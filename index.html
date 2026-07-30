@@ -3059,12 +3059,6 @@ function GlowUpTracker() {
     if (supportOwnerId !== user.id) loadSupportOwner(user.id);
   }, [user?.id, supportViewMode, supportLinks.length, isCaretakerOnlyAccount]);
 
-  let lastSection = null;
-
-  if (!user) {
-    return <LandingPage email={email} setEmail={setEmail} otpCode={otpCode} setOtpCode={setOtpCode} showSignIn={showSignIn} setShowSignIn={setShowSignIn} sendSignInLink={sendSignInLink} verifySignInCode={verifySignInCode} signInMessage={signInMessage} codeCooldown={codeCooldown} />;
-  }
-
   const babyMode = preferences.nickname_style === "baby";
   const dinoTheme = !!preferences.dino_theme;
 
@@ -3125,6 +3119,12 @@ function GlowUpTracker() {
     newlyEarnedBadgeIds.join("|"),
     (mascotCollection.earnedBadgeIds || []).join("|"),
   ]);
+
+  let lastSection = null;
+
+  if (!user) {
+    return <LandingPage email={email} setEmail={setEmail} otpCode={otpCode} setOtpCode={setOtpCode} showSignIn={showSignIn} setShowSignIn={setShowSignIn} sendSignInLink={sendSignInLink} verifySignInCode={verifySignInCode} signInMessage={signInMessage} codeCooldown={codeCooldown} />;
+  }
 
   const themeKey = babyMode ? (preferences.baby_voice === "fatherly" ? "baby_fatherly" : "baby_motherly") : dinoTheme ? "dino" : "warm";
   const voice = THEME_VOICE[themeKey];
