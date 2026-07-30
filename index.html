@@ -569,9 +569,13 @@ function GlowUpTracker() {
   const [active, setActive] = useState("daily");
   const [dashboard, setDashboard] = useState("today");
   const swipeStartX = React.useRef(null);
+  const swipeStartY = React.useRef(null);
   const routineSwipeStartX = React.useRef(null);
+  const routineSwipeStartY = React.useRef(null);
   const todaySwipeStartX = React.useRef(null);
+  const todaySwipeStartY = React.useRef(null);
   const weekSwipeStartX = React.useRef(null);
+  const weekSwipeStartY = React.useRef(null);
   const [todayCardIndex, setTodayCardIndex] = useState(0);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
@@ -3017,14 +3021,20 @@ function GlowUpTracker() {
       <div className="baby-shell" style={{ position: "relative", zIndex: 1 }}>
 
       <div
-        onTouchStart={(event) => { swipeStartX.current = event.touches[0]?.clientX ?? null; }}
+        onTouchStart={(event) => { swipeStartX.current = event.touches[0]?.clientX ?? null; swipeStartY.current = event.touches[0]?.clientY ?? null; }}
         onTouchEnd={(event) => {
           const startX = swipeStartX.current;
+          const startY = swipeStartY.current;
           const endX = event.changedTouches[0]?.clientX;
+          const endY = event.changedTouches[0]?.clientY;
           swipeStartX.current = null;
-          if (startX == null || endX == null || Math.abs(endX - startX) < 60) return;
+          swipeStartY.current = null;
+          if (startX == null || endX == null || startY == null || endY == null) return;
+          const deltaX = endX - startX;
+          const deltaY = endY - startY;
+          if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
           const currentIndex = DASHBOARDS.findIndex((item) => item.id === dashboard);
-          const direction = endX < startX ? 1 : -1;
+          const direction = deltaX < 0 ? 1 : -1;
           const nextIndex = Math.max(0, Math.min(DASHBOARDS.length - 1, currentIndex + direction));
           const nextDashboard = DASHBOARDS[nextIndex];
           if (nextDashboard && nextDashboard.id !== dashboard) setDashboard(nextDashboard.id);
@@ -3765,14 +3775,20 @@ function GlowUpTracker() {
           <button type="button" aria-label="Next card" onClick={() => setTodayCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
-          onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; }}
+          onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; todaySwipeStartY.current = event.touches[0]?.clientY ?? null; }}
           onTouchEnd={(event) => {
             event.stopPropagation();
             const startX = todaySwipeStartX.current;
+            const startY = todaySwipeStartY.current;
             const endX = event.changedTouches[0]?.clientX;
+            const endY = event.changedTouches[0]?.clientY;
             todaySwipeStartX.current = null;
-            if (startX == null || endX == null || Math.abs(endX - startX) < 45) return;
-            setTodayCardIndex(endX < startX ? 1 : 0);
+            todaySwipeStartY.current = null;
+            if (startX == null || endX == null || startY == null || endY == null) return;
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+            setTodayCardIndex(deltaX < 0 ? 1 : 0);
           }}
           style={{ touchAction: "pan-y" }}>
         {todayCardIndex === 0 && <>
@@ -3924,14 +3940,20 @@ function GlowUpTracker() {
           <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
-          onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; }}
+          onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; weekSwipeStartY.current = event.touches[0]?.clientY ?? null; }}
           onTouchEnd={(event) => {
             event.stopPropagation();
             const startX = weekSwipeStartX.current;
+            const startY = weekSwipeStartY.current;
             const endX = event.changedTouches[0]?.clientX;
+            const endY = event.changedTouches[0]?.clientY;
             weekSwipeStartX.current = null;
-            if (startX == null || endX == null || Math.abs(endX - startX) < 45) return;
-            setWeekCardIndex(endX < startX ? 1 : 0);
+            weekSwipeStartY.current = null;
+            if (startX == null || endX == null || startY == null || endY == null) return;
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
+            setWeekCardIndex(deltaX < 0 ? 1 : 0);
           }}
           style={{ touchAction: "pan-y" }}>
         {weekCardIndex === 0 && <>
@@ -4117,15 +4139,21 @@ function GlowUpTracker() {
           </div>
         )}
         {/* Card */}
-        <div onTouchStart={(event) => { routineSwipeStartX.current = event.touches[0]?.clientX ?? null; }}
+        <div onTouchStart={(event) => { routineSwipeStartX.current = event.touches[0]?.clientX ?? null; routineSwipeStartY.current = event.touches[0]?.clientY ?? null; }}
           onTouchEnd={(event) => {
             event.stopPropagation();
             const startX = routineSwipeStartX.current;
+            const startY = routineSwipeStartY.current;
             const endX = event.changedTouches[0]?.clientX;
+            const endY = event.changedTouches[0]?.clientY;
             routineSwipeStartX.current = null;
-            if (startX == null || endX == null || Math.abs(endX - startX) < 60) return;
+            routineSwipeStartY.current = null;
+            if (startX == null || endX == null || startY == null || endY == null) return;
+            const deltaX = endX - startX;
+            const deltaY = endY - startY;
+            if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
             const currentIndex = ALL.findIndex((item) => item.id === active);
-            const nextIndex = Math.max(0, Math.min(ALL.length - 1, currentIndex + (endX < startX ? 1 : -1)));
+            const nextIndex = Math.max(0, Math.min(ALL.length - 1, currentIndex + (deltaX < 0 ? 1 : -1)));
             const nextDay = ALL[nextIndex];
             if (nextDay && nextDay.id !== active) {
               setActive(nextDay.id);
