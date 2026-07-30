@@ -182,6 +182,32 @@ function reflectionPromptForDay(dayId, date, fallback) {
   return prompts[rotation];
 }
 
+const TEMPLATE_PACKS = [
+  { id: "basics", label: "Just the basics", emoji: "🌱", tasks: [
+    { task: "Drink water", section: "Every day" },
+    { task: "Take a little stretch", section: "Every day" },
+    { task: "Get ready for tomorrow", section: "Every day" },
+  ] },
+  { id: "morning", label: "Gentle morning routine", emoji: "☀️", tasks: [
+    { task: "Drink a glass of water", section: "Morning" },
+    { task: "Wash my face", section: "Morning" },
+    { task: "Eat something", section: "Morning" },
+    { task: "Take my medication or vitamins", section: "Morning" },
+  ] },
+  { id: "selfcare", label: "Basic self-care", emoji: "🧸", tasks: [
+    { task: "Brush my teeth", section: "Self-care" },
+    { task: "Shower or wash up", section: "Self-care" },
+    { task: "Tidy one small space", section: "Self-care" },
+    { task: "Do something comforting", section: "Self-care" },
+  ] },
+  { id: "fitness", label: "Simple fitness", emoji: "🏃", tasks: [
+    { task: "Move my body for 10 minutes", section: "Movement" },
+    { task: "Stretch", section: "Movement" },
+    { task: "Drink water", section: "Movement" },
+  ] },
+  { id: "blank", label: "Start from scratch", emoji: "📝", tasks: [] },
+];
+
 const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
@@ -599,6 +625,7 @@ function GlowUpTracker() {
   const [trackerProfile, setTrackerProfile] = useState(null);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [comfortItemDraft, setComfortItemDraft] = useState("");
+  const [selectedTemplateId, setSelectedTemplateId] = useState("basics");
   const [onboardingMode, setOnboardingMode] = useState("cozy");
   const [onboardingMessage, setOnboardingMessage] = useState("");
   const [privateNote, setPrivateNote] = useState("");
@@ -1969,12 +1996,15 @@ function GlowUpTracker() {
       }
     }
     if (trackerTasks.length === 0) {
-      const starterTasks = ["Drink water", "Take a little stretch", "Get ready for tomorrow"].map((task, index) => ({
-        user_id: user.id, task_key: `starter-${Date.now()}-${index}`, day_id: "daily", section: "Every day",
-        task, detail: "", sort_order: index, is_bonus: false, schedule_type: "weekly",
-      }));
-      const { error: starterError } = await supabase.from("tracker_tasks").insert(starterTasks);
-      if (!starterError) setTrackerTasks(starterTasks);
+      const pack = TEMPLATE_PACKS.find((item) => item.id === selectedTemplateId) || TEMPLATE_PACKS[0];
+      if (pack.tasks.length > 0) {
+        const starterTasks = pack.tasks.map((item, index) => ({
+          user_id: user.id, task_key: `starter-${Date.now()}-${index}`, day_id: "daily", section: item.section,
+          task: item.task, detail: "", sort_order: index, is_bonus: false, schedule_type: "weekly",
+        }));
+        const { error: starterError } = await supabase.from("tracker_tasks").insert(starterTasks);
+        if (!starterError) setTrackerTasks(starterTasks);
+      }
     }
     const next = { ...preferences, onboarding_complete: true };
     setPreferences(next);
@@ -2775,7 +2805,7 @@ function GlowUpTracker() {
   const dinoTheme = !!preferences.dino_theme;
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
   const currentCopingOption = COPING_OPTIONS[copingPick].replace(/Tigger/gi, comfortItemName);
-  const onboardingTotalSteps = onboardingMode === "guardian" ? 5 : 4;
+  const onboardingTotalSteps = onboardingMode === "guardian" ? 6 : 5;
 
   return (
     <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
@@ -2914,6 +2944,21 @@ function GlowUpTracker() {
               <input value={comfortItemDraft} onChange={(event) => setComfortItemDraft(event.target.value)} maxLength={80} placeholder="Example: favorite plush" style={{ width: "100%", boxSizing: "border-box", padding: "10px", borderRadius: 10, border: "1px solid #DCC9E8" }} />
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 3) || (onboardingMode === "guardian" && onboardingStep === 4)) && <>
+              <h2 style={{ margin: "8px 0 6px" }}>Pick a starting point 🌱</h2>
+              <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>Optional — just a head start. You can add, edit, or delete anything afterward.</p>
+              <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+                {TEMPLATE_PACKS.map((pack) => (
+                  <button key={pack.id} type="button" onClick={() => setSelectedTemplateId(pack.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, border: selectedTemplateId === pack.id ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selectedTemplateId === pack.id ? "#F7ECFB" : "white", textAlign: "left", cursor: "pointer" }}>
+                    <span style={{ fontSize: 20 }}>{pack.emoji}</span>
+                    <span style={{ flex: 1 }}>
+                      <div style={{ fontWeight: 800, color: "#5B4B6B" }}>{pack.label}</div>
+                      <div style={{ fontSize: 11.5, color: "#8C6B9E", marginTop: 2 }}>{pack.tasks.length > 0 ? pack.tasks.map((item) => item.task).join(" · ") : "No starter tasks — build it all yourself"}</div>
+                    </span>
+                  </button>
+                ))}
+              </div>
+            </>}
+            {((onboardingMode === "cozy" && onboardingStep === 4) || (onboardingMode === "guardian" && onboardingStep === 5)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>What you're working toward 🧸</h2>
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>
                 As you check things off, your plush mascot earns new outfits and badges — for showing up day after day, for building a good habit, or for gently reducing one you're working on.
@@ -2922,9 +2967,9 @@ function GlowUpTracker() {
                 Missing a day never takes anything away. You can see what you've unlocked (and what's next) anytime from the 🏅 Mascot Collection.
               </p>
             </>}
-            {((onboardingMode === "cozy" && onboardingStep === 4) || (onboardingMode === "guardian" && onboardingStep === 5)) && <>
-              <h2 style={{ margin: "8px 0 6px" }}>Ready for your first three tasks ✨</h2>
-              <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>Plushlist will begin with: drink water, take a little stretch, and get ready for tomorrow. Soft Plush is your default theme.</p>
+            {((onboardingMode === "cozy" && onboardingStep === 5) || (onboardingMode === "guardian" && onboardingStep === 6)) && <>
+              <h2 style={{ margin: "8px 0 6px" }}>You're ready ✨</h2>
+              <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>{(TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.tasks.length ?? 0) > 0 ? `Plushlist will begin with your ${TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.label.toLowerCase()} tasks.` : "You chose to start from scratch — add your first task once you're in."} Soft Plush is your default theme.</p>
             </>}
             {onboardingMessage && <div style={{ marginTop: 11, fontSize: 12, color: "#B0576B", lineHeight: 1.45 }}>{onboardingMessage}</div>}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 18 }}>
