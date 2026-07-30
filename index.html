@@ -290,6 +290,39 @@ function legacyScheduleToEntries(schedule) {
 }
 
 const HABIT_META_PATTERN = /^\[\[plushlist-habit:(build|reduce)\]\]\s*/;
+const THEME_VOICE = {
+  warm: {
+    dayComplete: "Day complete — proud of you 💜",
+    celebrationTitle: "100% essentials complete! ✨",
+    nurturingSome: (count) => `You have already finished ${count} ${count === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛`,
+    nurturingNone: "A soft start still counts, honey. Pick one small essential when you're ready. 💛",
+    welcomeBack: (days) => `It's been ${days} days — no pressure at all. Just pick one small thing to restart with, whenever you're ready. 💛`,
+    testNotifTitle: "Just checking on you 💛",
+    testNotifBody: "Hi sweetheart — how are you doing today? Come check in when you're ready.",
+    testNotifBodyDiscreet: "A gentle check-in is ready for you.",
+  },
+  baby: {
+    dayComplete: "All done! You did so good today! 🍼✨",
+    celebrationTitle: "Everything's all done! Yay!! 🎉",
+    nurturingSome: (count) => `You already did ${count} ${count === 1 ? "thing" : "things"} today! Such a good job! 🧸`,
+    nurturingNone: "It's okay to go slow, little one. Just one small thing when you're ready. 🍼",
+    welcomeBack: (days) => `It's been ${days} sleeps since you visited! No worries at all — come do one little thing whenever you want. 🧸`,
+    testNotifTitle: "Hi little one! 🍼",
+    testNotifBody: "Just checking on you! Come say hi whenever you're ready. 🧸",
+    testNotifBodyDiscreet: "A gentle check-in is waiting for you.",
+  },
+  dino: {
+    dayComplete: "RAWR! Day complete — you're dino-mite! 🦕",
+    celebrationTitle: "Stomp! 100% complete! 🦖✨",
+    nurturingSome: (count) => `You already stomped through ${count} ${count === 1 ? "thing" : "things"} today! Roar-some! 🦕`,
+    nurturingNone: "Even a tiny dino takes small steps. Pick one thing when you're ready. 🦖",
+    welcomeBack: (days) => `It's been ${days} days since your last stomp! No pressure, just pick one thing to get back on track. 🦕`,
+    testNotifTitle: "Rawr! Just checking on you 🦕",
+    testNotifBody: "Ready to stomp through your day? Come check in when you're ready.",
+    testNotifBodyDiscreet: "A gentle check-in is ready for you.",
+  },
+};
+
 const HABIT_REWARDS = [
   { count: 1, badge: "🌱", label: "First sprout" },
   { count: 3, badge: "✨", label: "Three in a row" },
@@ -2216,8 +2249,8 @@ function GlowUpTracker() {
         setSettingsMessage(`Permission worked, but this device couldn't be registered: ${subscriptionError.message}`);
         return;
       }
-      await registration.showNotification("Just checking on you 💛", {
-        body: preferences.discreet_notifications ? "A gentle check-in is ready for you." : "Hi sweetheart — how are you doing today? Come check in when you're ready.",
+      await registration.showNotification(voice.testNotifTitle, {
+        body: preferences.discreet_notifications ? voice.testNotifBodyDiscreet : voice.testNotifBody,
         icon: "./icon.svg?v=2",
         badge: "./icon.svg?v=2",
         tag: "plushlist-test",
@@ -3014,6 +3047,8 @@ function GlowUpTracker() {
 
   const babyMode = preferences.nickname_style === "baby";
   const dinoTheme = !!preferences.dino_theme;
+  const themeKey = babyMode ? "baby" : dinoTheme ? "dino" : "warm";
+  const voice = THEME_VOICE[themeKey];
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
   const currentCopingOption = COPING_OPTIONS[copingPick].replace(/Tigger/gi, comfortItemName);
   const onboardingTotalSteps = onboardingMode === "guardian" ? 7 : 6;
@@ -3162,7 +3197,7 @@ function GlowUpTracker() {
           ))}
           <div onClick={(event) => event.stopPropagation()} style={{ position: "relative", zIndex: 62, width: "min(100%, 390px)", padding: "22px 20px", borderRadius: 26, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} />
-            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>100% essentials complete! ✨</div>
+            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{voice.celebrationTitle}</div>
             <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.55, color: "#6B5A7D" }}>
               You cared for every required task today. Bonus items are still optional—this day already counts.
             </div>
@@ -4140,7 +4175,7 @@ function GlowUpTracker() {
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>🧸 WELCOME BACK</div>
                 <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#6B5A3D" }}>
-                  It's been {returnGapDays} days — no pressure at all. Just pick one small thing to restart with, whenever you're ready. 💛
+                  {voice.welcomeBack(returnGapDays)}
                 </div>
               </div>
               <button type="button" onClick={() => setReturnBannerDismissed(true)} aria-label="Dismiss welcome back message" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
@@ -4225,7 +4260,7 @@ function GlowUpTracker() {
             </div>
             {preferences.nurturing_checkins && (
               <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
-                {doneCount > 0 ? `You have already finished ${doneCount} ${doneCount === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛` : "A soft start still counts, honey. Pick one small essential when you're ready. 💛"}
+                {doneCount > 0 ? voice.nurturingSome(doneCount) : voice.nurturingNone}
               </div>
             )}
             {preferences.focus_mode && !focusModeShowAll ? (() => {
@@ -4318,7 +4353,7 @@ function GlowUpTracker() {
               </>
             )}
             {pct === 100 && (
-              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Day complete — proud of you 💜</div>
+              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>{voice.dayComplete}</div>
             )}
           </div>
         )}
