@@ -923,6 +923,8 @@ function GlowUpTracker() {
     return () => { active = false; };
   }, [user?.id, period.date]);
 
+  const [supportAchievements, setSupportAchievements] = useState(null);
+
   const loadSupportOwner = async (targetOwnerId) => {
     if (!targetOwnerId) {
       setSupportOwnerId(null);
@@ -931,16 +933,18 @@ function GlowUpTracker() {
       setSupportProgress([]);
       setSupportWeeklyHistory([]);
       setSupportTrackerTasks([]);
+      setSupportAchievements(null);
       return;
     }
     setSupportOwnerId(targetOwnerId);
-    const [notesResult, rewardsResult, progressResult, historyResult, tasksResult, suggestionsResult] = await Promise.all([
+    const [notesResult, rewardsResult, progressResult, historyResult, tasksResult, suggestionsResult, achievementsResult] = await Promise.all([
       supabase.from("support_notes").select("id, caregiver_name, body, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
       supabase.from("support_rewards").select("id, title, details, target_percent, active, week_start, earned_at, claimed_at, approval_required, approved_at, caregiver_user_id, created_at").eq("owner_user_id", targetOwnerId).eq("active", true).order("created_at", { ascending: false }),
       supabase.from("daily_progress").select("completed_keys").eq("user_id", targetOwnerId).eq("progress_date", period.date).maybeSingle(),
       supabase.from("daily_progress").select("progress_date, completed_keys").eq("user_id", targetOwnerId).gte("progress_date", period.weekStart).lte("progress_date", period.date),
       supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", targetOwnerId).order("sort_order"),
       supabase.from("task_suggestions").select("id, owner_user_id, caregiver_user_id, caregiver_name, task, suggested_day_id, status, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
+      supabase.from("user_achievements").select("visit_streak, best_visit_streak, best_care_streak, last_celebrated_date").eq("user_id", targetOwnerId).maybeSingle(),
     ]);
     setSupportNotes(notesResult.data || []);
     setSupportRewards(rewardsResult.data || []);
@@ -948,6 +952,7 @@ function GlowUpTracker() {
     setSupportWeeklyHistory(historyResult.data || []);
     setSupportTrackerTasks(tasksResult.data || []);
     setTaskSuggestions(suggestionsResult.data || []);
+    setSupportAchievements(achievementsResult.data || null);
     if (notesResult.error || rewardsResult.error || progressResult.error || historyResult.error || tasksResult.error || suggestionsResult.error) {
       setSupportMessage("Some guardian information couldn't be refreshed.");
     }
@@ -3503,6 +3508,13 @@ function GlowUpTracker() {
               </div>
               <button onClick={() => loadSupportData(user)} style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F5FAFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>↻ Refresh</button>
             </div>
+
+            {isSupportAdult && canViewSupportProgress && supportAchievements?.last_celebrated_date && daysBetweenDates(supportAchievements.last_celebrated_date, period.date) !== null && daysBetweenDates(supportAchievements.last_celebrated_date, period.date) <= 2 && (
+              <div style={{ marginTop: 12, padding: "12px 14px", borderRadius: 13, background: "#FFF9E9", border: "1px solid #F0D99E" }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: "#A56D14" }}>🎉 {selectedSupportName} just reached a new milestone!</div>
+                <div style={{ marginTop: 3, fontSize: 11.5, color: "#8A6A21" }}>A little cheer from you could mean a lot right now. 💛</div>
+              </div>
+            )}
 
             <div style={{ marginTop: 14, padding: 12, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
               <div style={{ fontSize: 11, fontWeight: 900, color: "#8D5CA5", letterSpacing: "0.08em" }}>{isSupportAdult ? "INVITED GUARDIAN ACCESS" : "YOUR PRIVATE TRACKER"}</div>
