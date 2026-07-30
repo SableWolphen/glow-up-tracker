@@ -2310,20 +2310,36 @@ function GlowUpTracker() {
   const [adminFeedback, setAdminFeedback] = useState([]);
   const [adminErrors, setAdminErrors] = useState([]);
   const [adminStats, setAdminStats] = useState(null);
+  const [adminOnline, setAdminOnline] = useState([]);
   const [adminMessage, setAdminMessage] = useState("");
 
   const loadAdminData = async () => {
     if (!isAdminUser) return;
     setAdminMessage("Loading…");
-    const [feedbackRes, errorsRes, statsRes] = await Promise.all([
+    const onlineSince = new Date(Date.now() - 5 * 60000).toISOString();
+    const [feedbackRes, errorsRes, statsRes, onlineRes] = await Promise.all([
       supabase.from("feedback_messages").select("id, email, message, resolved, created_at").order("created_at", { ascending: false }),
       supabase.from("app_error_logs").select("id, message, stack, url, user_id, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.rpc("admin_dashboard_stats"),
+      supabase.from("user_presence").select("user_id, email, last_active_at").gte("last_active_at", onlineSince).order("last_active_at", { ascending: false }),
     ]);
     setAdminFeedback(feedbackRes.data || []);
     setAdminErrors(errorsRes.data || []);
     setAdminStats(statsRes.data || null);
-    setAdminMessage(feedbackRes.error || errorsRes.error || statsRes.error ? "Some admin data couldn't load." : "");
+    setAdminOnline(onlineRes.data || []);
+    setAdminMessage(feedbackRes.error || errorsRes.error || statsRes.error || onlineRes.error ? "Some admin data couldn't load." : "");
+  };
+
+  const clearAllErrors = async () => {
+    if (!window.confirm(`Permanently delete all ${adminErrors.length} error log entries?`)) return;
+    setAdminMessage("Clearing errors…");
+    const { error } = await supabase.from("app_error_logs").delete().not("id", "is", null);
+    if (error) {
+      setAdminMessage(`Couldn't clear errors: ${error.message}`);
+      return;
+    }
+    setAdminErrors([]);
+    setAdminMessage("Error logs cleared ✨");
   };
 
   const resolveFeedback = async (item) => {
@@ -3120,6 +3136,22 @@ function GlowUpTracker() {
     (mascotCollection.earnedBadgeIds || []).join("|"),
   ]);
 
+  useEffect(() => {
+    if (!user) return;
+    let alive = true;
+    const beat = () => {
+      if (!alive) return;
+      supabase.from("user_presence").upsert({
+        user_id: user.id,
+        email: user.email || null,
+        last_active_at: new Date().toISOString(),
+      }, { onConflict: "user_id" }).then(() => {});
+    };
+    beat();
+    const interval = window.setInterval(beat, 60000);
+    return () => { alive = false; window.clearInterval(interval); };
+  }, [user?.id]);
+
   let lastSection = null;
 
   if (!user) {
@@ -3841,6 +3873,23 @@ function GlowUpTracker() {
           )}
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🟢 ONLINE NOW ({adminOnline.length})</div>
+            <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>Active in the last 5 minutes.</div>
+            {adminOnline.length === 0 ? (
+              <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>Nobody's online right now.</div>
+            ) : (
+              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                {adminOnline.map((item) => (
+                  <div key={item.user_id} style={{ display: "flex", justifyContent: "space-between", gap: 8, padding: "8px 10px", borderRadius: 10, background: "#F1FFF9", border: "1px solid #CFE8E1" }}>
+                    <span style={{ fontSize: 12.5, fontWeight: 700, color: "#318C79" }}>🟢 {item.email || item.user_id.slice(0, 8)}</span>
+                    <span style={{ fontSize: 10.5, color: "#8C6B9E" }}>{new Date(item.last_active_at).toLocaleTimeString()}</span>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>💌 FEEDBACK INBOX ({adminFeedback.length})</div>
             {adminFeedback.length === 0 ? (
               <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>No feedback waiting. 🎉</div>
@@ -3861,7 +3910,10 @@ function GlowUpTracker() {
           </div>
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>⚠️ ERROR LOGS (last 100)</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>⚠️ ERROR LOGS (last 100)</div>
+              {adminErrors.length > 0 && <button type="button" onClick={clearAllErrors} style={{ padding: "5px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>🗑️ Clear all errors</button>}
+            </div>
             {adminErrors.length === 0 ? (
               <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>No errors logged. 🎉</div>
             ) : (
