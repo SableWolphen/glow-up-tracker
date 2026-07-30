@@ -4703,6 +4703,7 @@ function GlowUpTracker() {
                   That's okay. Today can be smaller. <button type="button" onClick={() => saveDailyCheckIn({ soft_day: true })} style={{ marginLeft: 4, padding: "3px 8px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Start a Soft Day</button>
                 </div>
               )}
+              {(dailyCheckIn.capacity === "very_low" || dailyCheckIn.capacity === "low") && (
               <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid #E6D4F2" }}>
                 <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
                   <div style={{ fontSize: 10.5, fontWeight: 800, color: "#8C6B9E" }}>WHAT COUNTS TODAY</div>
@@ -4714,6 +4715,7 @@ function GlowUpTracker() {
                   <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>Pick a small handful of today's tasks — your Today list will simplify to just those.</div>
                 )}
               </div>
+              )}
             </div>
           )}
         </div>
