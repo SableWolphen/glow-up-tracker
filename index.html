@@ -366,6 +366,14 @@ const THEME_VOICE = {
   },
 };
 
+// ————— Supporter unlock (groundwork only) —————
+// This is the single switch that turns any free-tier limit on or off, everywhere.
+// While false, every account behaves exactly as it does today — nobody sees a
+// limit, an upsell, or any different behavior. Flip only when explicitly asked to.
+const SUPPORTER_FEATURES_ENABLED = false;
+const FREE_TASK_LIMIT_PER_DAY = 5;
+const FREE_GUARDIAN_LIMIT = 1;
+
 const CURRENT_CHANGELOG_VERSION = "2026-07-30-3";
 const CHANGELOG_ITEMS = [
   "🧸 Your mascot now has moods — tired when nothing's done yet, excited when your day is complete",
@@ -793,6 +801,7 @@ function GlowUpTracker() {
     baby_voice: "motherly",
     beta_banner_dismissed: false,
     last_seen_changelog: "",
+    is_supporter: false,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -1698,6 +1707,13 @@ function GlowUpTracker() {
       setTaskMessage("Choose a section or name your new section first.");
       return;
     }
+    if (SUPPORTER_FEATURES_ENABLED && !isSupporterAccount) {
+      const combinedDayTaskCount = trackerTasks.filter((item) => item.day_id === "daily" || item.day_id === newTaskDay).length;
+      if (combinedDayTaskCount >= FREE_TASK_LIMIT_PER_DAY) {
+        setTaskMessage(`🌟 Free accounts can have up to ${FREE_TASK_LIMIT_PER_DAY} tasks for this day. Become a Supporter for unlimited tasks.`);
+        return;
+      }
+    }
     const taskKey = `custom-${crypto.randomUUID()}`;
     const lastSectionIndex = dayTasks.reduce((lastIndex, item, index) => item.section === section ? index : lastIndex, -1);
     const insertionIndex = lastSectionIndex >= 0 ? lastSectionIndex + 1 : dayTasks.length;
@@ -2434,6 +2450,23 @@ function GlowUpTracker() {
   const [adminStats, setAdminStats] = useState(null);
   const [adminOnline, setAdminOnline] = useState(0);
   const [adminMessage, setAdminMessage] = useState("");
+  const [supporterEmailDraft, setSupporterEmailDraft] = useState("");
+  const [supporterGrantMessage, setSupporterGrantMessage] = useState("");
+
+  const setSupporterStatus = async (grant) => {
+    const email = supporterEmailDraft.trim().toLowerCase();
+    if (!email || !email.includes("@")) {
+      setSupporterGrantMessage("Enter a valid email first.");
+      return;
+    }
+    setSupporterGrantMessage("Updating…");
+    const { error } = await supabase.rpc("admin_set_supporter_status", { target_email: email, new_value: grant });
+    if (error) {
+      setSupporterGrantMessage(`Couldn't update: ${error.message}`);
+      return;
+    }
+    setSupporterGrantMessage(`${email} is now ${grant ? "a Supporter 🌟" : "on the free plan"}.`);
+  };
 
   const loadAdminData = async () => {
     if (!isAdminUser) return;
@@ -3141,6 +3174,7 @@ function GlowUpTracker() {
   const accountType = trackerProfile?.account_type || (canUseCaretakerDashboard ? "caretaker" : "little");
   const isCaretakerOnlyAccount = accountType === "caretaker" && canUseCaretakerDashboard;
   const isAdminUser = ["johnston.alexander.k@gmail.com", "johnston.alexander.k+plushlisttest@gmail.com"].includes((user?.email || "").toLowerCase());
+  const isSupporterAccount = !!preferences.is_supporter || isAdminUser;
   const personalPlushlistTitle = trackerProfile?.display_name
     ? `${trackerProfile.display_name}’s Plushlist`
     : "My Plushlist";
@@ -4092,6 +4126,17 @@ function GlowUpTracker() {
           </div>
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#C9954A" }}>🌟 SUPPORTER STATUS {!SUPPORTER_FEATURES_ENABLED && <span style={{ fontWeight: 700, color: "#8C6B9E" }}>(gate is currently OFF for everyone)</span>}</div>
+            <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>Manually grant or revoke Supporter status for an account — for comping testers or recording a payment before real billing exists.</div>
+            <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
+              <input type="email" value={supporterEmailDraft} onChange={(event) => setSupporterEmailDraft(event.target.value)} placeholder="person@example.com" style={{ flex: "1 1 190px", minWidth: 0, padding: "8px 10px", borderRadius: 9, border: "1px solid #E8D4B6" }} />
+              <button type="button" onClick={() => setSupporterStatus(true)} style={{ padding: "8px 12px", borderRadius: 9, border: 0, background: "#C9954A", color: "white", fontWeight: 900, cursor: "pointer" }}>Grant</button>
+              <button type="button" onClick={() => setSupporterStatus(false)} style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid #E8D4B6", background: "white", color: "#C9954A", fontWeight: 800, cursor: "pointer" }}>Revoke</button>
+            </div>
+            {supporterGrantMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{supporterGrantMessage}</div>}
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>💌 FEEDBACK INBOX ({adminFeedback.length})</div>
             {adminFeedback.length === 0 ? (
               <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>No feedback waiting. 🎉</div>
@@ -4239,6 +4284,11 @@ function GlowUpTracker() {
               </div>
             )}
             <button onClick={addTrackerTask} style={{ marginTop: 10, padding: "9px 13px", borderRadius: 10, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Add this task ✨</button>
+            {SUPPORTER_FEATURES_ENABLED && !isSupporterAccount && (
+              <div style={{ marginTop: 8, fontSize: 11, color: "#8C6B9E" }}>
+                {trackerTasks.filter((item) => item.day_id === "daily" || item.day_id === newTaskDay).length}/{FREE_TASK_LIMIT_PER_DAY} tasks used for this day on the free plan · 🌟 Supporters get unlimited
+              </div>
+            )}
             {taskMessage && <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>{taskMessage}</div>}
           </div>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
