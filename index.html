@@ -580,6 +580,7 @@ function GlowUpTracker() {
   const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
+  const [focusModeShowAll, setFocusModeShowAll] = useState(false);
   const [user, setUser] = useState(null);
   const [syncStatus, setSyncStatus] = useState("loading");
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
@@ -693,6 +694,9 @@ function GlowUpTracker() {
     gentle_streaks: true,
     dino_theme: false,
     weekly_intention_intro_seen: false,
+    focus_mode: false,
+    calm_mode: false,
+    adult_mode: false,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2009,6 +2013,9 @@ function GlowUpTracker() {
       gentle_streaks: !!nextPreferences.gentle_streaks,
       dino_theme: !!nextPreferences.dino_theme,
       weekly_intention_intro_seen: !!nextPreferences.weekly_intention_intro_seen,
+      focus_mode: !!nextPreferences.focus_mode,
+      calm_mode: !!nextPreferences.calm_mode,
+      adult_mode: !!nextPreferences.adult_mode,
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from("app_preferences").upsert(row, { onConflict: "user_id" });
@@ -4209,12 +4216,53 @@ function GlowUpTracker() {
             <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
             </div>
-            {preferences.nurturing_checkins && (
+            {preferences.nurturing_checkins && !preferences.adult_mode && (
               <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
                 {doneCount > 0 ? `You have already finished ${doneCount} ${doneCount === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛` : "A soft start still counts, honey. Pick one small essential when you're ready. 💛"}
               </div>
             )}
-            {(() => {
+            {preferences.focus_mode && !focusModeShowAll ? (() => {
+              const focusNextTask = rows.find((r) => !r.isBonus && !viewDone[r.key]) || rows.find((r) => !viewDone[r.key]);
+              if (!focusNextTask) {
+                return (
+                  <div style={{ textAlign: "center", padding: "18px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Everything's done — proud of you 💜</div>
+                );
+              }
+              const checked = !!viewDone[focusNextTask.key];
+              const expandable = !!(focusNextTask.how || focusNextTask.why);
+              const expanded = openRow === focusNextTask.key;
+              return (
+                <div>
+                  <div style={{ fontSize: 10.5, letterSpacing: "0.14em", color: day.accent, fontWeight: 800, marginBottom: 6 }}>🎯 NEXT UP{focusNextTask.section ? ` · ${focusNextTask.section.toUpperCase()}` : ""}</div>
+                  <div style={{ borderRadius: 18, border: `2px solid ${day.accent}`, background: day.accent + "14", overflow: "hidden" }}>
+                    <div onClick={() => { if (isFutureView) return; expandable ? setOpenRow(expanded ? null : focusNextTask.key) : toggle(focusNextTask.key); }}
+                      style={{ display: "flex", alignItems: "center", gap: 16, padding: "22px 18px", cursor: isFutureView ? "not-allowed" : "pointer" }}>
+                      <span onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(focusNextTask.key); }}
+                        style={{ width: 40, height: 40, minWidth: 40, borderRadius: 12,
+                          border: `3px solid ${day.accent}`,
+                          background: checked ? day.accent : "white",
+                          display: "flex", alignItems: "center", justifyContent: "center",
+                          color: "white", fontWeight: 900, fontSize: 22, animation: celebrateKey === focusNextTask.key ? "checkPop 0.5s ease" : "none" }}>
+                        {checked ? "✓" : ""}
+                      </span>
+                      <span style={{ flex: 1, fontSize: 19, fontWeight: 700, color: "#5B4B6B" }}>{focusNextTask.label}</span>
+                    </div>
+                    {expandable && expanded && (
+                      <div style={{ padding: "0 18px 16px 74px", fontSize: 14, lineHeight: 1.6, color: "#6B5A7D" }}>
+                        {focusNextTask.how && <div>{focusNextTask.how}</div>}
+                        {focusNextTask.why && <div style={{ marginTop: focusNextTask.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {focusNextTask.why}</div>}
+                      </div>
+                    )}
+                  </div>
+                  <button type="button" onClick={() => setFocusModeShowAll(true)} style={{ marginTop: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Show full list instead</button>
+                </div>
+              );
+            })() : (
+              <>
+                {preferences.focus_mode && (
+                  <button type="button" onClick={() => setFocusModeShowAll(false)} style={{ marginBottom: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🎯 Back to one thing at a time</button>
+                )}
+                {(() => {
               let lastSection = "";
               return rows.map((r) => {
                 const header = r.section !== lastSection ? r.section : null;
@@ -4259,9 +4307,11 @@ function GlowUpTracker() {
                   </div>
                 );
               });
-            })()}
+                })()}
+              </>
+            )}
             {pct === 100 && (
-              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Day complete — proud of you 💜</div>
+              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>{preferences.calm_mode ? "Day complete 💜" : "Day complete — proud of you 💜"}</div>
             )}
           </div>
         )}
