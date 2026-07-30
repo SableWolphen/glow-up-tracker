@@ -2989,6 +2989,19 @@ function GlowUpTracker() {
   const dashboardItems = canUseCaretakerDashboard
     ? [...DASHBOARDS, { id: "guardian", label: "Guardian's Page", icon: "💛", accent: "#4C8FE8" }]
     : DASHBOARDS;
+
+  const goToDashboard = (id) => {
+    setDashboard(id);
+    if (id === "today") {
+      setActive("daily");
+      setSelectedProgressDate(period.date);
+    }
+    if (id === "guardian") {
+      setSupportViewMode("caretaker");
+      setSupportOpen(true);
+      if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id);
+    }
+  };
   const accountType = trackerProfile?.account_type || (canUseCaretakerDashboard ? "caretaker" : "little");
   const isCaretakerOnlyAccount = accountType === "caretaker" && canUseCaretakerDashboard;
   const isAdminUser = ["johnston.alexander.k@gmail.com", "johnston.alexander.k+plushlisttest@gmail.com"].includes((user?.email || "").toLowerCase());
@@ -3455,7 +3468,7 @@ function GlowUpTracker() {
           const direction = deltaX < 0 ? 1 : -1;
           const nextIndex = Math.max(0, Math.min(DASHBOARDS.length - 1, currentIndex + direction));
           const nextDashboard = DASHBOARDS[nextIndex];
-          if (nextDashboard && nextDashboard.id !== dashboard) setDashboard(nextDashboard.id);
+          if (nextDashboard && nextDashboard.id !== dashboard) goToDashboard(nextDashboard.id);
         }}
         style={{ maxWidth: 520, margin: "0 auto", touchAction: "pan-y" }}>
         <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 12, background: "rgba(255,255,255,0.55)", border: "1px solid #F3D9EC", fontSize: 12.5, color: "#8C6B9E" }}>
@@ -3517,14 +3530,7 @@ function GlowUpTracker() {
         <div role="tablist" aria-label="Plushlist dashboards" style={{ display: "grid", gridTemplateColumns: `repeat(${dashboardItems.length}, minmax(0, 1fr))`, gap: 6, marginBottom: 10 }}>
           {dashboardItems.map((item) => {
             const on = item.id === dashboard;
-            return <button key={item.id} role="tab" aria-selected={on} onClick={() => {
-              setDashboard(item.id);
-              if (item.id === "guardian") {
-                setSupportViewMode("caretaker");
-                setSupportOpen(true);
-                if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id);
-              }
-            }} style={{ minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
+            return <button key={item.id} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
               <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
             </button>;
           })}
