@@ -238,6 +238,47 @@ const TEMPLATE_PACKS = [
     { task: "Stretch", section: "Movement" },
     { task: "Drink water", section: "Movement" },
   ] },
+  { id: "workday", label: "Workday survival", emoji: "💼", tasks: [
+    { task: "Check messages once", section: "Workday" },
+    { task: "Take a real break", section: "Workday" },
+    { task: "Eat lunch away from my desk", section: "Workday" },
+    { task: "Wrap up for the day", section: "Workday" },
+  ] },
+  { id: "low_energy", label: "Low-energy day", emoji: "🪫", tasks: [
+    { task: "Drink water", section: "Low-energy" },
+    { task: "Take medication if needed", section: "Low-energy" },
+    { task: "Rest without guilt", section: "Low-energy" },
+    { task: "One tiny task, if I can", section: "Low-energy" },
+  ] },
+  { id: "bedtime", label: "Bedtime wind-down", emoji: "🌙", tasks: [
+    { task: "Brush my teeth", section: "Bedtime" },
+    { task: "Put my phone away", section: "Bedtime" },
+    { task: "Dim the lights", section: "Bedtime" },
+    { task: "Read or relax for a few minutes", section: "Bedtime" },
+  ] },
+  { id: "medication", label: "Medication", emoji: "💊", tasks: [
+    { task: "Take morning medication", section: "Medication" },
+    { task: "Take evening medication", section: "Medication" },
+    { task: "Check if I need a refill", section: "Medication" },
+  ] },
+  { id: "cleaning_reset", label: "Cleaning reset", emoji: "🧹", tasks: [
+    { task: "Clear one surface", section: "Cleaning reset" },
+    { task: "Put away 5 things", section: "Cleaning reset" },
+    { task: "Take out the trash", section: "Cleaning reset" },
+    { task: "Wipe one counter", section: "Cleaning reset" },
+  ] },
+  { id: "sunday_reset", label: "Sunday reset", emoji: "🗓️", tasks: [
+    { task: "Look ahead at the week", section: "Sunday reset" },
+    { task: "Prep one meal or snack", section: "Sunday reset" },
+    { task: "Tidy up for the week ahead", section: "Sunday reset" },
+    { task: "Rest for a bit", section: "Sunday reset" },
+  ] },
+  { id: "grounding", label: "Comfort & grounding", emoji: "🧘", tasks: [
+    { task: "Take 3 slow breaths", section: "Comfort" },
+    { task: "Hold something comforting", section: "Comfort" },
+    { task: "Name 3 things I can see", section: "Comfort" },
+    { task: "Do one grounding thing", section: "Comfort" },
+  ] },
   { id: "blank", label: "Start from scratch", emoji: "📝", tasks: [] },
 ];
 
@@ -3752,17 +3793,24 @@ function GlowUpTracker() {
             {((onboardingMode === "cozy" && onboardingStep === 3) || (onboardingMode === "guardian" && onboardingStep === 4)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>Pick a starting point 🌱</h2>
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>Optional — just a head start. You can add, edit, or delete anything afterward.</p>
-              <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 7, marginTop: 10 }}>
                 {TEMPLATE_PACKS.map((pack) => (
-                  <button key={pack.id} type="button" onClick={() => setSelectedTemplateId(pack.id)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, border: selectedTemplateId === pack.id ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selectedTemplateId === pack.id ? "#F7ECFB" : "white", textAlign: "left", cursor: "pointer" }}>
+                  <button key={pack.id} type="button" onClick={() => setSelectedTemplateId(pack.id)} style={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 3, padding: "10px 6px", borderRadius: 12, border: selectedTemplateId === pack.id ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selectedTemplateId === pack.id ? "#F7ECFB" : "white", textAlign: "center", cursor: "pointer" }}>
                     <span style={{ fontSize: 20 }}>{pack.emoji}</span>
-                    <span style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 800, color: "#5B4B6B" }}>{pack.label}</div>
-                      <div style={{ fontSize: 11.5, color: "#8C6B9E", marginTop: 2 }}>{pack.tasks.length > 0 ? pack.tasks.map((item) => item.task).join(" · ") : "No starter tasks — build it all yourself"}</div>
-                    </span>
+                    <span style={{ fontSize: 11.5, fontWeight: 800, color: "#5B4B6B", lineHeight: 1.25 }}>{pack.label}</span>
                   </button>
                 ))}
               </div>
+              {(() => {
+                const selectedPack = TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId);
+                if (!selectedPack) return null;
+                return (
+                  <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 12, background: "#F7ECFB", border: "1px solid #E3C9EC" }}>
+                    <div style={{ fontSize: 12, fontWeight: 800, color: "#8E4EAA" }}>{selectedPack.emoji} {selectedPack.label}</div>
+                    <div style={{ marginTop: 4, fontSize: 11.5, color: "#6B5A7D", lineHeight: 1.5 }}>{selectedPack.tasks.length > 0 ? selectedPack.tasks.map((item) => item.task).join(" · ") : "No starter tasks — build it all yourself."}</div>
+                  </div>
+                );
+              })()}
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 4) || (onboardingMode === "guardian" && onboardingStep === 5)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>What you're working toward 🧸</h2>
