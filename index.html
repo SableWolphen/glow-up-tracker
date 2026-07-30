@@ -2890,46 +2890,6 @@ function GlowUpTracker() {
   const unlockedOutfits = MASCOT_OUTFITS.filter((outfit) => unlockedIdSet.has(outfit.id));
   const selectedOutfit = unlockedOutfits.find((outfit) => outfit.id === mascotCollection.selectedId) || MASCOT_OUTFITS[0];
 
-  const BADGE_DEFS = [
-    { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete a full caring day.", check: () => savedBestStreak >= 1 },
-    { id: "one_week", badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", check: () => savedBestStreak >= 7 },
-    { id: "two_weeks", badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", check: () => savedBestStreak >= 14 },
-    { id: "one_month", badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", check: () => savedBestStreak >= 30 },
-    { id: "two_months", badge: "💎", name: "Two Months Strong", hint: "Reach a 60-day caring streak.", check: () => savedBestStreak >= 60 },
-    { id: "hundred_days", badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", check: () => savedBestStreak >= 100 },
-    { id: "two_hundred_days", badge: "🎊", name: "Two Hundred Days", hint: "Reach a 200-day caring streak.", check: () => savedBestStreak >= 200 },
-    { id: "one_year", badge: "🏆", name: "One Year Strong", hint: "Reach a 365-day caring streak.", check: () => savedBestStreak >= 365 },
-    { id: "getting_started", badge: "👣", name: "Getting Started", hint: "Open Plushlist for the first time.", check: () => mascotCollection.bestVisitStreak >= 1 },
-    { id: "regular_visitor", badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", check: () => mascotCollection.bestVisitStreak >= 7 },
-    { id: "devoted_visitor", badge: "🌙", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", check: () => mascotCollection.bestVisitStreak >= 30 },
-    { id: "sixty_visitor", badge: "💫", name: "60-Day Visitor", hint: "Open Plushlist 60 days in a row.", check: () => mascotCollection.bestVisitStreak >= 60 },
-    { id: "hundred_visitor", badge: "💯", name: "100-Day Visitor", hint: "Open Plushlist 100 days in a row.", check: () => mascotCollection.bestVisitStreak >= 100 },
-    { id: "first_reflection", badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", check: () => reflectionDates.length >= 1 },
-    { id: "reflection_habit", badge: "✍️", name: "Reflection Habit", hint: "Write 10 private reflections.", check: () => reflectionDates.length >= 10 },
-    { id: "reflection_devotee", badge: "📖", name: "Reflection Devotee", hint: "Write 30 private reflections.", check: () => reflectionDates.length >= 30 },
-    { id: "reflection_sage", badge: "📚", name: "Reflection Sage", hint: "Write 100 private reflections.", check: () => reflectionDates.length >= 100 },
-    { id: "intention_setter", badge: "📮", name: "Intention Setter", hint: "Write a reflection on a Sunday.", check: () => reflectionDates.some((date) => dayIdForDate(date) === "sun") },
-    { id: "guardian_connected", badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", check: () => ownedSupportLinks.length >= 1 },
-    { id: "two_guardians", badge: "🧑‍🤝‍🧑", name: "Two Guardians", hint: "Add two trusted Guardians.", check: () => ownedSupportLinks.length >= 2 },
-    { id: "habit_starter", badge: "🥇", name: "Habit Starter", hint: "Create your first build or reduce habit.", check: () => habitTasks.length >= 1 },
-    { id: "habit_gardener", badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", check: () => habitTasks.some((item) => item.stats.earnedReward) },
-    { id: "habit_collector", badge: "🌻", name: "Habit Collector", hint: "Earn badges on 3 different habits.", check: () => habitTasks.filter((item) => item.stats.earnedReward).length >= 3 },
-    { id: "full_grown", badge: "🌳", name: "Full Grown", hint: "Reach a 30-day streak on any single habit.", check: () => habitTasks.some((item) => item.stats.best >= 30) },
-    { id: "habit_builder", badge: "🎯", name: "Habit Builder", hint: "Earn a badge on a habit you're building.", check: () => habitTasks.some((item) => item.habitType === "build" && item.stats.earnedReward) },
-    { id: "habit_reducer", badge: "🛡️", name: "Habit Reducer", hint: "Earn a badge on a habit you're reducing.", check: () => habitTasks.some((item) => item.habitType === "reduce" && item.stats.earnedReward) },
-    { id: "organizer", badge: "📋", name: "Organizer", hint: "Have 10 tasks set up.", check: () => trackerTasks.length >= 10 },
-    { id: "big_planner", badge: "🧩", name: "Big Planner", hint: "Have 25 tasks set up.", check: () => trackerTasks.length >= 25 },
-    { id: "schedule_setter", badge: "🗓️", name: "Schedule Setter", hint: "Set up a schedule for one day.", check: () => personalSchedules.length >= 1 },
-    { id: "full_week_scheduled", badge: "📅", name: "Full Week Scheduled", hint: "Set up a schedule for all 7 days.", check: () => personalSchedules.length >= 7 },
-    { id: "personalizer", badge: "🎨", name: "Personalizer", hint: "Try Baby Mode or Dino Theme.", check: () => babyMode || dinoTheme },
-    { id: "reminder_ready", badge: "🔔", name: "Reminder Ready", hint: "Turn on push notifications.", check: () => !!preferences.notifications_enabled },
-    { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
-    { id: "perfect_week", badge: "✨", name: "Perfect Week", hint: "Reach 100% for the whole week.", check: () => weeklyOverallPct === 100 },
-    { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
-  ];
-  const newlyEarnedBadgeIds = BADGE_DEFS.filter((item) => item.check()).map((item) => item.id);
-  const earnedBadgeIdSet = new Set([...(mascotCollection.earnedBadgeIds || []), ...newlyEarnedBadgeIds]);
-
   const saveMascotCollection = (nextCollection) => {
     const normalized = {
       ...nextCollection,
@@ -2975,24 +2935,6 @@ function GlowUpTracker() {
     mascotCollection.bestStreak,
     (mascotCollection.unlockedIds || []).join("|"),
     newlyEarnedIds.join("|"),
-  ]);
-
-  useEffect(() => {
-    if (!user || collectionLoadedFor !== user.id) return;
-    const currentBadgeIds = mascotCollection.earnedBadgeIds || [];
-    const badgesChanged = newlyEarnedBadgeIds.some((id) => !currentBadgeIds.includes(id));
-    if (!badgesChanged) return;
-    saveMascotCollection({
-      ...mascotCollection,
-      bestStreak: Math.max(mascotCollection.bestStreak, currentUnlockProgress),
-      unlockedIds: [...unlockedIdSet],
-      earnedBadgeIds: [...earnedBadgeIdSet],
-    });
-  }, [
-    user?.id,
-    collectionLoadedFor,
-    newlyEarnedBadgeIds.join("|"),
-    (mascotCollection.earnedBadgeIds || []).join("|"),
   ]);
 
   useEffect(() => {
@@ -3125,6 +3067,65 @@ function GlowUpTracker() {
 
   const babyMode = preferences.nickname_style === "baby";
   const dinoTheme = !!preferences.dino_theme;
+
+  const BADGE_DEFS = [
+    { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete a full caring day.", check: () => savedBestStreak >= 1 },
+    { id: "one_week", badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", check: () => savedBestStreak >= 7 },
+    { id: "two_weeks", badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", check: () => savedBestStreak >= 14 },
+    { id: "one_month", badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", check: () => savedBestStreak >= 30 },
+    { id: "two_months", badge: "💎", name: "Two Months Strong", hint: "Reach a 60-day caring streak.", check: () => savedBestStreak >= 60 },
+    { id: "hundred_days", badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", check: () => savedBestStreak >= 100 },
+    { id: "two_hundred_days", badge: "🎊", name: "Two Hundred Days", hint: "Reach a 200-day caring streak.", check: () => savedBestStreak >= 200 },
+    { id: "one_year", badge: "🏆", name: "One Year Strong", hint: "Reach a 365-day caring streak.", check: () => savedBestStreak >= 365 },
+    { id: "getting_started", badge: "👣", name: "Getting Started", hint: "Open Plushlist for the first time.", check: () => mascotCollection.bestVisitStreak >= 1 },
+    { id: "regular_visitor", badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", check: () => mascotCollection.bestVisitStreak >= 7 },
+    { id: "devoted_visitor", badge: "🌙", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", check: () => mascotCollection.bestVisitStreak >= 30 },
+    { id: "sixty_visitor", badge: "💫", name: "60-Day Visitor", hint: "Open Plushlist 60 days in a row.", check: () => mascotCollection.bestVisitStreak >= 60 },
+    { id: "hundred_visitor", badge: "💯", name: "100-Day Visitor", hint: "Open Plushlist 100 days in a row.", check: () => mascotCollection.bestVisitStreak >= 100 },
+    { id: "first_reflection", badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", check: () => reflectionDates.length >= 1 },
+    { id: "reflection_habit", badge: "✍️", name: "Reflection Habit", hint: "Write 10 private reflections.", check: () => reflectionDates.length >= 10 },
+    { id: "reflection_devotee", badge: "📖", name: "Reflection Devotee", hint: "Write 30 private reflections.", check: () => reflectionDates.length >= 30 },
+    { id: "reflection_sage", badge: "📚", name: "Reflection Sage", hint: "Write 100 private reflections.", check: () => reflectionDates.length >= 100 },
+    { id: "intention_setter", badge: "📮", name: "Intention Setter", hint: "Write a reflection on a Sunday.", check: () => reflectionDates.some((date) => dayIdForDate(date) === "sun") },
+    { id: "guardian_connected", badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", check: () => ownedSupportLinks.length >= 1 },
+    { id: "two_guardians", badge: "🧑‍🤝‍🧑", name: "Two Guardians", hint: "Add two trusted Guardians.", check: () => ownedSupportLinks.length >= 2 },
+    { id: "habit_starter", badge: "🥇", name: "Habit Starter", hint: "Create your first build or reduce habit.", check: () => habitTasks.length >= 1 },
+    { id: "habit_gardener", badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", check: () => habitTasks.some((item) => item.stats.earnedReward) },
+    { id: "habit_collector", badge: "🌻", name: "Habit Collector", hint: "Earn badges on 3 different habits.", check: () => habitTasks.filter((item) => item.stats.earnedReward).length >= 3 },
+    { id: "full_grown", badge: "🌳", name: "Full Grown", hint: "Reach a 30-day streak on any single habit.", check: () => habitTasks.some((item) => item.stats.best >= 30) },
+    { id: "habit_builder", badge: "🎯", name: "Habit Builder", hint: "Earn a badge on a habit you're building.", check: () => habitTasks.some((item) => item.habitType === "build" && item.stats.earnedReward) },
+    { id: "habit_reducer", badge: "🛡️", name: "Habit Reducer", hint: "Earn a badge on a habit you're reducing.", check: () => habitTasks.some((item) => item.habitType === "reduce" && item.stats.earnedReward) },
+    { id: "organizer", badge: "📋", name: "Organizer", hint: "Have 10 tasks set up.", check: () => trackerTasks.length >= 10 },
+    { id: "big_planner", badge: "🧩", name: "Big Planner", hint: "Have 25 tasks set up.", check: () => trackerTasks.length >= 25 },
+    { id: "schedule_setter", badge: "🗓️", name: "Schedule Setter", hint: "Set up a schedule for one day.", check: () => personalSchedules.length >= 1 },
+    { id: "full_week_scheduled", badge: "📅", name: "Full Week Scheduled", hint: "Set up a schedule for all 7 days.", check: () => personalSchedules.length >= 7 },
+    { id: "personalizer", badge: "🎨", name: "Personalizer", hint: "Try Baby Mode or Dino Theme.", check: () => babyMode || dinoTheme },
+    { id: "reminder_ready", badge: "🔔", name: "Reminder Ready", hint: "Turn on push notifications.", check: () => !!preferences.notifications_enabled },
+    { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
+    { id: "perfect_week", badge: "✨", name: "Perfect Week", hint: "Reach 100% for the whole week.", check: () => weeklyOverallPct === 100 },
+    { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
+  ];
+  const newlyEarnedBadgeIds = BADGE_DEFS.filter((item) => item.check()).map((item) => item.id);
+  const earnedBadgeIdSet = new Set([...(mascotCollection.earnedBadgeIds || []), ...newlyEarnedBadgeIds]);
+
+  useEffect(() => {
+    if (!user || collectionLoadedFor !== user.id) return;
+    const currentBadgeIds = mascotCollection.earnedBadgeIds || [];
+    const badgesChanged = newlyEarnedBadgeIds.some((id) => !currentBadgeIds.includes(id));
+    if (!badgesChanged) return;
+    saveMascotCollection({
+      ...mascotCollection,
+      bestStreak: Math.max(mascotCollection.bestStreak, currentUnlockProgress),
+      unlockedIds: [...unlockedIdSet],
+      earnedBadgeIds: [...earnedBadgeIdSet],
+    });
+  }, [
+    user?.id,
+    collectionLoadedFor,
+    newlyEarnedBadgeIds.join("|"),
+    (mascotCollection.earnedBadgeIds || []).join("|"),
+  ]);
+
   const themeKey = babyMode ? (preferences.baby_voice === "fatherly" ? "baby_fatherly" : "baby_motherly") : dinoTheme ? "dino" : "warm";
   const voice = THEME_VOICE[themeKey];
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
