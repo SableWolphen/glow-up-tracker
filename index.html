@@ -3623,7 +3623,8 @@ function GlowUpTracker() {
                   }} style={{ minHeight: 96, padding: "10px 8px", borderRadius: 13, border: selected ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: selected ? "#F8ECFC" : unlocked ? "#FFFFFFC9" : "#F1ECEF", color: unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", cursor: unlocked ? "pointer" : "not-allowed", opacity: unlocked ? 1 : .68 }}>
                     <div style={{ fontSize: 27 }}>{unlocked ? outfit.badge : "🔒"}</div>
                     <div style={{ marginTop: 3, fontSize: 12, fontWeight: 900 }}>{outfit.name}</div>
-                    <div style={{ marginTop: 3, fontSize: 9.5, lineHeight: 1.35 }}>{selected ? "Wearing now" : unlocked ? "Unlocked · tap to wear" : outfit.hint}</div>
+                    <div style={{ marginTop: 3, fontSize: 9.5, lineHeight: 1.35 }}>{outfit.hint}</div>
+                    {unlocked && <div style={{ marginTop: 3, fontSize: 9.5, fontWeight: 900, color: selected ? "#A65DC1" : "#318C79" }}>{selected ? "Wearing now" : "✓ Unlocked · tap to wear"}</div>}
                     {!unlocked && outfit.unlock.count > 0 && (
                       <div style={{ marginTop: 4, fontSize: 9, fontWeight: 900, color: "#A65DC1" }}>{progress}/{outfit.unlock.count}</div>
                     )}
@@ -3643,7 +3644,8 @@ function GlowUpTracker() {
                     <div key={item.id} style={{ minHeight: 88, padding: "10px 8px", borderRadius: 13, border: unlocked ? "1px solid #E4D7B4" : "1px solid #E9E4E7", background: unlocked ? "#FFFFFFC9" : "#F1ECEF", color: unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", opacity: unlocked ? 1 : .68 }}>
                       <div style={{ fontSize: 24 }}>{unlocked ? item.badge : "🔒"}</div>
                       <div style={{ marginTop: 3, fontSize: 11, fontWeight: 900 }}>{item.name}</div>
-                      <div style={{ marginTop: 3, fontSize: 9, lineHeight: 1.35 }}>{unlocked ? "Earned" : item.hint}</div>
+                      <div style={{ marginTop: 3, fontSize: 9, lineHeight: 1.35 }}>{item.hint}</div>
+                      {unlocked && <div style={{ marginTop: 3, fontSize: 9.5, fontWeight: 900, color: "#318C79" }}>✓ Earned</div>}
                     </div>
                   );
                 })}
