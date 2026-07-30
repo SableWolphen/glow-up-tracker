@@ -685,6 +685,16 @@ function GlowUpTracker() {
     setFocusHelperOpen(false);
     setFocusSuggestionKey(null);
   }, [selectedProgressDate]);
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const view = params.get("view");
+    if (!view) return;
+    if (view === "today") setDashboard("today");
+    else if (view === "week") setDashboard("week");
+    else if (view === "tasks") { setDashboard("routines"); setManageTasks(true); }
+    window.history.replaceState(null, "", window.location.pathname);
+  }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [collectionLoadedFor, setCollectionLoadedFor] = useState(null);
@@ -1858,6 +1868,7 @@ function GlowUpTracker() {
     if (signingOut) return;
     setSigningOut(true);
     setSignInMessage("Signing out…");
+    if ("clearAppBadge" in navigator) { try { navigator.clearAppBadge().catch(() => {}); } catch (_error) {} }
     setUser(null);
     setDone({});
     setTrackerTasks([]);
@@ -2642,6 +2653,15 @@ function GlowUpTracker() {
     ? Math.round((todayRequiredDone / todayRequiredKeys.length) * 100)
     : 0;
   const todayIsComplete = todayRequiredKeys.length > 0 && todayRequiredDone === todayRequiredKeys.length;
+
+  useEffect(() => {
+    if (!user || !("setAppBadge" in navigator)) return;
+    const remaining = Math.max(0, todayRequiredKeys.length - todayRequiredDone);
+    try {
+      if (remaining > 0) navigator.setAppBadge(remaining).catch(() => {});
+      else navigator.clearAppBadge().catch(() => {});
+    } catch (_error) {}
+  }, [user, todayRequiredKeys.length, todayRequiredDone]);
 
   const firstCareHistoryDate = habitHistory.length
     ? habitHistory.reduce((earliest, entry) => entry.progress_date < earliest ? entry.progress_date : earliest, period.date)

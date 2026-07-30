@@ -1,4 +1,4 @@
-const CACHE_NAME = "plushlist-v12";
+const CACHE_NAME = "plushlist-v13";
 const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./icon.svg?v=2"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
