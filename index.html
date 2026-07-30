@@ -3251,7 +3251,7 @@ function GlowUpTracker() {
               }
             }
           }} style={{ position: "relative", padding: "7px 10px", borderRadius: 9, border: "1px solid #4C8FE855", background: supportOpen && supportViewMode === "mine" ? "#EAF4FF" : "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            🧸 Add a Guardian
+            🧸 {ownedSupportLinks.length === 0 ? "Add a Guardian" : ownedSupportLinks.length === 1 ? "My Guardian" : `My Guardians (${ownedSupportLinks.length})`}
             {unreadNoteCount > 0 && (
               <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
             )}
