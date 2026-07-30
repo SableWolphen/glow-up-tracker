@@ -41,6 +41,19 @@ const supabase = window.supabase.createClient(
 );
 const SUPABASE_AUTH_STORAGE_KEY = "sb-pvitdhixycegmcovapyh-auth-token";
 const VAPID_PUBLIC_KEY = "BMJMbr9mvNVbmo7X8YNKHxOL0Wb62RNvfti9jMn8lwlCFaYqJpZqxam_GDE5RRU-p9RRFscP1mIetfa404Em7Dw";
+function formatRelativeTime(isoString) {
+  if (!isoString) return "Never yet";
+  const diffMs = Date.now() - new Date(isoString).getTime();
+  const minutes = Math.floor(diffMs / 60000);
+  if (minutes < 1) return "Just now";
+  if (minutes < 60) return `${minutes} ${minutes === 1 ? "minute" : "minutes"} ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours} ${hours === 1 ? "hour" : "hours"} ago`;
+  const days = Math.floor(hours / 24);
+  if (days < 30) return `${days} ${days === 1 ? "day" : "days"} ago`;
+  return new Date(isoString).toLocaleDateString();
+}
+
 const MASCOT_OUTFITS = [
   { id: "classic", name: "Classic Plush", badge: "💛", accessory: "", unlock: { type: "always", count: 0 }, hint: "Always available" },
   { id: "bow", name: "Cozy Bow", badge: "🎀", accessory: "🎀", unlock: { type: "daily_core", count: 1 }, hint: "Complete your Every Day Core once" },
@@ -1211,6 +1224,9 @@ function GlowUpTracker() {
     setSupportTrackerTasks(tasksResult.data || []);
     setTaskSuggestions(suggestionsResult.data || []);
     setSupportAchievements(achievementsResult.data || null);
+    if (isSupportAdult && targetOwnerId !== user?.id && user?.email) {
+      supabase.from("caregiver_links").update({ last_viewed_at: new Date().toISOString() }).eq("owner_user_id", targetOwnerId).ilike("caregiver_email", user.email).then(() => {});
+    }
     if (notesResult.error || rewardsResult.error || progressResult.error || historyResult.error || tasksResult.error || suggestionsResult.error) {
       setSupportMessage("Some guardian information couldn't be refreshed.");
     }
@@ -1221,7 +1237,7 @@ function GlowUpTracker() {
     setSupportMessage("");
     const { data: links, error: linksError } = await supabase
       .from("caregiver_links")
-      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, created_at")
+      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, created_at, last_viewed_at")
       .order("created_at", { ascending: false });
     if (linksError) {
       setSupportMessage("Couldn't load guardian access right now.");
@@ -4752,6 +4768,7 @@ function GlowUpTracker() {
                         <span style={{ fontSize: 12.5, fontWeight: 700 }}>{link.caregiver_email}</span>
                         <span style={{ padding: "3px 7px", borderRadius: 999, background: link.active ? "#E9F8EF" : "#EEE9F1", color: link.active ? "#268A50" : "#75677D", fontSize: 10.5, fontWeight: 900 }}>{link.active ? "ACTIVE" : "PAUSED"}</span>
                       </div>
+                      <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>👀 Last checked in: {formatRelativeTime(link.last_viewed_at)}</div>
                       <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
                         <button onClick={() => setSupportAdultActive(link.id, !link.active)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>{link.active ? "Pause access" : "Resume access"}</button>
                         <button onClick={() => removeSupportAdult(link.id)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 800, cursor: "pointer" }}>End relationship</button>
