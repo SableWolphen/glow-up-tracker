@@ -3648,6 +3648,72 @@ function GlowUpTracker() {
           </div>
         </div>
 
+        {rows.length > 0 && (
+          <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
+              <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{pct}% · {requiredDoneCount}/{requiredRows.length}</span>
+            </div>
+            <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
+              <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
+            </div>
+            {preferences.nurturing_checkins && (
+              <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
+                {doneCount > 0 ? `You have already finished ${doneCount} ${doneCount === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛` : "A soft start still counts, honey. Pick one small essential when you're ready. 💛"}
+              </div>
+            )}
+            {(() => {
+              let lastSection = "";
+              return rows.map((r) => {
+                const header = r.section !== lastSection ? r.section : null;
+                lastSection = r.section;
+                const checked = !!viewDone[r.key];
+                const expandable = !!(r.how || r.why);
+                const expanded = openRow === r.key;
+                return (
+                  <div key={r.key}>
+                    {header && (
+                      <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 700, margin: "12px 2px 6px" }}>
+                        {header.toUpperCase()}
+                      </div>
+                    )}
+                    <div style={{ marginBottom: 6, borderRadius: 12,
+                      border: "1px solid " + (checked ? day.accent + "66" : "#F3D9EC"),
+                      background: checked ? day.accent + "1A" : "rgba(255,255,255,0.25)",
+                      overflow: "hidden" }}>
+                      <div onClick={() => { if (isFutureView) return; expandable ? setOpenRow(expanded ? null : r.key) : toggle(r.key); }}
+                        style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", cursor: isFutureView ? "not-allowed" : "pointer", opacity: isFutureView ? 0.62 : 1 }}>
+                        <span onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(r.key); }}
+                          style={{ width: 22, height: 22, minWidth: 22, borderRadius: 7,
+                            border: `2px solid ${checked ? day.accent : "#E3B8D8"}`,
+                            background: checked ? day.accent : "transparent",
+                            display: "flex", alignItems: "center", justifyContent: "center",
+                            color: "#FFF6FB", fontWeight: 900, fontSize: 12 }}>
+                          {checked ? "✓" : ""}
+                        </span>
+                        <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
+                          {r.label}
+                        </span>
+                        {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
+                        {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
+                      </div>
+                      {expandable && expanded && (
+                        <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
+                          {r.how && <div>{r.how}</div>}
+                          {r.why && <div style={{ marginTop: r.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {r.why}</div>}
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                );
+              });
+            })()}
+            {pct === 100 && (
+              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Day complete — proud of you 💜</div>
+            )}
+          </div>
+        )}
+
         </>}
 
         {dashboard === "week" && <>
@@ -3782,72 +3848,6 @@ function GlowUpTracker() {
                 </div>
               ))}
             </div>
-          </div>
-        )}
-
-        {rows.length > 0 && (
-          <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
-              <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{pct}% · {requiredDoneCount}/{requiredRows.length}</span>
-            </div>
-            <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
-              <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
-            </div>
-            {preferences.nurturing_checkins && (
-              <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
-                {doneCount > 0 ? `You have already finished ${doneCount} ${doneCount === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛` : "A soft start still counts, honey. Pick one small essential when you're ready. 💛"}
-              </div>
-            )}
-            {(() => {
-              let lastSection = "";
-              return rows.map((r) => {
-                const header = r.section !== lastSection ? r.section : null;
-                lastSection = r.section;
-                const checked = !!viewDone[r.key];
-                const expandable = !!(r.how || r.why);
-                const expanded = openRow === r.key;
-                return (
-                  <div key={r.key}>
-                    {header && (
-                      <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 700, margin: "12px 2px 6px" }}>
-                        {header.toUpperCase()}
-                      </div>
-                    )}
-                    <div style={{ marginBottom: 6, borderRadius: 12,
-                      border: "1px solid " + (checked ? day.accent + "66" : "#F3D9EC"),
-                      background: checked ? day.accent + "1A" : "rgba(255,255,255,0.25)",
-                      overflow: "hidden" }}>
-                      <div onClick={() => { if (isFutureView) return; expandable ? setOpenRow(expanded ? null : r.key) : toggle(r.key); }}
-                        style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 12px", cursor: isFutureView ? "not-allowed" : "pointer", opacity: isFutureView ? 0.62 : 1 }}>
-                        <span onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(r.key); }}
-                          style={{ width: 22, height: 22, minWidth: 22, borderRadius: 7,
-                            border: `2px solid ${checked ? day.accent : "#E3B8D8"}`,
-                            background: checked ? day.accent : "transparent",
-                            display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "#FFF6FB", fontWeight: 900, fontSize: 12 }}>
-                          {checked ? "✓" : ""}
-                        </span>
-                        <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
-                          {r.label}
-                        </span>
-                        {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
-                        {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
-                      </div>
-                      {expandable && expanded && (
-                        <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
-                          {r.how && <div>{r.how}</div>}
-                          {r.why && <div style={{ marginTop: r.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {r.why}</div>}
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                );
-              });
-            })()}
-            {pct === 100 && (
-              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Day complete — proud of you 💜</div>
-            )}
           </div>
         )}
 
