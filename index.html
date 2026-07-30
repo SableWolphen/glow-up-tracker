@@ -3154,6 +3154,29 @@ function GlowUpTracker() {
   };
   const todayRequiredKeys = requiredKeysForDate(period.date);
   const todayRequiredDone = todayRequiredKeys.filter((key) => completedKeysForToday.has(key)).length;
+
+  const weekdayPatternInsight = (() => {
+    if (habitHistory.length < 10) return null;
+    const buckets = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+    habitHistory.forEach((entry) => {
+      const dayId = dayIdForDate(entry.progress_date);
+      const keys = requiredKeysForDate(entry.progress_date);
+      if (keys.length === 0) return;
+      const completed = new Set(entry.completed_keys || []);
+      const pct = keys.filter((key) => completed.has(key)).length / keys.length;
+      buckets[dayId].push(pct);
+    });
+    const averages = Object.entries(buckets)
+      .filter(([, values]) => values.length >= 2)
+      .map(([dayId, values]) => ({ dayId, avg: values.reduce((a, b) => a + b, 0) / values.length }));
+    if (averages.length < 3) return null;
+    averages.sort((a, b) => b.avg - a.avg);
+    const best = averages[0];
+    if (best.avg < 0.6) return null;
+    const dayLabel = DAYS.find((d) => d.id === best.dayId)?.label || best.dayId;
+    return `${dayLabel}s tend to go well for you — you've completed your essentials there about ${Math.round(best.avg * 100)}% of the time.`;
+  })();
+
   const todayDailyCoreKeys = trackerTasks
     .filter((task) =>
       task.day_id === "daily" &&
@@ -5324,6 +5347,11 @@ function GlowUpTracker() {
           <div style={{ marginTop: 9, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
             <strong>Gentle weekly review:</strong> {weeklyEssentialDone} essentials and {weeklyBonusDone} bonus wins completed across {caringDays} caring {caringDays === 1 ? "day" : "days"}. A missed day never erases the care you gave yourself.
           </div>
+          {weekdayPatternInsight && (
+            <div style={{ marginTop: 9, padding: "10px 12px", borderRadius: 10, background: "#F3E8FA99", border: "1px solid #E6D4F2", fontSize: 11.5, lineHeight: 1.5, color: "#6B5A7D" }}>
+              <strong>📈 A gentle pattern:</strong> {weekdayPatternInsight}
+            </div>
+          )}
           <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 10, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
           <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>FORGOT SOMETHING? CHOOSE A DAY TO CORRECT IT</div>
