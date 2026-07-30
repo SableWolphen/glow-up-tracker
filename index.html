@@ -607,6 +607,15 @@ function GlowUpTracker() {
   const [supportViewMode, setSupportViewMode] = useState("mine");
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportNotes, setSupportNotes] = useState([]);
+  const [unreadNoteCount, setUnreadNoteCount] = useState(0);
+  useEffect(() => {
+    if (!user) { setUnreadNoteCount(0); return; }
+    let alive = true;
+    supabase.from("support_notes").select("id", { count: "exact", head: true }).eq("owner_user_id", user.id).eq("is_read", false).then(({ count }) => {
+      if (alive) setUnreadNoteCount(count || 0);
+    });
+    return () => { alive = false; };
+  }, [user?.id]);
   const [supportRewards, setSupportRewards] = useState([]);
   const [supportProgress, setSupportProgress] = useState([]);
   const [supportWeeklyHistory, setSupportWeeklyHistory] = useState([]);
@@ -980,7 +989,7 @@ function GlowUpTracker() {
     }
     setSupportOwnerId(targetOwnerId);
     const [notesResult, rewardsResult, progressResult, historyResult, tasksResult, suggestionsResult, achievementsResult] = await Promise.all([
-      supabase.from("support_notes").select("id, caregiver_name, body, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
+      supabase.from("support_notes").select("id, caregiver_name, body, is_read, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
       supabase.from("support_rewards").select("id, title, details, target_percent, active, week_start, earned_at, claimed_at, approval_required, approved_at, caregiver_user_id, created_at").eq("owner_user_id", targetOwnerId).eq("active", true).order("created_at", { ascending: false }),
       supabase.from("daily_progress").select("completed_keys").eq("user_id", targetOwnerId).eq("progress_date", period.date).maybeSingle(),
       supabase.from("daily_progress").select("progress_date, completed_keys").eq("user_id", targetOwnerId).gte("progress_date", period.weekStart).lte("progress_date", period.date),
@@ -1167,6 +1176,11 @@ function GlowUpTracker() {
     }
     setNewNote("");
     setSupportMessage("Encouraging note sent 💛");
+    if (isSupportAdult) {
+      supabase.functions.invoke("notify-new-note", {
+        body: { owner_user_id: supportOwnerId, caregiver_name: user.email?.split("@")[0] || "Guardian", message: body },
+      }).catch(() => {});
+    }
     await loadSupportData(user);
   };
 
@@ -3229,9 +3243,18 @@ function GlowUpTracker() {
             const shouldOpen = !(supportOpen && supportViewMode === "mine");
             setSupportViewMode("mine");
             setSupportOpen(shouldOpen);
-            if (shouldOpen) loadSupportOwner(user.id);
-          }} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #4C8FE855", background: supportOpen && supportViewMode === "mine" ? "#EAF4FF" : "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+            if (shouldOpen) {
+              loadSupportOwner(user.id);
+              if (unreadNoteCount > 0) {
+                setUnreadNoteCount(0);
+                supabase.from("support_notes").update({ is_read: true }).eq("owner_user_id", user.id).eq("is_read", false).then(() => {});
+              }
+            }
+          }} style={{ position: "relative", padding: "7px 10px", borderRadius: 9, border: "1px solid #4C8FE855", background: supportOpen && supportViewMode === "mine" ? "#EAF4FF" : "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
             🧸 Add a Guardian
+            {unreadNoteCount > 0 && (
+              <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
+            )}
           </button>}
 
           <button type="button" onClick={() => setSettingsOpen((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #73B7A855", background: settingsOpen ? "#E9FBF6" : "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
