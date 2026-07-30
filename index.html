@@ -1488,6 +1488,13 @@ function GlowUpTracker() {
 
   const [recentlyDeletedTask, setRecentlyDeletedTask] = useState(null);
   const undoDeleteTimer = React.useRef(null);
+  const pendingDeleteKey = React.useRef(null);
+
+  const finalizeDeleteTask = async (taskKey) => {
+    if (!taskKey) return;
+    await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+  };
 
   const deleteTrackerTask = async (taskKey, taskLabel) => {
     const taskRow = trackerTasks.find((task) => task.task_key === taskKey);
@@ -1499,18 +1506,25 @@ function GlowUpTracker() {
     });
     setPendingTaskDelete(null);
     setTaskMessage("");
-    if (undoDeleteTimer.current) window.clearTimeout(undoDeleteTimer.current);
+    if (undoDeleteTimer.current) {
+      window.clearTimeout(undoDeleteTimer.current);
+      // A previous delete was still waiting to be undone — since we're replacing
+      // its toast now, finalize that one for real instead of silently dropping it.
+      finalizeDeleteTask(pendingDeleteKey.current);
+    }
+    pendingDeleteKey.current = taskKey;
     setRecentlyDeletedTask(taskRow ? { ...taskRow, label: taskLabel } : null);
-    undoDeleteTimer.current = window.setTimeout(async () => {
+    undoDeleteTimer.current = window.setTimeout(() => {
       setRecentlyDeletedTask(null);
-      await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
-      await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+      finalizeDeleteTask(taskKey);
+      pendingDeleteKey.current = null;
     }, 6000);
   };
 
   const undoDeleteTask = () => {
     if (!recentlyDeletedTask) return;
     if (undoDeleteTimer.current) window.clearTimeout(undoDeleteTimer.current);
+    pendingDeleteKey.current = null;
     setTrackerTasks((tasks) => [...tasks, recentlyDeletedTask]);
     setRecentlyDeletedTask(null);
     setTaskMessage("Task restored ✨");
