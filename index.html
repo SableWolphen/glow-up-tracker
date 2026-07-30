@@ -2146,9 +2146,13 @@ function GlowUpTracker() {
     setAdminMessage(feedbackRes.error || errorsRes.error || statsRes.error ? "Some admin data couldn't load." : "");
   };
 
-  const toggleFeedbackResolved = async (item) => {
-    const { error } = await supabase.from("feedback_messages").update({ resolved: !item.resolved }).eq("id", item.id);
-    if (!error) setAdminFeedback((items) => items.map((entry) => entry.id === item.id ? { ...entry, resolved: !item.resolved } : entry));
+  const resolveFeedback = async (item) => {
+    setAdminFeedback((items) => items.filter((entry) => entry.id !== item.id));
+    const { error } = await supabase.from("feedback_messages").delete().eq("id", item.id);
+    if (error) {
+      setAdminMessage(`Couldn't delete that message: ${error.message}`);
+      setAdminFeedback((items) => [...items, item].sort((a, b) => new Date(b.created_at) - new Date(a.created_at)));
+    }
   };
 
   const exportMyData = async () => {
@@ -3456,8 +3460,7 @@ function GlowUpTracker() {
                   ["Accounts", adminStats.total_accounts],
                   ["Tasks", adminStats.total_tasks],
                   ["Active guardian links", adminStats.total_guardian_links],
-                  ["Feedback (total)", adminStats.total_feedback],
-                  ["Feedback (unresolved)", adminStats.unresolved_feedback],
+                  ["Feedback (open)", adminStats.total_feedback],
                   ["Errors (24h)", adminStats.total_errors_24h],
                   ["Progress rows logged", adminStats.total_daily_progress_rows],
                 ].map(([label, value]) => (
@@ -3471,19 +3474,19 @@ function GlowUpTracker() {
           )}
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>💌 FEEDBACK INBOX ({adminFeedback.filter((item) => !item.resolved).length} unresolved)</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#C45D74" }}>💌 FEEDBACK INBOX ({adminFeedback.length})</div>
             {adminFeedback.length === 0 ? (
-              <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>No feedback yet.</div>
+              <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>No feedback waiting. 🎉</div>
             ) : (
               <div style={{ display: "grid", gap: 8, marginTop: 10 }}>
                 {adminFeedback.map((item) => (
-                  <div key={item.id} style={{ padding: "10px 12px", borderRadius: 11, background: item.resolved ? "#F7F7F7" : "#FFF9FD", border: "1px solid #EADDE2", opacity: item.resolved ? 0.6 : 1 }}>
+                  <div key={item.id} style={{ padding: "10px 12px", borderRadius: 11, background: "#FFF9FD", border: "1px solid #EADDE2" }}>
                     <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 10.5, color: "#8C6B9E" }}>
                       <span>{item.email || "unknown"}</span>
                       <span>{new Date(item.created_at).toLocaleString()}</span>
                     </div>
                     <div style={{ marginTop: 5, fontSize: 13, color: "#5B4B6B", whiteSpace: "pre-wrap" }}>{item.message}</div>
-                    <button type="button" onClick={() => toggleFeedbackResolved(item)} style={{ marginTop: 7, padding: "4px 9px", borderRadius: 8, border: "1px solid #D7C3E2", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>{item.resolved ? "Mark unresolved" : "Mark resolved"}</button>
+                    <button type="button" onClick={() => resolveFeedback(item)} style={{ marginTop: 7, padding: "4px 9px", borderRadius: 8, border: "1px solid #D7C3E2", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>✓ Resolved</button>
                   </div>
                 ))}
               </div>
