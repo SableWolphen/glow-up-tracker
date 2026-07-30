@@ -781,6 +781,7 @@ function GlowUpTracker() {
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [shareCardOpen, setShareCardOpen] = useState(false);
+  const [betaBannerDismissed, setBetaBannerDismissed] = useState(false);
   const [collectionTab, setCollectionTab] = useState("mascot");
   const [collectionLoadedFor, setCollectionLoadedFor] = useState(null);
   const [mascotCollection, setMascotCollection] = useState({
@@ -3644,7 +3645,7 @@ function GlowUpTracker() {
           )}
         </div>
 
-        {user && !preferences.beta_banner_dismissed && (
+        {user && !betaBannerDismissed && (
           <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "#EAF4FF", border: "1px solid #B9DCF6", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 200px" }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: "#2D6BB5" }}>🧪 You're using an early test build</div>
@@ -3652,7 +3653,7 @@ function GlowUpTracker() {
             </div>
             <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
               <button type="button" onClick={goToFeedback} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💌 Send feedback</button>
-              <button type="button" onClick={() => updatePreference({ beta_banner_dismissed: true })} aria-label="Dismiss test build notice" style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "white", color: "#2D6BB5", fontWeight: 900, cursor: "pointer" }}>✕</button>
+              <button type="button" onClick={() => setBetaBannerDismissed(true)} aria-label="Dismiss test build notice" style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "white", color: "#2D6BB5", fontWeight: 900, cursor: "pointer" }}>✕</button>
             </div>
           </div>
         )}
