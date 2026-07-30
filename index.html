@@ -3901,6 +3901,12 @@ function GlowUpTracker() {
         </>}
 
         <div style={{ display: "flex", justifyContent: "flex-end", gap: 7, margin: "-10px 0 14px", flexWrap: "wrap" }}>
+          {dashboard === "today" && (
+            <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+              🎯 {dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
+              {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
+            </button>
+          )}
           {!isCaretakerOnlyAccount && <button type="button" onClick={() => {
             const shouldOpen = !(supportOpen && supportViewMode === "mine");
             setSupportViewMode("mine");
@@ -4738,11 +4744,6 @@ function GlowUpTracker() {
             </div>
           </div>
         )}
-
-        <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 7, marginBottom: 18, padding: "9px 14px", borderRadius: 999, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.6)", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
-          🎯 {dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in for today"}
-          {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
-        </button>
 
         {dailyCheckIn.soft_day && (
           <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "#FFF9E9", border: "1px solid #F0D99E", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
