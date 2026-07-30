@@ -826,6 +826,7 @@ function GlowUpTracker() {
   const [shareCardOpen, setShareCardOpen] = useState(false);
   const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, soft_day: false, custom_essentials: null });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
+  const [checkInExpanded, setCheckInExpanded] = useState(false);
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
@@ -4666,24 +4667,43 @@ function GlowUpTracker() {
           </div>
         )}
 
-        <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "rgba(255,255,255,0.55)", border: "1px solid #E6D4F2" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: day.accent }}>HOW MUCH DO YOU HAVE TODAY?</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 8 }}>
-            {[
-              ["very_low", "😞", "Very low"],
-              ["low", "😕", "Low"],
-              ["usual", "🙂", "Usual"],
-              ["high", "💪", "High"],
-            ].map(([value, emoji, label]) => (
-              <button key={value} type="button" onClick={() => saveDailyCheckIn({ capacity: value })} style={{ padding: "8px 4px", borderRadius: 11, border: dailyCheckIn.capacity === value ? `2px solid ${day.accent}` : "1px solid #E6D4F2", background: dailyCheckIn.capacity === value ? `${day.accent}1A` : "white", cursor: "pointer", textAlign: "center" }}>
-                <div style={{ fontSize: 18 }}>{emoji}</div>
-                <div style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
-              </button>
-            ))}
-          </div>
-          {dailyCheckIn.capacity === "very_low" && !dailyCheckIn.soft_day && (
-            <div style={{ marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#FFF9E9", fontSize: 12, color: "#6B5A3D" }}>
-              That's okay. Today can be smaller. <button type="button" onClick={() => saveDailyCheckIn({ soft_day: true })} style={{ marginLeft: 4, padding: "3px 8px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Start a Soft Day</button>
+        <div style={{ marginBottom: 18, padding: "11px 16px", borderRadius: 16, background: "rgba(255,255,255,0.55)", border: "1px solid #E6D4F2" }}>
+          <button type="button" onClick={() => setCheckInExpanded((open) => !open)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: 0, padding: 0, cursor: "pointer" }}>
+            <span style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: day.accent }}>🎯 TODAY'S CHECK-IN{dailyCheckIn.capacity ? ` · ${{ very_low: "😞", low: "😕", usual: "🙂", high: "💪" }[dailyCheckIn.capacity]}` : ""}{dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}</span>
+            <span style={{ color: day.accent, fontSize: 12, transform: checkInExpanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>
+          </button>
+          {checkInExpanded && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: "#8C6B9E" }}>HOW MUCH DO YOU HAVE TODAY?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 7 }}>
+                {[
+                  ["very_low", "😞", "Very low"],
+                  ["low", "😕", "Low"],
+                  ["usual", "🙂", "Usual"],
+                  ["high", "💪", "High"],
+                ].map(([value, emoji, label]) => (
+                  <button key={value} type="button" onClick={() => saveDailyCheckIn({ capacity: value })} style={{ padding: "8px 4px", borderRadius: 11, border: dailyCheckIn.capacity === value ? `2px solid ${day.accent}` : "1px solid #E6D4F2", background: dailyCheckIn.capacity === value ? `${day.accent}1A` : "white", cursor: "pointer", textAlign: "center" }}>
+                    <div style={{ fontSize: 18 }}>{emoji}</div>
+                    <div style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
+                  </button>
+                ))}
+              </div>
+              {dailyCheckIn.capacity === "very_low" && !dailyCheckIn.soft_day && (
+                <div style={{ marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#FFF9E9", fontSize: 12, color: "#6B5A3D" }}>
+                  That's okay. Today can be smaller. <button type="button" onClick={() => saveDailyCheckIn({ soft_day: true })} style={{ marginLeft: 4, padding: "3px 8px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Start a Soft Day</button>
+                </div>
+              )}
+              <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid #E6D4F2" }}>
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 800, color: "#8C6B9E" }}>WHAT COUNTS TODAY</div>
+                  <button type="button" onClick={() => setEssentialsPickerOpen(true)} style={{ padding: "4px 8px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{dailyCheckIn.custom_essentials?.length ? "✏️ Change" : "＋ Choose"}</button>
+                </div>
+                {dailyCheckIn.custom_essentials?.length ? (
+                  <div style={{ marginTop: 8, fontSize: 12, color: "#6B5A7D" }}>Your Today list below is showing just these {dailyCheckIn.custom_essentials.length} picks. <button type="button" onClick={() => saveDailyCheckIn({ custom_essentials: null })} style={{ color: day.accent, background: "none", border: 0, textDecoration: "underline", cursor: "pointer", fontWeight: 800, fontSize: 12, padding: 0 }}>Show everything instead</button></div>
+                ) : (
+                  <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>Pick a small handful of today's tasks — your Today list will simplify to just those.</div>
+                )}
+              </div>
             </div>
           )}
         </div>
@@ -4697,22 +4717,6 @@ function GlowUpTracker() {
             <button type="button" onClick={() => saveDailyCheckIn({ soft_day: false })} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>Back to a regular day</button>
           </div>
         )}
-
-        <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "rgba(255,255,255,0.55)", border: "1px solid #E6D4F2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: day.accent }}>WHAT COUNTS TODAY</div>
-            <button type="button" onClick={() => setEssentialsPickerOpen(true)} style={{ padding: "4px 8px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer", flexShrink: 0 }}>{dailyCheckIn.custom_essentials?.length ? "✏️ Change" : "＋ Choose"}</button>
-          </div>
-          {dailyCheckIn.custom_essentials?.length ? (
-            <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
-              {rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key)).map((r) => (
-                <div key={r.key} style={{ fontSize: 12.5, color: viewDone[r.key] ? "#8C6B9E" : "#5B4B6B", textDecoration: viewDone[r.key] ? "line-through" : "none" }}>{viewDone[r.key] ? "✓" : "•"} {r.label}</div>
-              ))}
-            </div>
-          ) : (
-            <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>Pick a small handful of today's tasks that truly count as "enough" for today.</div>
-          )}
-        </div>
 
         {!nextStepDismissedToday && (() => {
           const essentialPool = dailyCheckIn.custom_essentials?.length
@@ -4887,7 +4891,9 @@ function GlowUpTracker() {
                 )}
                 {(() => {
               let lastSection = "";
-              const visibleRows = dailyCheckIn.soft_day ? rows.filter((r) => !r.isBonus) : rows;
+              const visibleRows = dailyCheckIn.custom_essentials?.length
+                ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
+                : dailyCheckIn.soft_day ? rows.filter((r) => !r.isBonus) : rows;
               return visibleRows.map((r) => {
                 const header = r.section !== lastSection ? r.section : null;
                 lastSection = r.section;
@@ -4934,7 +4940,11 @@ function GlowUpTracker() {
                 })()}
               </>
             )}
-            {pct === 100 && (
+            {dailyCheckIn.custom_essentials?.length ? (
+              dailyCheckIn.custom_essentials.every((key) => viewDone[key]) && (
+                <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>✨ Today's essentials are done — that's enough. 💛</div>
+              )
+            ) : pct === 100 && (
               <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>{voice.dayComplete}</div>
             )}
           </div>
