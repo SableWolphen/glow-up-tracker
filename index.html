@@ -639,6 +639,7 @@ function GlowUpTracker() {
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [comfortItemDraft, setComfortItemDraft] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("basics");
+  const [onboardingIntentionDraft, setOnboardingIntentionDraft] = useState("");
   const [onboardingMode, setOnboardingMode] = useState("cozy");
   const [onboardingMessage, setOnboardingMessage] = useState("");
   const [privateNote, setPrivateNote] = useState("");
@@ -2118,6 +2119,17 @@ function GlowUpTracker() {
         if (!starterError) setTrackerTasks(starterTasks);
       }
     }
+    const weeklyIntention = onboardingIntentionDraft.trim();
+    if (weeklyIntention) {
+      const sundayDate = dateForDayId("sun", period);
+      await supabase.from("private_notes").upsert({
+        user_id: user.id,
+        note_date: sundayDate,
+        body: weeklyIntention,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,note_date" });
+      setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
+    }
     const next = { ...preferences, onboarding_complete: true };
     setPreferences(next);
     await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
@@ -2957,7 +2969,7 @@ function GlowUpTracker() {
   const dinoTheme = !!preferences.dino_theme;
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
   const currentCopingOption = COPING_OPTIONS[copingPick].replace(/Tigger/gi, comfortItemName);
-  const onboardingTotalSteps = onboardingMode === "guardian" ? 6 : 5;
+  const onboardingTotalSteps = onboardingMode === "guardian" ? 7 : 6;
 
   return (
     <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
@@ -3163,6 +3175,12 @@ function GlowUpTracker() {
               </p>
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 5) || (onboardingMode === "guardian" && onboardingStep === 6)) && <>
+              <h2 style={{ margin: "8px 0 6px" }}>One intention for this week 📮</h2>
+              <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>Optional — just one small thing you want to carry with you this week. Every Sunday, Plushlist will remind you what you wrote and let you check in on it.</p>
+              <textarea value={onboardingIntentionDraft} onChange={(event) => setOnboardingIntentionDraft(event.target.value)} maxLength={2000} placeholder="Example: Be a little gentler with myself this week." style={{ width: "100%", boxSizing: "border-box", minHeight: 80, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #DCC9E8", resize: "vertical" }} />
+              <div style={{ marginTop: 6, fontSize: 10.5, color: "#8C6B9E" }}>Private — only you can ever read this. You can skip this and write one later too.</div>
+            </>}
+            {((onboardingMode === "cozy" && onboardingStep === 6) || (onboardingMode === "guardian" && onboardingStep === 7)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>You're ready ✨</h2>
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>{(TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.tasks.length ?? 0) > 0 ? `Plushlist will begin with your ${TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.label.toLowerCase()} tasks.` : "You chose to start from scratch — add your first task once you're in."} Soft Plush is your default theme.</p>
             </>}
