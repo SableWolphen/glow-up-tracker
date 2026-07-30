@@ -79,6 +79,7 @@ const MASCOT_OUTFITS = [
   { id: "wings", name: "Fresh Start Wings", badge: "🪽", accessory: "🪽", unlock: { type: "reduce_streak", count: 14 }, hint: "Reduce one habit for 14 check-ins" },
   { id: "change-champion", name: "Change Champion", badge: "⚡", accessory: "⚡", unlock: { type: "reduce_streak", count: 30 }, hint: "Reduce one habit for 30 check-ins" },
   { id: "diamond-shield", name: "Diamond Shield", badge: "💠", accessory: "💠", unlock: { type: "reduce_streak", count: 60 }, hint: "Reduce one habit for 60 check-ins" },
+  { id: "founders-ribbon", name: "Founder's Ribbon", badge: "🎗️", accessory: "🎗️", unlock: { type: "founding", count: 1 }, hint: "Exclusive to accounts from Plushlist's early access period — can never be earned later." },
 ];
 const OPTIONAL_SECTION_MARKERS = ["bonus", "little space", "reward", "fun"];
 
@@ -3237,7 +3238,8 @@ function GlowUpTracker() {
       case "visit_streak": return mascotCollection.bestVisitStreak;
       case "build_streak": return bestBuildHabitStreak;
       case "reduce_streak": return bestReduceHabitStreak;
-      default: return Number.POSITIVE_INFINITY;
+      case "founding": return (user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z")) ? 1 : 0;
+      default: return Number.NEGATIVE_INFINITY;
     }
   };
   const newlyEarnedIds = MASCOT_OUTFITS
