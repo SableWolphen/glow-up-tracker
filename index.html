@@ -462,6 +462,13 @@ const MAKE_IT_EASIER_SUGGESTIONS = [
   "Ask yourself: what's the smallest version of this I could still call done?",
 ];
 
+const GUARDIAN_ROLE_PRESETS = [
+  { id: "view_only", label: "Just keep an eye on things", icon: "👀", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: false } },
+  { id: "accountability", label: "Accountability partner", icon: "🎯", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: true } },
+  { id: "encouragement", label: "Encouragement only", icon: "💛", permissions: { can_view_progress: false, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: false } },
+  { id: "full", label: "Full support", icon: "🌟", permissions: { can_view_progress: true, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: true } },
+];
+
 const HABIT_REWARDS = [
   { count: 1, badge: "🌱", label: "First sprout" },
   { count: 3, badge: "✨", label: "Three in a row" },
@@ -800,6 +807,7 @@ function GlowUpTracker() {
   const [suggestedTask, setSuggestedTask] = useState("");
   const [suggestedTaskDay, setSuggestedTaskDay] = useState("daily");
   const [inviteEmail, setInviteEmail] = useState("");
+  const [guardianRolePreset, setGuardianRolePreset] = useState("view_only");
   const [newNote, setNewNote] = useState("");
   const [rewardTitle, setRewardTitle] = useState("");
   const [rewardDetails, setRewardDetails] = useState("");
@@ -1289,8 +1297,9 @@ function GlowUpTracker() {
       return;
     }
     setSupportMessage("Adding guardian access…");
+    const rolePermissions = GUARDIAN_ROLE_PRESETS.find((role) => role.id === guardianRolePreset)?.permissions || GUARDIAN_ROLE_PRESETS[0].permissions;
     const { error } = await supabase.from("caregiver_links").upsert(
-      { owner_user_id: user.id, caregiver_email: address, label: "Guardian", active: true, can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: false },
+      { owner_user_id: user.id, caregiver_email: address, label: "Guardian", active: true, ...rolePermissions },
       { onConflict: "owner_user_id,caregiver_email" }
     );
     if (error) {
@@ -2497,8 +2506,9 @@ function GlowUpTracker() {
       return;
     }
     if (onboardingMode === "guardian") {
+      const rolePermissions = GUARDIAN_ROLE_PRESETS.find((role) => role.id === guardianRolePreset)?.permissions || GUARDIAN_ROLE_PRESETS[0].permissions;
       const { error: guardianLinkError } = await supabase.from("caregiver_links").upsert(
-        { owner_user_id: user.id, caregiver_email: guardianEmail, label: "Guardian", active: true, can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: false },
+        { owner_user_id: user.id, caregiver_email: guardianEmail, label: "Guardian", active: true, ...rolePermissions },
         { onConflict: "owner_user_id,caregiver_email" }
       );
       if (guardianLinkError) {
@@ -3904,6 +3914,15 @@ function GlowUpTracker() {
               <label style={{ display: "grid", gap: 5, color: "#6B5A7D", fontWeight: 800 }}>GUARDIAN EMAIL
                 <input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="guardian@example.com" style={{ padding: "10px", borderRadius: 10, border: "1px solid #B9DCF6" }} />
               </label>
+              <div style={{ marginTop: 10, fontSize: 11, fontWeight: 800, color: "#4C8FE8" }}>WHAT'S THEIR ROLE?</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: 6, marginTop: 6 }}>
+                {GUARDIAN_ROLE_PRESETS.map((role) => (
+                  <button key={role.id} type="button" onClick={() => setGuardianRolePreset(role.id)} style={{ padding: "8px 6px", borderRadius: 10, border: guardianRolePreset === role.id ? "2px solid #4C8FE8" : "1px solid #B9DCF6", background: guardianRolePreset === role.id ? "#EAF4FF" : "white", textAlign: "center", cursor: "pointer" }}>
+                    <div style={{ fontSize: 16 }}>{role.icon}</div>
+                    <div style={{ marginTop: 2, fontSize: 10.5, fontWeight: 800, color: "#4C6E8E" }}>{role.label}</div>
+                  </button>
+                ))}
+              </div>
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 2) || (onboardingMode === "guardian" && onboardingStep === 3)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>One comforting detail 🧸</h2>
@@ -4891,6 +4910,18 @@ function GlowUpTracker() {
                 <div style={{ display: "flex", gap: 7, marginTop: 10 }}>
                   <input type="email" value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="guardian@example.com" style={{ flex: 1, minWidth: 0, padding: 9, borderRadius: 10, border: "1px solid #CFE4F5" }} />
                   <button onClick={inviteSupportAdult} style={{ padding: "8px 11px", borderRadius: 10, border: 0, background: "#4C8FE8", color: "white", fontWeight: 800, cursor: "pointer" }}>Invite guardian</button>
+                </div>
+                <div style={{ marginTop: 9 }}>
+                  <div style={{ fontSize: 11, fontWeight: 800, color: "#4C8FE8" }}>WHAT'S THEIR ROLE?</div>
+                  <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 6 }}>
+                    {GUARDIAN_ROLE_PRESETS.map((role) => (
+                      <button key={role.id} type="button" onClick={() => setGuardianRolePreset(role.id)} style={{ padding: "7px 4px", borderRadius: 10, border: guardianRolePreset === role.id ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: guardianRolePreset === role.id ? "#EAF4FF" : "white", textAlign: "center", cursor: "pointer" }}>
+                        <div style={{ fontSize: 14 }}>{role.icon}</div>
+                        <div style={{ marginTop: 2, fontSize: 9.5, fontWeight: 800, color: "#4C6E8E", lineHeight: 1.2 }}>{role.label}</div>
+                      </button>
+                    ))}
+                  </div>
+                  <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>You can fine-tune each permission afterward too.</div>
                 </div>
                 <div style={{ marginTop: 12 }}>
                   {ownedSupportLinks.length === 0 ? (
