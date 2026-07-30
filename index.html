@@ -2621,9 +2621,9 @@ function GlowUpTracker() {
   const rows = trackerTasks
     .filter((task) => (isHistoricalView
       ? task.day_id === "daily" || task.day_id === selectedProgressDayId
-      : task.day_id === day.id) && taskOccursOn(task, selectedProgressDate))
+      : task.day_id === "daily" || task.day_id === day.id) && taskOccursOn(task, selectedProgressDate))
     .sort((a, b) => {
-      if (isHistoricalView && a.day_id !== b.day_id) return a.day_id === "daily" ? -1 : 1;
+      if (a.day_id !== b.day_id) return a.day_id === "daily" ? -1 : b.day_id === "daily" ? 1 : 0;
       return a.sort_order - b.sort_order;
     })
     .map(rowForTask);
