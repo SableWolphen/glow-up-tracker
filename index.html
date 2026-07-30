@@ -836,6 +836,7 @@ function GlowUpTracker() {
   const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, soft_day: false, custom_essentials: null });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
   const [checkInPopupOpen, setCheckInPopupOpen] = useState(false);
+  const [completedTodayExpanded, setCompletedTodayExpanded] = useState(false);
   const [checkInPopupDismissedToday, setCheckInPopupDismissedToday] = useState(false);
   const [dailyCheckInLoaded, setDailyCheckInLoaded] = useState(false);
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
@@ -4956,7 +4957,9 @@ function GlowUpTracker() {
               const visibleRows = dailyCheckIn.custom_essentials?.length
                 ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
                 : dailyCheckIn.soft_day ? rows.filter((r) => !r.isBonus) : rows;
-              return visibleRows.map((r) => {
+              const incompleteRows = visibleRows.filter((r) => !viewDone[r.key]);
+              const completedRows = visibleRows.filter((r) => viewDone[r.key]);
+              const renderRow = (r) => {
                 const header = r.section !== lastSection ? r.section : null;
                 lastSection = r.section;
                 const checked = !!viewDone[r.key];
@@ -4998,7 +5001,21 @@ function GlowUpTracker() {
                     </div>
                   </div>
                 );
-              });
+              };
+              return (
+                <>
+                  {incompleteRows.map(renderRow)}
+                  {completedRows.length > 0 && (
+                    <div style={{ marginTop: 10 }}>
+                      <button type="button" onClick={() => setCompletedTodayExpanded((open) => !open)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 10, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.4)", color: "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+                        <span>✓ Completed today ({completedRows.length})</span>
+                        <span style={{ transform: completedTodayExpanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>
+                      </button>
+                      {completedTodayExpanded && <div style={{ marginTop: 8 }}>{completedRows.map(renderRow)}</div>}
+                    </div>
+                  )}
+                </>
+              );
                 })()}
               </>
             )}
