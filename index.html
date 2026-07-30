@@ -388,6 +388,15 @@ const CHANGELOG_ITEMS = [
   "📸 A new \"Share my week\" card you can screenshot and post",
 ];
 
+const MAKE_IT_EASIER_SUGGESTIONS = [
+  "Just do the very first tiny part — that's enough for now.",
+  "Set a timer for 2 minutes. When it rings, you're allowed to stop.",
+  "Pick the single easiest piece of this and only do that piece.",
+  "Do about 10% of it. A small piece still counts as real care.",
+  "Try it sitting down, or from bed, if that makes it easier to start.",
+  "Ask yourself: what's the smallest version of this I could still call done?",
+];
+
 const HABIT_REWARDS = [
   { count: 1, badge: "🌱", label: "First sprout" },
   { count: 3, badge: "✨", label: "Three in a row" },
@@ -830,6 +839,7 @@ function GlowUpTracker() {
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
+  const pickEasierSuggestion = (taskKey) => setNextStepHint({ key: taskKey, text: MAKE_IT_EASIER_SUGGESTIONS[Math.floor(Math.random() * MAKE_IT_EASIER_SUGGESTIONS.length)] });
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(false);
   const [collectionTab, setCollectionTab] = useState("mascot");
   const [collectionLoadedFor, setCollectionLoadedFor] = useState(null);
@@ -4729,14 +4739,15 @@ function GlowUpTracker() {
               <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: day.accent }}>🎯 ONE NEXT STEP</div>
               <div style={{ marginTop: 6, fontSize: 19, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.label}</div>
               <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>This looks like the gentlest useful next step.</div>
-              {nextStepHint === nextStepTask.key && (
+              {nextStepHint?.key === nextStepTask.key && (
                 <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", fontSize: 12.5, color: "#6B5A7D" }}>
-                  {nextStepTask.how || nextStepTask.why || "Even a tiny piece of this counts. Try just the smallest part you can manage right now."}
+                  🌱 {nextStepHint.text}
+                  <button type="button" onClick={() => toggle(nextStepTask.key)} style={{ display: "block", marginTop: 7, padding: "6px 10px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: `${day.accent}14`, color: day.accent, fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>✓ Did the smaller version — that counts</button>
                 </div>
               )}
               <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
                 <button type="button" onClick={() => toggle(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: day.accent, color: "white", fontWeight: 900, fontSize: 12.5, cursor: "pointer" }}>✓ I already did this</button>
-                <button type="button" onClick={() => setNextStepHint(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>🌱 Make it easier</button>
+                <button type="button" onClick={() => pickEasierSuggestion(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>🌱 Make it easier</button>
                 <button type="button" onClick={() => setNextStepSkipped((keys) => [...keys, nextStepTask.key])} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>🔀 Pick another</button>
                 <button type="button" onClick={() => setNextStepDismissedToday(true)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "transparent", color: "#8C6B9E", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Not right now</button>
               </div>
