@@ -899,6 +899,8 @@ function GlowUpTracker() {
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [shareCardOpen, setShareCardOpen] = useState(false);
   const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, soft_day: false, custom_essentials: null });
+  const [restDates, setRestDates] = useState([]);
+  const [restRangeDraft, setRestRangeDraft] = useState({ start: "", end: "" });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
   const [checkInPopupOpen, setCheckInPopupOpen] = useState(false);
   const [completedTodayExpanded, setCompletedTodayExpanded] = useState(false);
@@ -1690,6 +1692,42 @@ function GlowUpTracker() {
       custom_essentials: next.custom_essentials,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,check_date" });
+  };
+
+  useEffect(() => {
+    if (!user) { setRestDates([]); return; }
+    let alive = true;
+    supabase.from("rest_days").select("rest_date").eq("user_id", user.id).then(({ data }) => {
+      if (!alive) return;
+      setRestDates((data || []).map((row) => row.rest_date));
+    });
+    return () => { alive = false; };
+  }, [user?.id]);
+
+  const toggleRestToday = async () => {
+    if (!user) return;
+    if (restDates.includes(period.date)) {
+      await supabase.from("rest_days").delete().eq("user_id", user.id).eq("rest_date", period.date);
+      setRestDates((dates) => dates.filter((date) => date !== period.date));
+    } else {
+      await supabase.from("rest_days").insert({ user_id: user.id, rest_date: period.date });
+      setRestDates((dates) => [...dates, period.date]);
+    }
+  };
+
+  const saveRestRange = async () => {
+    if (!user || !restRangeDraft.start || !restRangeDraft.end || restRangeDraft.end < restRangeDraft.start) return;
+    const rangeDates = [];
+    let cursor = restRangeDraft.start;
+    let guard = 0;
+    while (cursor <= restRangeDraft.end && guard < 60) {
+      rangeDates.push(cursor);
+      cursor = offsetDate(cursor, 1);
+      guard += 1;
+    }
+    await supabase.from("rest_days").upsert(rangeDates.map((date) => ({ user_id: user.id, rest_date: date })), { onConflict: "user_id,rest_date" });
+    setRestDates((dates) => Array.from(new Set([...dates, ...rangeDates])));
+    setRestRangeDraft({ start: "", end: "" });
   };
 
   const goToFeedback = () => {
@@ -3143,7 +3181,9 @@ function GlowUpTracker() {
   const firstCareHistoryDate = habitHistory.length
     ? habitHistory.reduce((earliest, entry) => entry.progress_date < earliest ? entry.progress_date : earliest, period.date)
     : period.date;
+  const restDatesSet = new Set(restDates);
   const careDayIsComplete = (date) => {
+    if (restDatesSet.has(date)) return true;
     const requiredKeys = requiredKeysForDate(date);
     const completed = habitHistoryByDate.get(date) || new Set();
     return requiredKeys.length > 0 && requiredKeys.every((key) => completed.has(key));
@@ -3676,6 +3716,13 @@ function GlowUpTracker() {
                 )}
               </div>
             )}
+            <div style={{ marginTop: 13, paddingTop: 13, borderTop: "1px solid #E6D4F2", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: "#5B4B6B" }}>🌴 Resting today</div>
+                <div style={{ marginTop: 2, fontSize: 11, color: "#8C6B9E" }}>Protects today from breaking your streak. Planning ahead? Set a range in Settings.</div>
+              </div>
+              <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
+            </div>
             <button type="button" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Done for now</button>
           </div>
         </div>
@@ -4269,6 +4316,17 @@ function GlowUpTracker() {
             <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🎯 TODAY'S CHECK-IN</div>
             <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>This pops up once a day on Today, but you can reopen or change it here anytime.</div>
             <button type="button" onClick={() => { setSettingsOpen(false); setDashboard("today"); setCheckInPopupOpen(true); }} style={{ marginTop: 9, padding: "8px 12px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Open today's check-in</button>
+          </div>
+
+          <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🌴 REST DAYS / VACATION MODE</div>
+            <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days are protected from ever breaking your streak.</div>
+            <div style={{ display: "flex", gap: 7, marginTop: 9, flexWrap: "wrap", alignItems: "flex-end" }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>From<input type="date" value={restRangeDraft.start} onChange={(event) => setRestRangeDraft((current) => ({ ...current, start: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>To<input type="date" value={restRangeDraft.end} onChange={(event) => setRestRangeDraft((current) => ({ ...current, end: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <button type="button" onClick={saveRestRange} style={{ padding: "8px 12px", borderRadius: 9, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Mark as resting</button>
+            </div>
+            {restDates.length > 0 && <div style={{ marginTop: 9, fontSize: 11.5, color: "#8C6B9E" }}>{restDates.length} rest {restDates.length === 1 ? "day" : "days"} marked so far.</div>}
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
@@ -4870,6 +4928,16 @@ function GlowUpTracker() {
               <button type="button" onClick={() => { setEssentialsPickerOpen(true); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Choose 3 essentials</button>
               <button type="button" onClick={() => { saveDailyCheckIn({ soft_day: true }); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start a Soft Day</button>
             </div>
+          </div>
+        )}
+
+        {restDatesSet.has(period.date) && (
+          <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "#EAF6F1", border: "1px solid #A9DFC4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#268A50" }}>🌴 RESTING TODAY</div>
+              <div style={{ marginTop: 4, fontSize: 12.5, color: "#2F6E48" }}>This day is protected — nothing you do or don't do today can break your streak. Reminders are paused too.</div>
+            </div>
+            <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #A9DFC4", background: "white", color: "#268A50", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>End rest day</button>
           </div>
         )}
 
