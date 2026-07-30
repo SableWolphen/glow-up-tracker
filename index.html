@@ -293,6 +293,13 @@ function offsetDate(date, dayOffset) {
   return value.toISOString().slice(0, 10);
 }
 
+function daysBetweenDates(earlierDate, laterDate) {
+  if (!earlierDate || !laterDate) return null;
+  const a = new Date(`${earlierDate}T12:00:00Z`);
+  const b = new Date(`${laterDate}T12:00:00Z`);
+  return Math.round((b.getTime() - a.getTime()) / 86400000);
+}
+
 function taskOccursOn(task, date) {
   if (task.schedule_type === "once") return task.one_time_date === date;
   if (task.schedule_type === "range") {
@@ -551,6 +558,7 @@ function GlowUpTracker() {
   const [signingOut, setSigningOut] = useState(false);
   const [period, setPeriod] = useState(() => trackerPeriod());
   const [weeklyHistory, setWeeklyHistory] = useState([]);
+  const [longHistory, setLongHistory] = useState([]);
   const [habitHistory, setHabitHistory] = useState([]);
   const [selectedProgressDate, setSelectedProgressDate] = useState(() => trackerPeriod().date);
   const [reflectionDates, setReflectionDates] = useState([]);
@@ -596,6 +604,7 @@ function GlowUpTracker() {
   const [newTaskSection, setNewTaskSection] = useState("");
   const [newTaskCustomSection, setNewTaskCustomSection] = useState("");
   const [newTaskKind, setNewTaskKind] = useState("regular");
+  const [newTaskWhy, setNewTaskWhy] = useState("");
   const [newTaskScheduleType, setNewTaskScheduleType] = useState("weekly");
   const [newTaskStartDate, setNewTaskStartDate] = useState("");
   const [newTaskEndDate, setNewTaskEndDate] = useState("");
@@ -650,6 +659,8 @@ function GlowUpTracker() {
     lastCelebratedDate: "",
   });
   const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [returnGapDays, setReturnGapDays] = useState(0);
+  const [returnBannerDismissed, setReturnBannerDismissed] = useState(false);
 
   useEffect(() => {
     const setConnectionState = () => setOnline(navigator.onLine);
@@ -732,10 +743,14 @@ function GlowUpTracker() {
       saved = null;
     }
     const loadCollection = async () => {
+      const { data: priorRow } = await supabase.from("user_achievements").select("last_visit_date").eq("user_id", user.id).maybeSingle();
+      const priorLastVisitDate = priorRow?.last_visit_date || "";
       const { data, error } = await supabase.rpc("record_plushlist_visit", {
         p_visit_date: period.date,
       });
       if (!active) return;
+      const gap = daysBetweenDates(priorLastVisitDate, period.date);
+      setReturnGapDays(priorLastVisitDate && gap !== null && gap >= 2 ? gap : 0);
       const row = Array.isArray(data) ? data[0] : data;
       const savedIds = Array.isArray(saved?.unlockedIds) ? saved.unlockedIds : [];
       const serverIds = Array.isArray(row?.unlocked_ids) ? row.unlocked_ids : [];
@@ -910,7 +925,7 @@ function GlowUpTracker() {
       supabase.from("support_rewards").select("id, title, details, target_percent, active, week_start, earned_at, claimed_at, approval_required, approved_at, caregiver_user_id, created_at").eq("owner_user_id", targetOwnerId).eq("active", true).order("created_at", { ascending: false }),
       supabase.from("daily_progress").select("completed_keys").eq("user_id", targetOwnerId).eq("progress_date", period.date).maybeSingle(),
       supabase.from("daily_progress").select("progress_date, completed_keys").eq("user_id", targetOwnerId).gte("progress_date", period.weekStart).lte("progress_date", period.date),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date").eq("user_id", targetOwnerId).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", targetOwnerId).order("sort_order"),
       supabase.from("task_suggestions").select("id, owner_user_id, caregiver_user_id, caregiver_name, task, suggested_day_id, status, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
     ]);
     setSupportNotes(notesResult.data || []);
@@ -1162,7 +1177,7 @@ function GlowUpTracker() {
     let alive = true;
     Promise.all([
       supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date").eq("user_id", user.id).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", user.id).order("sort_order"),
       supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
     ]).then(([profileResult, tasksResult, schedulesResult]) => {
       if (!alive) return;
@@ -1175,6 +1190,22 @@ function GlowUpTracker() {
     });
     return () => { alive = false; };
   }, [user]);
+
+  useEffect(() => {
+    if (!user) { setLongHistory([]); return; }
+    let alive = true;
+    supabase
+      .from("daily_progress")
+      .select("progress_date, completed_keys")
+      .eq("user_id", user.id)
+      .gte("progress_date", offsetDate(period.date, -34))
+      .lte("progress_date", period.date)
+      .then(({ data, error }) => {
+        if (!alive || error) return;
+        setLongHistory(data || []);
+      });
+    return () => { alive = false; };
+  }, [user, period.date]);
 
   useEffect(() => {
     if (!user) return;
@@ -1320,6 +1351,7 @@ function GlowUpTracker() {
       start_date: newTaskScheduleType === "range" ? (newTaskStartDate || null) : null,
       end_date: newTaskScheduleType === "range" ? (newTaskEndDate || null) : null,
       one_time_date: newTaskScheduleType === "once" ? (newTaskOneTimeDate || selectedProgressDate) : null,
+      why_note: newTaskWhy.trim(),
     };
     setTaskMessage("Adding task…");
     const { error } = await supabase.from("tracker_tasks").insert(row);
@@ -1361,6 +1393,7 @@ function GlowUpTracker() {
     ]);
     setNewTaskName("");
     setNewTaskKind("regular");
+    setNewTaskWhy("");
     setNewTaskSection(section);
     setNewTaskCustomSection("");
     setActive(newTaskDay);
@@ -1460,6 +1493,7 @@ function GlowUpTracker() {
       detail: cleanTaskDetail(task.detail || ""),
       habit_type: habitTypeForTask(task),
       custom_section: "",
+      why_note: task.why_note || "",
     });
   };
 
@@ -1498,6 +1532,7 @@ function GlowUpTracker() {
       start_date: editTaskDraft.schedule_type === "range" ? (editTaskDraft.start_date || null) : null,
       end_date: editTaskDraft.schedule_type === "range" ? (editTaskDraft.end_date || null) : null,
       one_time_date: editTaskDraft.schedule_type === "once" ? (editTaskDraft.one_time_date || selectedProgressDate) : null,
+      why_note: (editTaskDraft.why_note || "").trim(),
       sort_order: placementChanged ? targetInsertionIndex + 1 : (Number(originalTask?.sort_order) || targetInsertionIndex + 1),
     };
     setTaskMessage("Saving task changes…");
@@ -1933,6 +1968,45 @@ function GlowUpTracker() {
     setSettingsMessage(error ? "Other devices couldn't be signed out." : "Other sessions have been signed out. This device stays connected.");
   };
 
+  const exportMyData = async () => {
+    if (!user) return;
+    setSettingsMessage("Preparing your data for download…");
+    try {
+      const [profileRes, prefsRes, tasksRes, schedulesRes, notesRes, dailyRes, achievementsRes] = await Promise.all([
+        supabase.from("tracker_profiles").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("app_preferences").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("tracker_tasks").select("*").eq("user_id", user.id),
+        supabase.from("tracker_schedules").select("*").eq("user_id", user.id),
+        supabase.from("private_notes").select("*").eq("user_id", user.id),
+        supabase.from("daily_progress").select("*").eq("user_id", user.id),
+        supabase.from("user_achievements").select("*").eq("user_id", user.id).maybeSingle(),
+      ]);
+      const payload = {
+        exported_at: new Date().toISOString(),
+        account_email: user.email,
+        profile: profileRes.data || null,
+        preferences: prefsRes.data || null,
+        tasks: tasksRes.data || [],
+        schedules: schedulesRes.data || [],
+        private_reflections: notesRes.data || [],
+        daily_progress: dailyRes.data || [],
+        achievements: achievementsRes.data || null,
+      };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = `plushlist-export-${period.date}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+      setSettingsMessage("Your data has been downloaded ✨");
+    } catch (exportError) {
+      setSettingsMessage(`Couldn't prepare your download: ${exportError?.message || "unknown error"}`);
+    }
+  };
+
   const requestEmailChange = async () => {
     if (!user) return;
     const nextEmail = emailChangeDraft.trim().toLowerCase();
@@ -2172,6 +2246,7 @@ function GlowUpTracker() {
       key: task.task_key,
       label: task.task,
       how: cleanDetail || null,
+      why: task.why_note || null,
       right: task.day_id === "daily" || !cleanDetail || cleanDetail.length > 40 ? null : cleanDetail,
       section: task.section,
       isBonus: taskIsOptional(task),
@@ -2208,6 +2283,7 @@ function GlowUpTracker() {
       key: task.task_key,
       label: task.task,
       how: cleanTaskDetail(task.detail || "") || null,
+      why: task.why_note || null,
     }));
   const focusedEssential = focusChoices.find((choice) => choice.key === focusSuggestionKey) || null;
   const pickRandomFocusTask = () => {
@@ -2348,6 +2424,16 @@ function GlowUpTracker() {
   const todayDailyCoreIsComplete =
     todayDailyCoreKeys.length > 0 &&
     todayDailyCoreKeys.every((key) => completedKeysForToday.has(key));
+
+  const longHistoryByDate = new Map(longHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
+  const heatmapDays = Array.from({ length: 35 }, (_, index) => {
+    const date = offsetDate(period.date, index - 34);
+    const requiredKeys = requiredKeysForDate(date);
+    const completed = date === period.date ? completedKeysForToday : (longHistoryByDate.get(date) || new Set());
+    const doneCountForDate = requiredKeys.filter((key) => completed.has(key)).length;
+    const dayPct = requiredKeys.length ? Math.round((doneCountForDate / requiredKeys.length) * 100) : null;
+    return { date, pct: dayPct };
+  });
   const todayEssentialsPercent = todayRequiredKeys.length
     ? Math.round((todayRequiredDone / todayRequiredKeys.length) * 100)
     : 0;
@@ -2587,7 +2673,7 @@ function GlowUpTracker() {
   const dinoTheme = !!preferences.dino_theme;
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
   const currentCopingOption = COPING_OPTIONS[copingPick].replace(/Tigger/gi, comfortItemName);
-  const onboardingTotalSteps = onboardingMode === "guardian" ? 4 : 3;
+  const onboardingTotalSteps = onboardingMode === "guardian" ? 5 : 4;
 
   return (
     <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
@@ -2726,6 +2812,15 @@ function GlowUpTracker() {
               <input value={comfortItemDraft} onChange={(event) => setComfortItemDraft(event.target.value)} maxLength={80} placeholder="Example: favorite plush" style={{ width: "100%", boxSizing: "border-box", padding: "10px", borderRadius: 10, border: "1px solid #DCC9E8" }} />
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 3) || (onboardingMode === "guardian" && onboardingStep === 4)) && <>
+              <h2 style={{ margin: "8px 0 6px" }}>What you're working toward 🧸</h2>
+              <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>
+                As you check things off, your plush mascot earns new outfits and badges — for showing up day after day, for building a good habit, or for gently reducing one you're working on.
+              </p>
+              <p style={{ marginTop: 8, color: "#6B5A7D", lineHeight: 1.55 }}>
+                Missing a day never takes anything away. You can see what you've unlocked (and what's next) anytime from the 🏅 Mascot Collection.
+              </p>
+            </>}
+            {((onboardingMode === "cozy" && onboardingStep === 4) || (onboardingMode === "guardian" && onboardingStep === 5)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>Ready for your first three tasks ✨</h2>
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>Plushlist will begin with: drink water, take a little stretch, and get ready for tomorrow. Soft Plush is your default theme.</p>
             </>}
@@ -3077,6 +3172,11 @@ function GlowUpTracker() {
               <button onClick={signOutOtherDevices} style={{ padding: "8px 11px", borderRadius: 9, border: "1px solid #E4C2C9", background: "#FFF8F9", color: "#B0576B", fontWeight: 900, cursor: "pointer" }}>Sign out other devices</button>
             </div>
             <div style={{ marginTop: 14, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "#6D5A7C" }}>YOUR DATA</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Your tasks, schedules, reflections, and progress are yours. Download a copy anytime.</div>
+              <button type="button" onClick={exportMyData} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
+            </div>
+            <div style={{ marginTop: 14, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
               <div style={{ fontSize: 11, fontWeight: 900, color: "#6D5A7C" }}>ACCOUNT EMAIL</div>
               <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Current: {user.email || "—"}</div>
               <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
@@ -3161,10 +3261,14 @@ function GlowUpTracker() {
             </div>
 
             <button type="button" onClick={() => setTaskAdvancedOpen((open) => !open)} style={{ marginTop: 10, padding: "6px 10px", borderRadius: 9, border: "1px solid #E3C9EC", background: taskAdvancedOpen ? "#F8EFFB" : "white", color: "#7D668C", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>
-              ⚙️ More options — habit type, repeat schedule {taskAdvancedOpen ? "▾" : "▸"}
+              ⚙️ More options — habit type, repeat schedule, why it matters {taskAdvancedOpen ? "▾" : "▸"}
             </button>
             {taskAdvancedOpen && (
               <div style={{ marginTop: 8, display: "grid", gap: 8 }}>
+                <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+                  WHY DOES THIS MATTER TO YOU? · OPTIONAL
+                  <input value={newTaskWhy} onChange={(event) => setNewTaskWhy(event.target.value)} maxLength={300} placeholder="e.g. So I have energy for the people I love" aria-label="Why this task matters" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+                </label>
                 <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
                   WHAT KIND OF TASK IS THIS?
                   <select value={newTaskKind} onChange={(event) => setNewTaskKind(event.target.value)} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
@@ -3465,6 +3569,19 @@ function GlowUpTracker() {
 
         <>
         {dashboard === "today" && <>
+        {returnGapDays >= 2 && !returnBannerDismissed && (
+          <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "#FFF9E9", border: "1px solid #F0D99E" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>🧸 WELCOME BACK</div>
+                <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#6B5A3D" }}>
+                  It's been {returnGapDays} days — no pressure at all. Just pick one small thing to restart with, whenever you're ready. 💛
+                </div>
+              </div>
+              <button type="button" onClick={() => setReturnBannerDismissed(true)} aria-label="Dismiss welcome back message" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
+            </div>
+          </div>
+        )}
         {/* Personal schedule */}
         {selectedSchedule ? (
         <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: `1px solid ${day.accent}55`, boxShadow: `0 8px 24px ${day.accent}16` }}>
@@ -3585,6 +3702,29 @@ function GlowUpTracker() {
           </div>
         </div>
 
+        <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>LAST 35 DAYS</div>
+          <div style={{ marginTop: 4, fontSize: 12, color: "#8C6B9E" }}>The shape of your effort over time — darker means more completed that day.</div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginTop: 12 }}>
+            {heatmapDays.map((day) => {
+              const label = new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+              const bg = day.pct === null ? "#F2E8F8" : day.pct === 0 ? "#F7EFFA" : day.pct < 50 ? "#E4C6EE" : day.pct < 100 ? "#C77DD6" : "#8E4EAA";
+              return (
+                <div key={day.date} title={`${label}${day.pct === null ? " · nothing scheduled" : ` · ${day.pct}%`}`} onClick={() => { setSelectedProgressDate(day.date); if (day.date === period.date) setActive("daily"); }}
+                  style={{ aspectRatio: "1", borderRadius: 6, background: bg, cursor: "pointer", border: day.date === selectedProgressDate ? "2px solid #4C8FE8" : "1px solid rgba(255,255,255,0.5)" }} />
+              );
+            })}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>
+            Less
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
+            More
+          </div>
+        </div>
+
         <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
@@ -3674,7 +3814,7 @@ function GlowUpTracker() {
                 const header = r.section !== lastSection ? r.section : null;
                 lastSection = r.section;
                 const checked = !!viewDone[r.key];
-                const expandable = !!r.how;
+                const expandable = !!(r.how || r.why);
                 const expanded = openRow === r.key;
                 return (
                   <div key={r.key}>
@@ -3704,7 +3844,10 @@ function GlowUpTracker() {
                         {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
                       </div>
                       {expandable && expanded && (
-                        <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>{r.how}</div>
+                        <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
+                          {r.how && <div>{r.how}</div>}
+                          {r.why && <div style={{ marginTop: r.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {r.why}</div>}
+                        </div>
                       )}
                     </div>
                   </div>
@@ -3741,6 +3884,7 @@ function GlowUpTracker() {
                   <>
                     <div style={{ marginTop: 9, fontSize: 17, fontWeight: 900, color: "#4F405C" }}>{focusedEssential.label}</div>
                     {focusedEssential.how && <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.5, color: "#6B5A7D" }}>{focusedEssential.how}</div>}
+                    {focusedEssential.why && <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.5, fontStyle: "italic", color: "#318C79" }}>💛 Why: {focusedEssential.why}</div>}
                     <div style={{ marginTop: 10, display: "flex", gap: 7, flexWrap: "wrap" }}>
                       <button type="button" onClick={() => { toggle(focusedEssential.key, selectedProgressDate); setFocusHelperOpen(false); setFocusSuggestionKey(null); }} style={{ padding: "8px 11px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Mark this done ✓</button>
                       {focusChoices.length > 1 && <button type="button" onClick={pickRandomFocusTask} style={{ padding: "8px 11px", borderRadius: 10, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, cursor: "pointer" }}>Pick a different one</button>}
@@ -3800,7 +3944,7 @@ function GlowUpTracker() {
             const sectionRows = rows.filter((item) => item.section === r.section);
             const sectionPosition = sectionRows.findIndex((item) => item.key === r.key);
             const checked = !!viewDone[r.key];
-            const expandable = !!r.how;
+            const expandable = !!(r.how || r.why);
             const expanded = openRow === r.key;
             const rowHabitStats = r.habitType === "regular" ? null : habitStatsForTask(r.sourceTask);
             return (
@@ -3871,7 +4015,8 @@ function GlowUpTracker() {
                   </div>
                   {expandable && expanded && (
                     <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
-                      {r.how}
+                      {r.how && <div>{r.how}</div>}
+                      {r.why && <div style={{ marginTop: r.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {r.why}</div>}
                     </div>
                   )}
                   {(manageTasks || editingTaskKey === r.key) && (
@@ -3886,6 +4031,10 @@ function GlowUpTracker() {
                           <label style={{ display: "grid", gap: 3, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
                             HELPFUL DETAILS · OPTIONAL
                             <textarea value={editTaskDraft.detail || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, detail: event.target.value }))} placeholder="Instructions or a gentle reminder" style={{ minHeight: 58, padding: 8, borderRadius: 8, border: "1px solid #E3C9EC", resize: "vertical" }} />
+                          </label>
+                          <label style={{ display: "grid", gap: 3, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+                            WHY DOES THIS MATTER TO YOU? · OPTIONAL
+                            <input value={editTaskDraft.why_note || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, why_note: event.target.value }))} maxLength={300} placeholder="e.g. So I have energy for the people I love" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #E3C9EC" }} />
                           </label>
                           <label style={{ display: "grid", gap: 3, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
                             TASK TYPE
