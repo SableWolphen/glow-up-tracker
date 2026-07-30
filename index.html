@@ -564,6 +564,7 @@ function GlowUpTracker() {
   const [period, setPeriod] = useState(() => trackerPeriod());
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [longHistory, setLongHistory] = useState([]);
+  const [previousWeekHistory, setPreviousWeekHistory] = useState([]);
   const [habitHistory, setHabitHistory] = useState([]);
   const [selectedProgressDate, setSelectedProgressDate] = useState(() => trackerPeriod().date);
   const [reflectionDates, setReflectionDates] = useState([]);
@@ -1221,6 +1222,22 @@ function GlowUpTracker() {
       });
     return () => { alive = false; };
   }, [user, reflectionCalendarMonth]);
+
+  useEffect(() => {
+    if (!user) { setPreviousWeekHistory([]); return; }
+    let alive = true;
+    supabase
+      .from("daily_progress")
+      .select("progress_date, completed_keys")
+      .eq("user_id", user.id)
+      .gte("progress_date", offsetDate(period.weekStart, -7))
+      .lte("progress_date", offsetDate(period.weekStart, -1))
+      .then(({ data, error }) => {
+        if (!alive || error) return;
+        setPreviousWeekHistory(data || []);
+      });
+    return () => { alive = false; };
+  }, [user, period.weekStart]);
 
   useEffect(() => {
     if (!user) return;
@@ -2447,6 +2464,22 @@ function GlowUpTracker() {
   const weeklyOverallPct = weeklyOverallPossible
     ? Math.round((weeklyOverallDone / weeklyOverallPossible) * 100)
     : 0;
+
+  const previousWeekHistoryByDate = new Map(previousWeekHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
+  let previousWeekDone = 0;
+  let previousWeekPossible = 0;
+  Array.from({ length: 7 }, (_, index) => offsetDate(period.weekStart, index - 7)).forEach((date) => {
+    const completed = previousWeekHistoryByDate.get(date) || new Set();
+    const scheduledDayId = dayIdForDate(date);
+    const scheduled = trackerTasks.filter((task) => task.day_id === scheduledDayId && !taskIsOptional(task) && taskOccursOn(task, date)).map((task) => task.task_key);
+    const datedDailyTasks = trackerTasks.filter((task) => task.day_id === "daily" && taskOccursOn(task, date));
+    const datedEssentialKeys = datedDailyTasks.filter((task) => !taskIsOptional(task)).map((task) => task.task_key);
+    const overallKeys = [...datedEssentialKeys, ...scheduled];
+    previousWeekDone += overallKeys.filter((key) => completed.has(key)).length;
+    previousWeekPossible += overallKeys.length;
+  });
+  const previousWeekPct = previousWeekPossible ? Math.round((previousWeekDone / previousWeekPossible) * 100) : null;
+  const weekOverWeekDelta = previousWeekPct === null ? null : weeklyOverallPct - previousWeekPct;
 
   const completedKeysForToday = new Set(Object.keys(done).filter((key) => done[key]));
   const todayDayId = dayIdForDate(period.date);
@@ -3833,6 +3866,11 @@ function GlowUpTracker() {
           <div style={{ height: 12, marginTop: 12, overflow: "hidden", borderRadius: 8, background: "#F2E8F8" }}>
             <div style={{ height: "100%", width: `${weeklyOverallPct}%`, borderRadius: 8, background: "linear-gradient(90deg, #C77DD6, #7FC8F8)", transition: "width .4s ease" }} />
           </div>
+          {weekOverWeekDelta !== null && (
+            <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: weekOverWeekDelta > 0 ? "#318C79" : weekOverWeekDelta < 0 ? "#8C6B9E" : "#8C6B9E" }}>
+              {weekOverWeekDelta > 0 ? `📈 ${weekOverWeekDelta}% more than last week` : weekOverWeekDelta < 0 ? `${Math.abs(weekOverWeekDelta)}% less than last week — that's okay 💛` : "Same as last week"}
+            </div>
+          )}
           <div style={{ display: "grid", gridTemplateColumns: preferences.gentle_streaks ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 12 }}>
             <div style={{ padding: "10px 8px", borderRadius: 12, textAlign: "center", background: "#FFF8FC" }}>
               <div style={{ fontSize: 17, fontWeight: 900, color: "#A65DC1" }}>{weeklyEssentialPct}%</div>
