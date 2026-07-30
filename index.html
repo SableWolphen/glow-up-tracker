@@ -3350,6 +3350,7 @@ function GlowUpTracker() {
     { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
     { id: "perfect_week", badge: "✨", name: "Perfect Week", hint: "Reach 100% for the whole week.", check: () => weeklyOverallPct === 100 },
     { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
+    { id: "founding_cozy", badge: "🌟", name: "Founding Cozy", hint: "Join Plushlist during its early access period.", check: () => !!user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z") },
   ];
   const newlyEarnedBadgeIds = BADGE_DEFS.filter((item) => item.check()).map((item) => item.id);
   const earnedBadgeIdSet = new Set([...(mascotCollection.earnedBadgeIds || []), ...newlyEarnedBadgeIds]);
@@ -3962,6 +3963,29 @@ function GlowUpTracker() {
                 <div><strong>Private reflection:</strong> belongs only to you and stays with the date you wrote it on.</div>
               </div>
             )}
+          </div>
+
+          <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFDF4", border: "1px solid #E9C96E", boxShadow: "0 8px 22px rgba(166,109,20,.08)" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#A56D14" }}>💛 FREQUENTLY ASKED QUESTIONS</div>
+            <div style={{ display: "grid", gap: 10, marginTop: 10 }}>
+              {[
+                ["What can a Guardian actually see?", "Only what you turn on for them, one setting at a time — your progress percentage, specific sections, or nothing at all. They can never see your private reflections, and you can pause or fully remove their access at any moment."],
+                ["Can a Guardian edit or complete my tasks?", "No. A Guardian can only view what you've allowed, send an encouraging note, or suggest a task for you to approve. They cannot check anything off or change your tasks."],
+                ["What happens if I miss a day?", "Nothing is lost. Your current streak resets, but your best streak, every badge, and every outfit you've earned stay yours forever."],
+                ["What's the difference between Required and Bonus tasks?", "Required tasks count toward your daily percentage. Bonus tasks are extras — completing them never lowers your score, and skipping them never counts against you."],
+                ["What is Soft Day?", "A mode for lower-capacity days. Turn it on and your bonus/optional tasks tuck out of view, so your list feels smaller and calmer."],
+                ["What is Focus Mode?", "Instead of your full checklist, Focus Mode shows just your next task, one at a time — good for when a long list feels like too many decisions."],
+                ["Who can see my private reflections?", "Only you, always. They're never shown to a Guardian, never included in any shared summary, and stored separately from anything else."],
+                ["Can I get my data, or delete my account?", "Yes to both, anytime — Settings → Your Data has a full export, and Settings → Account Actions has account deletion. Deletion is permanent and requires confirmation."],
+                ["How do badges and the Mascot Closet work?", "Badges and outfits unlock from all kinds of care — showing up, reflecting, building or reducing a habit, connecting a Guardian. Once unlocked, nothing is ever taken away."],
+              ].map(([q, a]) => (
+                <details key={q} style={{ padding: "9px 11px", borderRadius: 12, background: "white", border: "1px solid #F0E4C2" }}>
+                  <summary style={{ fontSize: 13, fontWeight: 800, color: "#5B4B6B", cursor: "pointer" }}>{q}</summary>
+                  <div style={{ marginTop: 7, fontSize: 12.5, lineHeight: 1.55, color: "#6B5A7D" }}>{a}</div>
+                </details>
+              ))}
+            </div>
+            <div style={{ marginTop: 12, fontSize: 12, color: "#8C6B9E" }}>Still stuck on something? <button type="button" onClick={() => { setHelpOpen(false); goToFeedback(); }} style={{ color: "#A56D14", background: "none", border: 0, textDecoration: "underline", cursor: "pointer", fontWeight: 800, fontSize: 12, padding: 0 }}>Send feedback</button> and I'll help directly.</div>
           </div>
           </ToolPanel>
         )}
