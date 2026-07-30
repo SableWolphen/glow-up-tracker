@@ -543,6 +543,10 @@ function GlowUpTracker() {
   const [dashboard, setDashboard] = useState("today");
   const swipeStartX = React.useRef(null);
   const routineSwipeStartX = React.useRef(null);
+  const todaySwipeStartX = React.useRef(null);
+  const weekSwipeStartX = React.useRef(null);
+  const [todayCardIndex, setTodayCardIndex] = useState(0);
+  const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
   const [user, setUser] = useState(null);
@@ -3584,6 +3588,22 @@ function GlowUpTracker() {
             </div>
           </div>
         )}
+        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+          <button type="button" onClick={() => setTodayCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 0 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 0 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Schedule</button>
+          <button type="button" onClick={() => setTodayCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 1 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 1 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✅ Tasks</button>
+        </div>
+        <div
+          onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; }}
+          onTouchEnd={(event) => {
+            event.stopPropagation();
+            const startX = todaySwipeStartX.current;
+            const endX = event.changedTouches[0]?.clientX;
+            todaySwipeStartX.current = null;
+            if (startX == null || endX == null || Math.abs(endX - startX) < 45) return;
+            setTodayCardIndex(endX < startX ? 1 : 0);
+          }}
+          style={{ touchAction: "pan-y" }}>
+        {todayCardIndex === 0 && <>
         {/* Personal schedule */}
         {selectedSchedule ? (
         <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: `1px solid ${day.accent}55`, boxShadow: `0 8px 24px ${day.accent}16` }}>
@@ -3625,30 +3645,9 @@ function GlowUpTracker() {
           </button>
         </div>
         )}
-        <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #F3D9EC" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", color: "#C77DD6", fontWeight: 700, marginBottom: 8 }}>🛟 IF I FEEL OVERWHELMED</div>
+        </>}
 
-          <div style={{ padding: "12px 14px", borderRadius: 12, background: "#C77DD622", border: "1px solid #C77DD655", marginBottom: 10 }}>
-            <div style={{ fontSize: 10, letterSpacing: "0.18em", color: "#C77DD6", fontWeight: 700, marginBottom: 4 }}>TRY THIS RIGHT NOW</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#5B4B6B" }}>{currentCopingOption}</div>
-          </div>
-          <button onClick={reshuffle} style={{
-            padding: "7px 14px", borderRadius: 10, border: "1px solid #C77DD655",
-            background: "rgba(255,255,255,0.4)", color: "#C77DD6", fontWeight: 700,
-            fontSize: 12.5, cursor: "pointer", marginBottom: 12,
-          }}>
-            🎲 Give me something else
-          </button>
-
-          <div style={{ fontSize: 13.5, lineHeight: 1.7, color: "#8C6B9E" }}>
-            And always: reach out and tell someone I'm struggling if I need to.
-          </div>
-          <div style={{ marginTop: 10, fontSize: 13.5, fontStyle: "italic", color: "#C77DD6" }}>
-            "My feelings are real. I don't have to hurt myself to prove they exist."
-          </div>
-        </div>
-
-        {rows.length > 0 && (
+        {todayCardIndex === 1 && rows.length > 0 && (
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
@@ -3713,10 +3712,55 @@ function GlowUpTracker() {
             )}
           </div>
         )}
+        {todayCardIndex === 1 && rows.length === 0 && (
+          <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px dashed #C9B3DC", textAlign: "center", color: "#8C6B9E", fontSize: 12.5 }}>
+            No tasks for this day yet. Add some from the Routines tab. 🧸
+          </div>
+        )}
+        </div>
+
+        <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #F3D9EC" }}>
+          <div style={{ fontSize: 11, letterSpacing: "0.2em", color: "#C77DD6", fontWeight: 700, marginBottom: 8 }}>🛟 IF I FEEL OVERWHELMED</div>
+
+          <div style={{ padding: "12px 14px", borderRadius: 12, background: "#C77DD622", border: "1px solid #C77DD655", marginBottom: 10 }}>
+            <div style={{ fontSize: 10, letterSpacing: "0.18em", color: "#C77DD6", fontWeight: 700, marginBottom: 4 }}>TRY THIS RIGHT NOW</div>
+            <div style={{ fontSize: 15, fontWeight: 600, color: "#5B4B6B" }}>{currentCopingOption}</div>
+          </div>
+          <button onClick={reshuffle} style={{
+            padding: "7px 14px", borderRadius: 10, border: "1px solid #C77DD655",
+            background: "rgba(255,255,255,0.4)", color: "#C77DD6", fontWeight: 700,
+            fontSize: 12.5, cursor: "pointer", marginBottom: 12,
+          }}>
+            🎲 Give me something else
+          </button>
+
+          <div style={{ fontSize: 13.5, lineHeight: 1.7, color: "#8C6B9E" }}>
+            And always: reach out and tell someone I'm struggling if I need to.
+          </div>
+          <div style={{ marginTop: 10, fontSize: 13.5, fontStyle: "italic", color: "#C77DD6" }}>
+            "My feelings are real. I don't have to hurt myself to prove they exist."
+          </div>
+        </div>
 
         </>}
 
         {dashboard === "week" && <>
+        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+          <button type="button" onClick={() => setWeekCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 0 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 0 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 0 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✨ Whole-week progress</button>
+          <button type="button" onClick={() => setWeekCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 1 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 1 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 1 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>📅 Progress calendar</button>
+        </div>
+        <div
+          onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; }}
+          onTouchEnd={(event) => {
+            event.stopPropagation();
+            const startX = weekSwipeStartX.current;
+            const endX = event.changedTouches[0]?.clientX;
+            weekSwipeStartX.current = null;
+            if (startX == null || endX == null || Math.abs(endX - startX) < 45) return;
+            setWeekCardIndex(endX < startX ? 1 : 0);
+          }}
+          style={{ touchAction: "pan-y" }}>
+        {weekCardIndex === 0 && <>
         {/* Weekly progress */}
         <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
@@ -3769,7 +3813,9 @@ function GlowUpTracker() {
             {isHistoricalView && <div style={{ marginTop: 8, fontSize: 11.5, color: "#A65DC1", fontWeight: 700 }}>Editing this past day. Checkmarks below update that date and your whole-week score. ✨</div>}
           </div>
         </div>
+        </>}
 
+        {weekCardIndex === 1 && <>
         <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
@@ -3820,6 +3866,8 @@ function GlowUpTracker() {
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
             More
           </div>
+        </div>
+        </>}
         </div>
 
         {!isHistoricalView && habitTasks.length > 0 && (
