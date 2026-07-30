@@ -3094,7 +3094,7 @@ function GlowUpTracker() {
         </div>
       )}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "visible" }}>
-        {(!preferences.simple_mode && (babyMode ? [
+        {(preferences.simple_mode ? [] : (babyMode ? [
           { e: "🧸", top: "1%", left: "3%", size: 58 }, { e: "🍼", top: "3%", left: "82%", size: 58 },
           { e: "🫧", top: "10%", left: "20%", size: 38 }, { e: "🐥", top: "15%", left: "72%", size: 48 },
           { e: "🌈", top: "22%", left: "4%", size: 48 }, { e: "🧸", top: "29%", left: "86%", size: 54 },
