@@ -836,6 +836,16 @@ function GlowUpTracker() {
       if (data) setPreferences((current) => ({ ...current, ...data, reminder_times: Array.isArray(data.reminder_times) ? data.reminder_times : current.reminder_times }));
       if (!data || !data.onboarding_complete) setOnboardingStep(1);
       if (error) setSettingsMessage("Your preferences couldn't be loaded yet.");
+      // Keep the stored timezone in sync with this device's actual local timezone,
+      // so scheduled notifications are bucketed (morning/midday/evening/night)
+      // against real local time instead of a hardcoded fallback.
+      try {
+        const deviceTimezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+        if (deviceTimezone && deviceTimezone !== data?.timezone) {
+          supabase.from("app_preferences").upsert({ user_id: user.id, timezone: deviceTimezone, updated_at: new Date().toISOString() }, { onConflict: "user_id" }).then(() => {});
+          setPreferences((current) => ({ ...current, timezone: deviceTimezone }));
+        }
+      } catch (_error) {}
     });
     return () => { active = false; };
   }, [user]);
@@ -2431,35 +2441,48 @@ function GlowUpTracker() {
     window.location.replace(window.location.origin + window.location.pathname);
   };
 
-  const COPING_OPTIONS = [
-    "Put distance between me and the urge",
-    "Hold Tigger or a pillow 🐯",
-    "Name 5 things I can see, 4 I can touch, 3 I can hear",
-    "Splash cold water on my face or hands",
-    "Step outside for one minute of air",
-    "Text or call someone and say I'm struggling",
-    "Put on one song and just listen to it fully",
-    "Squeeze something tight for 10 seconds, then let go",
-    "Wrap up in a blanket and just breathe for a minute",
-    "Take a sip of water",
-    "Get somewhere soft and comfortable",
-    "Hold Tigger for a minute",
-    "Put on a calming sound",
-    "Take three slow breaths",
-    "Step into fresh air",
-    "Sit with your feet on the floor and notice the support beneath you",
-    "Wash your hands with warm water",
-    "Look at something soft or familiar",
-    "Open a window or change rooms for a moment",
-    "Write one sentence about what you need right now",
-    "Choose one tiny task you can finish in two minutes",
+  const COPING_OPTIONS_TAGGED = [
+    { text: "Put distance between me and the urge", times: ["any"] },
+    { text: "Hold Tigger or a pillow 🐯", times: ["any"] },
+    { text: "Name 5 things I can see, 4 I can touch, 3 I can hear", times: ["any"] },
+    { text: "Splash cold water on my face or hands", times: ["morning", "midday", "afternoon"] },
+    { text: "Step outside for one minute of air", times: ["morning", "midday", "afternoon"] },
+    { text: "Text or call someone and say I'm struggling", times: ["any"] },
+    { text: "Put on one song and just listen to it fully", times: ["any"] },
+    { text: "Squeeze something tight for 10 seconds, then let go", times: ["any"] },
+    { text: "Wrap up in a blanket and just breathe for a minute", times: ["evening", "night"] },
+    { text: "Take a sip of water", times: ["any"] },
+    { text: "Get somewhere soft and comfortable", times: ["evening", "night"] },
+    { text: "Hold Tigger for a minute", times: ["any"] },
+    { text: "Put on a calming sound", times: ["evening", "night"] },
+    { text: "Take three slow breaths", times: ["any"] },
+    { text: "Step into fresh air", times: ["morning", "midday", "afternoon"] },
+    { text: "Sit with your feet on the floor and notice the support beneath you", times: ["any"] },
+    { text: "Wash your hands with warm water", times: ["any"] },
+    { text: "Look at something soft or familiar", times: ["night"] },
+    { text: "Open a window or change rooms for a moment", times: ["morning", "midday", "afternoon"] },
+    { text: "Write one sentence about what you need right now", times: ["any"] },
+    { text: "Choose one tiny task you can finish in two minutes", times: ["morning", "midday", "afternoon"] },
   ];
-  const [copingPick, setCopingPick] = useState(() => Math.floor(Math.random() * COPING_OPTIONS.length));
-  const reshuffle = () => setCopingPick((p) => {
-    let n = Math.floor(Math.random() * COPING_OPTIONS.length);
-    while (n === p && COPING_OPTIONS.length > 1) n = Math.floor(Math.random() * COPING_OPTIONS.length);
-    return n;
-  });
+  const COPING_OPTIONS = COPING_OPTIONS_TAGGED.map((item) => item.text);
+  const deviceHour = new Date().getHours();
+  const deviceTimeOfDay = deviceHour >= 5 && deviceHour < 11 ? "morning"
+    : deviceHour >= 11 && deviceHour < 14 ? "midday"
+    : deviceHour >= 14 && deviceHour < 18 ? "afternoon"
+    : deviceHour >= 18 && deviceHour < 22 ? "evening"
+    : "night";
+  const timeFittingIndexes = COPING_OPTIONS_TAGGED
+    .map((item, index) => ({ index, fits: item.times.includes("any") || item.times.includes(deviceTimeOfDay) }))
+    .filter((item) => item.fits)
+    .map((item) => item.index);
+  const pickCopingIndex = (excludeIndex) => {
+    const pool = timeFittingIndexes.length ? timeFittingIndexes : COPING_OPTIONS.map((_, index) => index);
+    const options = pool.filter((index) => index !== excludeIndex);
+    const finalPool = options.length ? options : pool;
+    return finalPool[Math.floor(Math.random() * finalPool.length)];
+  };
+  const [copingPick, setCopingPick] = useState(() => pickCopingIndex(null));
+  const reshuffle = () => setCopingPick((p) => pickCopingIndex(p));
 
   const isHistoricalView = selectedProgressDate !== period.date;
   const isFutureView = selectedProgressDate > period.date;
