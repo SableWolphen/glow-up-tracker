@@ -813,6 +813,7 @@ function GlowUpTracker() {
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [comfortItemDraft, setComfortItemDraft] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("basics");
+  const [onboardingReason, setOnboardingReason] = useState(null);
   const [onboardingIntentionDraft, setOnboardingIntentionDraft] = useState("");
   const [onboardingMode, setOnboardingMode] = useState("cozy");
   const [onboardingMessage, setOnboardingMessage] = useState("");
@@ -876,6 +877,7 @@ function GlowUpTracker() {
     beta_banner_dismissed: false,
     last_seen_changelog: "",
     is_supporter: false,
+    onboarding_reason: null,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2362,6 +2364,7 @@ function GlowUpTracker() {
       focus_mode: !!nextPreferences.focus_mode,
       baby_voice: nextPreferences.baby_voice === "fatherly" ? "fatherly" : "motherly",
       beta_banner_dismissed: !!nextPreferences.beta_banner_dismissed,
+      onboarding_reason: nextPreferences.onboarding_reason || null,
       last_seen_changelog: nextPreferences.last_seen_changelog || "",
       updated_at: new Date().toISOString(),
     };
@@ -2536,7 +2539,13 @@ function GlowUpTracker() {
       }, { onConflict: "user_id,note_date" });
       setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
     }
-    const next = { ...preferences, onboarding_complete: true, weekly_intention_intro_seen: true };
+    const next = {
+      ...preferences,
+      onboarding_complete: true,
+      weekly_intention_intro_seen: true,
+      onboarding_reason: onboardingReason,
+      focus_mode: onboardingReason === "focus" ? true : preferences.focus_mode,
+    };
     setPreferences(next);
     await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
     setTrackerProfile(profileData);
@@ -3941,6 +3950,20 @@ function GlowUpTracker() {
             {((onboardingMode === "cozy" && onboardingStep === 6) || (onboardingMode === "guardian" && onboardingStep === 7)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>You're ready ✨</h2>
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>{(TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.tasks.length ?? 0) > 0 ? `Plushlist will begin with your ${TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.label.toLowerCase()} tasks.` : "You chose to start from scratch — add your first task once you're in."} Soft Plush is your default theme.</p>
+              <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #E9DAF2" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: "#6B5A7D" }}>One last thing, totally optional 💛</div>
+                <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>What brings you here? Just helps me set a couple of defaults for you.</div>
+                <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
+                  {[
+                    ["general", "🌿 General self-care"],
+                    ["focus", "🎯 ADHD / focus support"],
+                    ["burnout", "🕊️ Recovering from burnout"],
+                    ["plain", "📋 Just a normal tracker"],
+                  ].map(([value, label]) => (
+                    <button key={value} type="button" onClick={() => setOnboardingReason((current) => current === value ? null : value)} style={{ padding: "7px 11px", borderRadius: 999, border: onboardingReason === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: onboardingReason === value ? "#F7ECFB" : "white", color: "#5B4B6B", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{label}</button>
+                  ))}
+                </div>
+              </div>
             </>}
             {onboardingMessage && <div style={{ marginTop: 11, fontSize: 12, color: "#B0576B", lineHeight: 1.45 }}>{onboardingMessage}</div>}
             <div style={{ display: "flex", justifyContent: "space-between", gap: 8, marginTop: 18 }}>
