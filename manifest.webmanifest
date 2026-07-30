@@ -1,0 +1,19 @@
+{
+  "name": "Plushlist — Gentle Daily Tracker",
+  "short_name": "Plushlist",
+  "description": "A private, gentle routine and progress tracker.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8fc",
+  "theme_color": "#b75acb",
+  "icons": [
+    {
+      "src": "./icon.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
+

@@ -1,0 +1,165 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#b75acb">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg?v=2">
+  <meta http-equiv="Cache-Control" content="no-store, no-cache, must-revalidate">
+  <title>Sign in to Plushlist</title>
+  <style>
+    * { box-sizing: border-box; }
+    body {
+      min-height: 100vh;
+      margin: 0;
+      display: grid;
+      place-items: center;
+      padding: 20px;
+      color: #4a3a5c;
+      font-family: "Segoe UI", system-ui, sans-serif;
+      background:
+        radial-gradient(circle at 8% 10%, #fce1f3 0%, transparent 38%),
+        radial-gradient(circle at 92% 8%, #d8f3ec 0%, transparent 38%),
+        #fff8fc;
+    }
+    main {
+      width: min(100%, 470px);
+      padding: 26px;
+      border: 1px solid #f0d9ee;
+      border-radius: 24px;
+      background: rgba(255,255,255,.9);
+      box-shadow: 0 18px 45px -25px rgba(90,50,110,.35);
+    }
+    h1 { margin: 0; text-align: center; font-size: 27px; }
+    .intro { margin: 8px 0 22px; text-align: center; color: #8574a0; line-height: 1.5; }
+    label { display: block; margin: 14px 0 6px; font-size: 13px; font-weight: 800; }
+    input {
+      width: 100%;
+      padding: 13px 14px;
+      border: 1px solid #e5cfe5;
+      border-radius: 12px;
+      color: #4a3a5c;
+      font-size: 16px;
+      outline: none;
+    }
+    input:focus { border-color: #b95fce; box-shadow: 0 0 0 3px #b95fce20; }
+    #code { letter-spacing: .16em; }
+    button {
+      width: 100%;
+      margin-top: 10px;
+      padding: 13px 16px;
+      border: 0;
+      border-radius: 12px;
+      background: #b95fce;
+      color: white;
+      font-size: 15px;
+      font-weight: 900;
+      cursor: pointer;
+    }
+    button.secondary { border: 1px solid #b95fce; background: white; color: #a24bb8; }
+    button:disabled { cursor: wait; opacity: .65; }
+    #message { min-height: 22px; margin-top: 14px; text-align: center; color: #8574a0; font-size: 13px; line-height: 1.45; }
+    .back { display: block; margin-top: 17px; text-align: center; color: #8574a0; font-size: 13px; }
+    .legal { margin-top: 18px; padding-top: 14px; border-top: 1px solid #f0d9ee; text-align: center; color: #8574a0; font-size: 11px; line-height: 1.7; }
+    .legal a { color: #9c5fb5; }
+  </style>
+</head>
+<body>
+  <main>
+    <h1>Welcome to Plushlist 💛</h1>
+    <p class="intro">Enter your email, then use the one-time code we send you.</p>
+
+    <label for="email">Email address</label>
+    <input id="email" type="email" autocomplete="email" placeholder="you@example.com">
+    <button id="send" type="button">Send my code</button>
+
+    <label for="code">Email code</label>
+    <input id="code" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter the code">
+    <button id="verify" class="secondary" type="button">Sign in</button>
+
+    <div id="message" role="status"></div>
+    <a class="back" href="./">Back to Plushlist</a>
+    <div class="legal">
+      <div>© 2026 Alexander K. Johnston · Plushlist™ · All rights reserved.</div>
+      <a href="./legal.html#privacy">Privacy</a> ·
+      <a href="./legal.html#terms">Terms</a> ·
+      <a href="./legal.html#about">About</a>
+    </div>
+  </main>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+  <script>
+    const client = window.supabase.createClient(
+      "https://pvitdhixycegmcovapyh.supabase.co",
+      "sb_publishable_SScDCEHovc68ITiEUu6lCg_mHPe2oaI",
+      { auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: true } }
+    );
+    const email = document.getElementById("email");
+    const code = document.getElementById("code");
+    const send = document.getElementById("send");
+    const verify = document.getElementById("verify");
+    const message = document.getElementById("message");
+
+    client.auth.getSession().then(({ data }) => {
+      if (data.session) window.location.replace("./");
+    });
+
+    code.addEventListener("input", () => {
+      code.value = code.value.replace(/\D/g, "").slice(0, 8);
+    });
+
+    send.addEventListener("click", async () => {
+      const address = email.value.trim();
+      if (!address || !address.includes("@")) {
+        message.textContent = "Please enter your email address first.";
+        email.focus();
+        return;
+      }
+      send.disabled = true;
+      message.textContent = "Sending your code…";
+      const { error } = await client.auth.signInWithOtp({
+        email: address,
+        options: { shouldCreateUser: true },
+      });
+      send.disabled = false;
+      message.textContent = error
+        ? "We couldn't send the code. Please try again."
+        : "Code sent! Enter the newest code from your email below.";
+      if (!error) code.focus();
+    });
+
+    verify.addEventListener("click", async () => {
+      const address = email.value.trim();
+      const token = code.value.trim();
+      if (!address || !address.includes("@")) {
+        message.textContent = "Please enter the same email address first.";
+        email.focus();
+        return;
+      }
+      if (!/^\d{6,8}$/.test(token)) {
+        message.textContent = "Please enter the 6–8 digit code from your newest email.";
+        code.focus();
+        return;
+      }
+      verify.disabled = true;
+      message.textContent = "Signing you in…";
+      const { error } = await client.auth.verifyOtp({ email: address, token, type: "email" });
+      if (error) {
+        verify.disabled = false;
+        message.textContent = "That code didn't work or expired. Please send a fresh one.";
+        return;
+      }
+      message.textContent = "Signed in! Opening your tracker…";
+      window.location.replace("./");
+    });
+  </script>
+  <script>
+    if ("serviceWorker" in navigator) {
+      window.addEventListener("load", () => navigator.serviceWorker.register("./service-worker.js").catch(() => {}));
+    }
+  </script>
+</body>
+</html>
+
