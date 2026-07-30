@@ -2079,6 +2079,14 @@ function GlowUpTracker() {
     setSettingsMessage(error ? "Those settings couldn't be saved." : "Settings saved privately ✨");
   };
 
+  const updatePreference = (patch) => {
+    setPreferences((current) => {
+      const next = { ...current, ...patch };
+      savePreferences(next);
+      return next;
+    });
+  };
+
   const saveAccountType = async (nextType) => {
     if (!user || !["little", "caretaker"].includes(nextType)) return;
     setSettingsMessage("Switching your account home…");
@@ -3751,7 +3759,7 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: preferences.nickname_style === "baby" ? "linear-gradient(145deg,#FFF0FA,#EAF8FF 55%,#FFF8D9)" : "#FFF9FD", border: preferences.nickname_style === "baby" ? "2px solid #D889E7" : "1px solid #E8CCE8", boxShadow: preferences.nickname_style === "baby" ? "0 8px 24px rgba(166,93,193,.16)" : "none" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#8E4EAA" }}>🎨 APPEARANCE</div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontSize: 14, fontWeight: 900, color: "#8E4EAA", cursor: "pointer" }}>
-              <input type="checkbox" checked={preferences.nickname_style === "baby"} onChange={(event) => setPreferences((current) => ({ ...current, nickname_style: event.target.checked ? "baby" : "warm", dino_theme: event.target.checked ? false : current.dino_theme }))} />
+              <input type="checkbox" checked={preferences.nickname_style === "baby"} onChange={(event) => updatePreference({ nickname_style: event.target.checked ? "baby" : "warm", dino_theme: event.target.checked ? false : preferences.dino_theme })} />
               🍼 Baby Mode
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Bigger words, round pill buttons, candy-soft colors, teddy-and-bottle decorations. Changes only the look — not your tasks, privacy, or progress.</div>
@@ -3760,14 +3768,14 @@ function GlowUpTracker() {
               <div style={{ marginTop: 10 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#8E4EAA" }}>VOICE</div>
                 <div style={{ display: "flex", gap: 7, marginTop: 6 }}>
-                  <button type="button" onClick={() => setPreferences((current) => ({ ...current, baby_voice: "motherly" }))} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: (preferences.baby_voice || "motherly") === "motherly" ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: (preferences.baby_voice || "motherly") === "motherly" ? "#F7ECFB" : "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>👩 Motherly</button>
-                  <button type="button" onClick={() => setPreferences((current) => ({ ...current, baby_voice: "fatherly" }))} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: preferences.baby_voice === "fatherly" ? "2px solid #4C8FE8" : "1px solid #E3C9EC", background: preferences.baby_voice === "fatherly" ? "#EAF4FF" : "white", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>👨 Fatherly</button>
+                  <button type="button" onClick={() => updatePreference({ baby_voice: "motherly" })} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: (preferences.baby_voice || "motherly") === "motherly" ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: (preferences.baby_voice || "motherly") === "motherly" ? "#F7ECFB" : "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>👩 Motherly</button>
+                  <button type="button" onClick={() => updatePreference({ baby_voice: "fatherly" })} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: preferences.baby_voice === "fatherly" ? "2px solid #4C8FE8" : "1px solid #E3C9EC", background: preferences.baby_voice === "fatherly" ? "#EAF4FF" : "white", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>👨 Fatherly</button>
                 </div>
               </div>
             )}
 
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 14, fontWeight: 900, color: "#477F6D", cursor: "pointer" }}>
-              <input type="checkbox" checked={dinoTheme} onChange={(event) => setPreferences((current) => ({ ...current, dino_theme: event.target.checked, nickname_style: event.target.checked ? "warm" : current.nickname_style }))} />
+              <input type="checkbox" checked={dinoTheme} onChange={(event) => updatePreference({ dino_theme: event.target.checked, nickname_style: event.target.checked ? "warm" : preferences.nickname_style })} />
               🦕 Dino Theme
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Friendly dinosaur decorations on the cozy color theme. Changes only the look.</div>
@@ -3777,7 +3785,7 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🎯 FOCUS MODE</div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontSize: 14, fontWeight: 900, color: "#318C79", cursor: "pointer" }}>
-              <input type="checkbox" checked={!!preferences.focus_mode} onChange={(event) => setPreferences((current) => ({ ...current, focus_mode: event.target.checked }))} />
+              <input type="checkbox" checked={!!preferences.focus_mode} onChange={(event) => updatePreference({ focus_mode: event.target.checked })} />
               🎯 Show one task at a time
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>
@@ -3795,20 +3803,20 @@ function GlowUpTracker() {
               {preferences.reminder_times.map((time, index) => (
                 <label key={index} style={{ display: "grid", gap: 3, minWidth: 0, fontSize: 10.5, fontWeight: 900, color: "#6D5A7C" }}>
                   REMINDER {index + 1}
-                  <input aria-label={`Reminder ${index + 1}`} type="time" value={time} onChange={(event) => setPreferences((current) => ({ ...current, reminder_times: current.reminder_times.map((item, itemIndex) => itemIndex === index ? event.target.value : item) }))} style={{ minWidth: 0, width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 9, border: "1px solid #CFE8E1" }} />
+                  <input aria-label={`Reminder ${index + 1}`} type="time" value={time} onChange={(event) => updatePreference({ reminder_times: preferences.reminder_times.map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} style={{ minWidth: 0, width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 9, border: "1px solid #CFE8E1" }} />
                 </label>
               ))}
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 7 }}>
-              <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet starts<input type="time" value={preferences.quiet_start} onChange={(event) => setPreferences((current) => ({ ...current, quiet_start: event.target.value }))} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
-              <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet ends<input type="time" value={preferences.quiet_end} onChange={(event) => setPreferences((current) => ({ ...current, quiet_end: event.target.value }))} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet starts<input type="time" value={preferences.quiet_start} onChange={(event) => updatePreference({ quiet_start: event.target.value })} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet ends<input type="time" value={preferences.quiet_end} onChange={(event) => updatePreference({ quiet_end: event.target.value })} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
             </div>
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 10, fontSize: 12.5, fontWeight: 700 }}>
-              <input type="checkbox" checked={!!preferences.discreet_notifications} onChange={(event) => setPreferences((current) => ({ ...current, discreet_notifications: event.target.checked }))} />
+              <input type="checkbox" checked={!!preferences.discreet_notifications} onChange={(event) => updatePreference({ discreet_notifications: event.target.checked })} />
               Use discreet lock-screen wording (also skips guardian note previews)
             </label>
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 8, fontSize: 12.5, fontWeight: 700 }}>
-              <input type="checkbox" checked={!!preferences.nurturing_checkins} onChange={(event) => setPreferences((current) => ({ ...current, nurturing_checkins: event.target.checked }))} />
+              <input type="checkbox" checked={!!preferences.nurturing_checkins} onChange={(event) => updatePreference({ nurturing_checkins: event.target.checked })} />
               Show nurturing check-ins
             </label>
             <div style={{ marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>After enabling, this device can receive check-ins and guardian notes even while Plushlist is closed.</div>
@@ -3824,7 +3832,7 @@ function GlowUpTracker() {
               ["simple_mode", "Simpler, quieter layout"],
             ].map(([key, label]) => (
               <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontSize: 12.5, fontWeight: 700 }}>
-                <input type="checkbox" checked={!!preferences[key]} onChange={(event) => setPreferences((current) => ({ ...current, [key]: event.target.checked }))} />
+                <input type="checkbox" checked={!!preferences[key]} onChange={(event) => updatePreference({ [key]: event.target.checked })} />
                 {label}
               </label>
             ))}
