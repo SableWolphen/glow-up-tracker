@@ -420,7 +420,7 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
         @keyframes checkPop { 0% { transform:scale(1) } 40% { transform:scale(1.35) rotate(-8deg) } 70% { transform:scale(0.92) rotate(4deg) } 100% { transform:scale(1) rotate(0) } }
         @keyframes demoPop { 0% { transform:scale(.88);opacity:0 } 65% { transform:scale(1.05);opacity:1 } 100% { transform:scale(1);opacity:1 } }
         @keyframes demoSparkle { 0%,100% { transform:rotate(-8deg) scale(1) } 50% { transform:rotate(8deg) scale(1.18) } }
-        .plush-feature-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:22px }
+        .plush-feature-grid { display:grid;grid-template-columns:repeat(2,1fr);gap:22px }
         .landing-demo-task:hover { border-color:#D9A6E3 !important; transform:translateY(-1px) }
         .landing-demo-task:focus-visible { outline:3px solid #E7B8F0;outline-offset:2px }
         @media(max-width:800px){.plush-feature-grid{grid-template-columns:1fr}}
@@ -435,7 +435,7 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
       <section style={{ padding: "40px 28px 20px", textAlign: "center" }}>
         <span style={{ display: "inline-block", fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: colors.orchid, background: "#F9E4F7", padding: "6px 16px", borderRadius: 999, marginBottom: 22 }}>FOR SOFT DAYS AND STRUCTURED ONES</span>
         <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: "clamp(38px,6vw,64px)", fontWeight: 800, lineHeight: 1.05, margin: "0 0 18px" }}>Little tasks.<br/><span style={{ color: colors.orchid }}>Big comfort.</span></h1>
-        <p style={{ fontSize: 18, color: colors.soft, maxWidth: 510, margin: "0 auto 30px", lineHeight: 1.6 }}>Plushlist turns your routines, workouts, and self-care into one gentle private checklist—with a soft place to land when things feel like too much.</p>
+        <p style={{ fontSize: 18, color: colors.soft, maxWidth: 510, margin: "0 auto 30px", lineHeight: 1.6 }}>Plushlist turns your routines, workouts, and self-care into one gentle private checklist — with a soft place to land, and a trusted person to invite in, whenever you want one.</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={() => setShowSignIn(true)} style={{ background: colors.orchid, color: "white", border: 0, padding: "15px 30px", borderRadius: 999, fontWeight: 800, fontSize: 16, cursor: "pointer", boxShadow: "0 12px 24px -10px rgba(185,95,206,.6)" }}>Start your list</button>
           <button onClick={() => document.getElementById("landing-features")?.scrollIntoView({ behavior: "smooth" })} style={{ background: "transparent", color: colors.plum, border: `2px solid ${colors.line}`, padding: "13px 26px", borderRadius: 999, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>See how it works</button>
@@ -525,9 +525,10 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
         </div>
         <div className="plush-feature-grid">
           {[
+            ["💛","A trusted person, if you want one","Invite a Guardian to gently check in — they see only what you allow, can send an encouraging note, and never anything more."],
+            ["🌱","Progress that never gets taken away","Badges and streaks for showing up, reflecting, and building habits. A missed day never erases what you've already earned."],
+            ["🎯","One thing at a time","When a full list feels like too much, Focus Mode shows just your next step — bigger, calmer, one decision instead of ten."],
             ["🌙","Rituals that repeat","Build the routines that help you feel steady, then change them whenever your needs change."],
-            ["📈","Progress that glows","Every checkmark fills a soft progress bar—without public streaks or guilt for a slow day."],
-            ["🫶","A private place to land","Each account has its own list. Only a guardian you invite can view your progress."],
           ].map(([icon,title,text]) => (
             <div key={title} style={{ background: "white", border: `1px solid ${colors.line}`, borderRadius: 24, padding: "30px 26px", boxShadow: "0 12px 30px -18px rgba(90,50,110,.2)" }}>
               <span style={{ fontSize: 34 }}>{icon}</span><h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 20, margin: "14px 0 10px" }}>{title}</h3><p style={{ color: colors.soft, fontSize: 14.5, lineHeight: 1.6, margin: 0 }}>{text}</p>
