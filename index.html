@@ -695,8 +695,6 @@ function GlowUpTracker() {
     dino_theme: false,
     weekly_intention_intro_seen: false,
     focus_mode: false,
-    calm_mode: false,
-    adult_mode: false,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2014,8 +2012,6 @@ function GlowUpTracker() {
       dino_theme: !!nextPreferences.dino_theme,
       weekly_intention_intro_seen: !!nextPreferences.weekly_intention_intro_seen,
       focus_mode: !!nextPreferences.focus_mode,
-      calm_mode: !!nextPreferences.calm_mode,
-      adult_mode: !!nextPreferences.adult_mode,
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from("app_preferences").upsert(row, { onConflict: "user_id" });
@@ -3023,7 +3019,7 @@ function GlowUpTracker() {
   const onboardingTotalSteps = onboardingMode === "guardian" ? 7 : 6;
 
   return (
-    <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : preferences.adult_mode ? "adult-mode" : preferences.calm_mode ? "calm-mode" : ""} style={{
+    <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
       minHeight: "100vh",
       background: babyMode ? "#FFF0FA" : "#FFF6FB",
       backgroundImage: preferences.simple_mode ? "none" : babyMode ? `
@@ -3098,21 +3094,6 @@ function GlowUpTracker() {
         .baby-mode .baby-mode-welcome {
           display: block;
         }
-        .adult-mode {
-          filter: saturate(0.4) brightness(0.99);
-        }
-        .adult-mode h1, .adult-mode h2 {
-          letter-spacing: normal !important;
-        }
-        .adult-mode .plush-mascot {
-          opacity: 0.85;
-        }
-        .adult-mode div[style*="border-radius: 20"] {
-          border-radius: 8px !important;
-        }
-        .calm-mode {
-          filter: saturate(0.7);
-        }
       `}</style>
       {preferences.reduced_motion && <style>{`*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}`}</style>}
       {weeklyKickoffOpen && (
@@ -3176,17 +3157,17 @@ function GlowUpTracker() {
       )}
       {celebrationOpen && (
         <div role="dialog" aria-modal="true" aria-labelledby="day-complete-title" onClick={() => setCelebrationOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
-          {!preferences.reduced_motion && !preferences.calm_mode && ["💛","✨","💜","⭐","🎀","✨","💛","🌟","💜","✨","⭐","🎀"].map((piece, index) => (
+          {!preferences.reduced_motion && ["💛","✨","💜","⭐","🎀","✨","💛","🌟","💜","✨","⭐","🎀"].map((piece, index) => (
             <span key={index} className="celebration-confetti" style={{ left: `${5 + index * 8}%`, animationDelay: `${(index % 5) * 0.12}s`, fontSize: `${18 + index % 3 * 6}px` }}>{piece}</span>
           ))}
           <div onClick={(event) => event.stopPropagation()} style={{ position: "relative", zIndex: 62, width: "min(100%, 390px)", padding: "22px 20px", borderRadius: 26, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
-            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion && !preferences.calm_mode} />
-            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{preferences.calm_mode ? "Everything's done for today" : "100% essentials complete! ✨"}</div>
+            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} />
+            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>100% essentials complete! ✨</div>
             <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.55, color: "#6B5A7D" }}>
               You cared for every required task today. Bonus items are still optional—this day already counts.
             </div>
             <div style={{ marginTop: 11, padding: "8px 10px", borderRadius: 12, background: "#FFFFFFAA", color: "#318C79", fontWeight: 900 }}>
-              {preferences.calm_mode ? "You showed up for yourself today 💛" : `🔥 ${currentCompleteStreak}-day complete streak`}
+              🔥 {currentCompleteStreak}-day complete streak
             </div>
             <button type="button" onClick={() => setCelebrationOpen(false)} style={{ marginTop: 14, padding: "10px 16px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Celebrate my win 💛</button>
           </div>
@@ -3282,7 +3263,7 @@ function GlowUpTracker() {
         </div>
       )}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "visible" }}>
-        {((preferences.simple_mode || preferences.adult_mode || preferences.calm_mode) ? [] : (babyMode ? [
+        {(preferences.simple_mode ? [] : (babyMode ? [
           { e: "🧸", top: "1%", left: "3%", size: 58 }, { e: "🍼", top: "3%", left: "82%", size: 58 },
           { e: "🫧", top: "10%", left: "20%", size: 38 }, { e: "🐥", top: "15%", left: "72%", size: 48 },
           { e: "🌈", top: "22%", left: "4%", size: 48 }, { e: "🧸", top: "29%", left: "86%", size: 54 },
@@ -3568,34 +3549,18 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: preferences.nickname_style === "baby" ? "linear-gradient(145deg,#FFF0FA,#EAF8FF 55%,#FFF8D9)" : "#FFF9FD", border: preferences.nickname_style === "baby" ? "2px solid #D889E7" : "1px solid #E8CCE8", boxShadow: preferences.nickname_style === "baby" ? "0 8px 24px rgba(166,93,193,.16)" : "none" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#8E4EAA" }}>🎨 APPEARANCE</div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontSize: 14, fontWeight: 900, color: "#8E4EAA", cursor: "pointer" }}>
-              <input type="checkbox" checked={preferences.nickname_style === "baby"} onChange={(event) => setPreferences((current) => ({ ...current, nickname_style: event.target.checked ? "baby" : "warm", dino_theme: event.target.checked ? false : current.dino_theme, adult_mode: event.target.checked ? false : current.adult_mode, calm_mode: event.target.checked ? false : current.calm_mode }))} />
+              <input type="checkbox" checked={preferences.nickname_style === "baby"} onChange={(event) => setPreferences((current) => ({ ...current, nickname_style: event.target.checked ? "baby" : "warm", dino_theme: event.target.checked ? false : current.dino_theme }))} />
               🍼 Baby Mode
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Bigger words, round pill buttons, candy-soft colors, teddy-and-bottle decorations. Changes only the look — not your tasks, privacy, or progress.</div>
             {preferences.nickname_style === "baby" && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#FFFFFFB8", color: "#A65DC1", fontWeight: 900, textAlign: "center" }}>🧸 Baby Mode preview is on! 🫧</div>}
 
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 14, fontWeight: 900, color: "#477F6D", cursor: "pointer" }}>
-              <input type="checkbox" checked={dinoTheme} onChange={(event) => setPreferences((current) => ({ ...current, dino_theme: event.target.checked, nickname_style: event.target.checked ? "warm" : current.nickname_style, adult_mode: event.target.checked ? false : current.adult_mode, calm_mode: event.target.checked ? false : current.calm_mode }))} />
+              <input type="checkbox" checked={dinoTheme} onChange={(event) => setPreferences((current) => ({ ...current, dino_theme: event.target.checked, nickname_style: event.target.checked ? "warm" : current.nickname_style }))} />
               🦕 Dino Theme
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Friendly dinosaur decorations on the cozy color theme. Changes only the look.</div>
             {dinoTheme && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#ECFFF5", color: "#318C79", fontWeight: 900, textAlign: "center" }}>🦕 Dino Theme preview is on! ✨</div>}
-
-            <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 14, fontWeight: 900, color: "#4A5568", cursor: "pointer" }}>
-              <input type="checkbox" checked={!!preferences.adult_mode} onChange={(event) => setPreferences((current) => ({ ...current, adult_mode: event.target.checked, nickname_style: event.target.checked ? "warm" : current.nickname_style, dino_theme: event.target.checked ? false : current.dino_theme, calm_mode: event.target.checked ? false : current.calm_mode }))} />
-              🧭 Adult / Minimal Mode
-            </label>
-            <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>A quieter, more muted look with no plush decorations and plainer wording. Just a clean tracker.</div>
-            {preferences.adult_mode && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#EEF1F5", color: "#4A5568", fontWeight: 900, textAlign: "center" }}>🧭 Minimal Mode is on</div>}
-
-            <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 12, fontSize: 14, fontWeight: 900, color: "#4C7A8C", cursor: "pointer" }}>
-              <input type="checkbox" checked={!!preferences.calm_mode} onChange={(event) => setPreferences((current) => ({ ...current, calm_mode: event.target.checked, nickname_style: event.target.checked ? "warm" : current.nickname_style, dino_theme: event.target.checked ? false : current.dino_theme, adult_mode: event.target.checked ? false : current.adult_mode }))} />
-              🕊️ Calm Mode
-            </label>
-            <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>
-              A lower-pressure default: no streak numbers front and center, no color-coded progress calendar, softer language around missed days. This isn't a clinical or treatment feature — just a calmer option some people prefer.
-            </div>
-            {preferences.calm_mode && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#EAF6F8", color: "#4C7A8C", fontWeight: 900, textAlign: "center" }}>🕊️ Calm Mode is on</div>}
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
@@ -4175,9 +4140,7 @@ function GlowUpTracker() {
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>🧸 WELCOME BACK</div>
                 <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#6B5A3D" }}>
-                  {preferences.adult_mode
-                    ? `It's been ${returnGapDays} days since your last visit. Pick up whenever you're ready.`
-                    : `It's been ${returnGapDays} days — no pressure at all. Just pick one small thing to restart with, whenever you're ready. 💛`}
+                  It's been {returnGapDays} days — no pressure at all. Just pick one small thing to restart with, whenever you're ready. 💛
                 </div>
               </div>
               <button type="button" onClick={() => setReturnBannerDismissed(true)} aria-label="Dismiss welcome back message" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
@@ -4260,7 +4223,7 @@ function GlowUpTracker() {
             <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
             </div>
-            {preferences.nurturing_checkins && !preferences.adult_mode && (
+            {preferences.nurturing_checkins && (
               <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
                 {doneCount > 0 ? `You have already finished ${doneCount} ${doneCount === 1 ? "thing" : "things"}—lovely progress, sweetheart. 💛` : "A soft start still counts, honey. Pick one small essential when you're ready. 💛"}
               </div>
@@ -4355,7 +4318,7 @@ function GlowUpTracker() {
               </>
             )}
             {pct === 100 && (
-              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>{preferences.calm_mode ? "Day complete 💜" : "Day complete — proud of you 💜"}</div>
+              <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Day complete — proud of you 💜</div>
             )}
           </div>
         )}
@@ -4479,8 +4442,8 @@ function GlowUpTracker() {
         <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📅 {preferences.calm_mode ? "CALENDAR" : "PROGRESS CALENDAR"}</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>{preferences.calm_mode ? "A purple dot means you saved a private reflection — tap a past day to open it." : "Darker means more completed that day. A purple dot means you saved a private reflection — tap a past day to open it."}</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📅 PROGRESS CALENDAR</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Darker means more completed that day. A purple dot means you saved a private reflection — tap a past day to open it.</div>
             </div>
             <div style={{ display: "flex", gap: 5 }}>
               <button type="button" aria-label="Previous month" onClick={() => {
@@ -4506,11 +4469,9 @@ function GlowUpTracker() {
               const isFutureDate = date > period.date;
               const isSelectedDate = date === selectedProgressDate;
               const pct = dayCompletionPct(date);
-              const bg = preferences.calm_mode
-                ? (isSelectedDate ? "#F4E8FA" : "rgba(255,255,255,0.82)")
-                : (isSelectedDate ? "#F4E8FA" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA");
-              const textColor = preferences.calm_mode ? "#6D5A7C" : (isFutureDate ? "#C7BBCF" : pct >= 50 ? "#FFFFFF" : "#6D5A7C");
-              return <button key={date} type="button" disabled={isFutureDate} title={preferences.calm_mode || pct === null ? undefined : `${pct}% complete`} onClick={() => {
+              const bg = isSelectedDate ? "#F4E8FA" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+              const textColor = isFutureDate ? "#C7BBCF" : pct >= 50 ? "#FFFFFF" : "#6D5A7C";
+              return <button key={date} type="button" disabled={isFutureDate} title={pct === null ? undefined : `${pct}% complete`} onClick={() => {
                 if (isFutureDate) return;
                 setSelectedProgressDate(date);
                 if (date === period.date) setActive("daily");
@@ -4520,7 +4481,6 @@ function GlowUpTracker() {
               </button>;
             })}
           </div>
-          {!preferences.calm_mode && (
           <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>
             Less
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
@@ -4529,7 +4489,6 @@ function GlowUpTracker() {
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
             More
           </div>
-          )}
         </div>
         </>}
         </div>
