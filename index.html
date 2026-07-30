@@ -3588,9 +3588,11 @@ function GlowUpTracker() {
             </div>
           </div>
         )}
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
+          <button type="button" aria-label="Previous card" onClick={() => setTodayCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setTodayCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 0 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 0 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Schedule</button>
           <button type="button" onClick={() => setTodayCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 1 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 1 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✅ Tasks</button>
+          <button type="button" aria-label="Next card" onClick={() => setTodayCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
           onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; }}
@@ -3745,9 +3747,11 @@ function GlowUpTracker() {
         </>}
 
         {dashboard === "week" && <>
-        <div style={{ display: "flex", gap: 6, marginBottom: 8 }}>
+        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
+          <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setWeekCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 0 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 0 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 0 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✨ Whole-week progress</button>
           <button type="button" onClick={() => setWeekCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 1 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 1 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 1 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>📅 Progress calendar</button>
+          <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
           onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; }}
