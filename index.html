@@ -760,6 +760,7 @@ function GlowUpTracker() {
   }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
   const [collectionOpen, setCollectionOpen] = useState(false);
+  const [collectionTab, setCollectionTab] = useState("mascot");
   const [collectionLoadedFor, setCollectionLoadedFor] = useState(null);
   const [mascotCollection, setMascotCollection] = useState({
     bestStreak: 0,
@@ -876,6 +877,9 @@ function GlowUpTracker() {
       const unlockedIds = [...new Set(["classic", ...serverIds, ...savedIds])].filter((id) =>
         MASCOT_OUTFITS.some((outfit) => outfit.id === id)
       );
+      const savedBadgeIds = Array.isArray(saved?.earnedBadgeIds) ? saved.earnedBadgeIds : [];
+      const serverBadgeIds = Array.isArray(row?.earned_badge_ids) ? row.earned_badge_ids : [];
+      const earnedBadgeIds = [...new Set([...serverBadgeIds, ...savedBadgeIds])];
       const selectedId = MASCOT_OUTFITS.some((outfit) => outfit.id === row?.selected_mascot)
         ? row.selected_mascot
         : MASCOT_OUTFITS.some((outfit) => outfit.id === saved?.selectedId)
@@ -887,6 +891,7 @@ function GlowUpTracker() {
         bestVisitStreak: Math.max(0, Number(row?.best_visit_streak) || 0),
         lastVisitDate: row?.last_visit_date || "",
         unlockedIds,
+        earnedBadgeIds,
         selectedId,
         celebrationSound: row?.celebration_sound !== false && saved?.celebrationSound !== false,
         lastCelebratedDate: row?.last_celebrated_date || saved?.lastCelebratedDate || "",
@@ -898,6 +903,7 @@ function GlowUpTracker() {
         await supabase.from("user_achievements").update({
           best_care_streak: next.bestStreak,
           unlocked_ids: next.unlockedIds,
+          earned_badge_ids: next.earnedBadgeIds,
           selected_mascot: next.selectedId,
           celebration_sound: next.celebrationSound,
           last_celebrated_date: next.lastCelebratedDate || null,
@@ -2884,10 +2890,51 @@ function GlowUpTracker() {
   const unlockedOutfits = MASCOT_OUTFITS.filter((outfit) => unlockedIdSet.has(outfit.id));
   const selectedOutfit = unlockedOutfits.find((outfit) => outfit.id === mascotCollection.selectedId) || MASCOT_OUTFITS[0];
 
+  const BADGE_DEFS = [
+    { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete a full caring day.", check: () => savedBestStreak >= 1 },
+    { id: "one_week", badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", check: () => savedBestStreak >= 7 },
+    { id: "two_weeks", badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", check: () => savedBestStreak >= 14 },
+    { id: "one_month", badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", check: () => savedBestStreak >= 30 },
+    { id: "two_months", badge: "💎", name: "Two Months Strong", hint: "Reach a 60-day caring streak.", check: () => savedBestStreak >= 60 },
+    { id: "hundred_days", badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", check: () => savedBestStreak >= 100 },
+    { id: "two_hundred_days", badge: "🎊", name: "Two Hundred Days", hint: "Reach a 200-day caring streak.", check: () => savedBestStreak >= 200 },
+    { id: "one_year", badge: "🏆", name: "One Year Strong", hint: "Reach a 365-day caring streak.", check: () => savedBestStreak >= 365 },
+    { id: "getting_started", badge: "👣", name: "Getting Started", hint: "Open Plushlist for the first time.", check: () => mascotCollection.bestVisitStreak >= 1 },
+    { id: "regular_visitor", badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", check: () => mascotCollection.bestVisitStreak >= 7 },
+    { id: "devoted_visitor", badge: "🌙", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", check: () => mascotCollection.bestVisitStreak >= 30 },
+    { id: "sixty_visitor", badge: "💫", name: "60-Day Visitor", hint: "Open Plushlist 60 days in a row.", check: () => mascotCollection.bestVisitStreak >= 60 },
+    { id: "hundred_visitor", badge: "💯", name: "100-Day Visitor", hint: "Open Plushlist 100 days in a row.", check: () => mascotCollection.bestVisitStreak >= 100 },
+    { id: "first_reflection", badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", check: () => reflectionDates.length >= 1 },
+    { id: "reflection_habit", badge: "✍️", name: "Reflection Habit", hint: "Write 10 private reflections.", check: () => reflectionDates.length >= 10 },
+    { id: "reflection_devotee", badge: "📖", name: "Reflection Devotee", hint: "Write 30 private reflections.", check: () => reflectionDates.length >= 30 },
+    { id: "reflection_sage", badge: "📚", name: "Reflection Sage", hint: "Write 100 private reflections.", check: () => reflectionDates.length >= 100 },
+    { id: "intention_setter", badge: "📮", name: "Intention Setter", hint: "Write a reflection on a Sunday.", check: () => reflectionDates.some((date) => dayIdForDate(date) === "sun") },
+    { id: "guardian_connected", badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", check: () => ownedSupportLinks.length >= 1 },
+    { id: "two_guardians", badge: "🧑‍🤝‍🧑", name: "Two Guardians", hint: "Add two trusted Guardians.", check: () => ownedSupportLinks.length >= 2 },
+    { id: "habit_starter", badge: "🥇", name: "Habit Starter", hint: "Create your first build or reduce habit.", check: () => habitTasks.length >= 1 },
+    { id: "habit_gardener", badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", check: () => habitTasks.some((item) => item.stats.earnedReward) },
+    { id: "habit_collector", badge: "🌻", name: "Habit Collector", hint: "Earn badges on 3 different habits.", check: () => habitTasks.filter((item) => item.stats.earnedReward).length >= 3 },
+    { id: "full_grown", badge: "🌳", name: "Full Grown", hint: "Reach a 30-day streak on any single habit.", check: () => habitTasks.some((item) => item.stats.best >= 30) },
+    { id: "habit_builder", badge: "🎯", name: "Habit Builder", hint: "Earn a badge on a habit you're building.", check: () => habitTasks.some((item) => item.habitType === "build" && item.stats.earnedReward) },
+    { id: "habit_reducer", badge: "🛡️", name: "Habit Reducer", hint: "Earn a badge on a habit you're reducing.", check: () => habitTasks.some((item) => item.habitType === "reduce" && item.stats.earnedReward) },
+    { id: "organizer", badge: "📋", name: "Organizer", hint: "Have 10 tasks set up.", check: () => trackerTasks.length >= 10 },
+    { id: "big_planner", badge: "🧩", name: "Big Planner", hint: "Have 25 tasks set up.", check: () => trackerTasks.length >= 25 },
+    { id: "schedule_setter", badge: "🗓️", name: "Schedule Setter", hint: "Set up a schedule for one day.", check: () => personalSchedules.length >= 1 },
+    { id: "full_week_scheduled", badge: "📅", name: "Full Week Scheduled", hint: "Set up a schedule for all 7 days.", check: () => personalSchedules.length >= 7 },
+    { id: "personalizer", badge: "🎨", name: "Personalizer", hint: "Try Baby Mode or Dino Theme.", check: () => babyMode || dinoTheme },
+    { id: "reminder_ready", badge: "🔔", name: "Reminder Ready", hint: "Turn on push notifications.", check: () => !!preferences.notifications_enabled },
+    { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
+    { id: "perfect_week", badge: "✨", name: "Perfect Week", hint: "Reach 100% for the whole week.", check: () => weeklyOverallPct === 100 },
+    { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
+  ];
+  const newlyEarnedBadgeIds = BADGE_DEFS.filter((item) => item.check()).map((item) => item.id);
+  const earnedBadgeIdSet = new Set([...(mascotCollection.earnedBadgeIds || []), ...newlyEarnedBadgeIds]);
+
   const saveMascotCollection = (nextCollection) => {
     const normalized = {
       ...nextCollection,
       unlockedIds: [...new Set(["classic", ...(nextCollection.unlockedIds || [])])],
+      earnedBadgeIds: [...new Set(nextCollection.earnedBadgeIds || [])],
     };
     setMascotCollection(normalized);
     if (user) {
@@ -2899,6 +2946,7 @@ function GlowUpTracker() {
         last_visit_date: normalized.lastVisitDate || null,
         best_care_streak: normalized.bestStreak,
         unlocked_ids: normalized.unlockedIds,
+        earned_badge_ids: normalized.earnedBadgeIds,
         selected_mascot: normalized.selectedId,
         celebration_sound: normalized.celebrationSound,
         last_celebrated_date: normalized.lastCelebratedDate || null,
@@ -2927,6 +2975,24 @@ function GlowUpTracker() {
     mascotCollection.bestStreak,
     (mascotCollection.unlockedIds || []).join("|"),
     newlyEarnedIds.join("|"),
+  ]);
+
+  useEffect(() => {
+    if (!user || collectionLoadedFor !== user.id) return;
+    const currentBadgeIds = mascotCollection.earnedBadgeIds || [];
+    const badgesChanged = newlyEarnedBadgeIds.some((id) => !currentBadgeIds.includes(id));
+    if (!badgesChanged) return;
+    saveMascotCollection({
+      ...mascotCollection,
+      bestStreak: Math.max(mascotCollection.bestStreak, currentUnlockProgress),
+      unlockedIds: [...unlockedIdSet],
+      earnedBadgeIds: [...earnedBadgeIdSet],
+    });
+  }, [
+    user?.id,
+    collectionLoadedFor,
+    newlyEarnedBadgeIds.join("|"),
+    (mascotCollection.earnedBadgeIds || []).join("|"),
   ]);
 
   useEffect(() => {
@@ -3281,7 +3347,7 @@ function GlowUpTracker() {
                 As you check things off, your plush mascot earns new outfits and badges — for showing up day after day, for building a good habit, or for gently reducing one you're working on.
               </p>
               <p style={{ marginTop: 8, color: "#6B5A7D", lineHeight: 1.55 }}>
-                Missing a day never takes anything away. You can see what you've unlocked (and what's next) anytime from the 🏅 Mascot Collection.
+                Missing a day never takes anything away. You can see what you've unlocked (and what's next) anytime from 🏅 Rewards.
               </p>
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 5) || (onboardingMode === "guardian" && onboardingStep === 6)) && <>
@@ -3485,7 +3551,7 @@ function GlowUpTracker() {
             ❓ {helpOpen ? "Close help" : "Help"}
           </button>
           {!isCaretakerOnlyAccount && <button type="button" onClick={() => setCollectionOpen((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #D9A64C66", background: collectionOpen ? "#FFF6D9" : "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            🏅 {collectionOpen ? "Close collection" : "Mascot collection"}
+            🏅 {collectionOpen ? "Close rewards" : "Rewards"}
           </button>}
 
         </div>
@@ -3515,7 +3581,7 @@ function GlowUpTracker() {
         )}
 
         {collectionOpen && !isCaretakerOnlyAccount && (
-          <ToolPanel title="Mascot collection" onClose={() => setCollectionOpen(false)}>
+          <ToolPanel title="Rewards" onClose={() => setCollectionOpen(false)}>
           <div style={{ marginBottom: 18, padding: 17, borderRadius: 20, background: "linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,245,218,.8))", border: "1px solid #E9C96E", boxShadow: "0 10px 28px rgba(166,109,20,.11)" }}>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
               <PlushMascot outfit={selectedOutfit} size={132} />
@@ -3528,12 +3594,18 @@ function GlowUpTracker() {
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 9 }}>
                   <span style={{ padding: "5px 9px", borderRadius: 999, background: "#FFF4CF", color: "#94600D", fontWeight: 900, fontSize: 11.5 }}>👋 Showing up: {mascotCollection.visitStreak} now · {mascotCollection.bestVisitStreak} best</span>
                   <span style={{ padding: "5px 9px", borderRadius: 999, background: "#F3E8FA", color: "#8E4EAA", fontWeight: 900, fontSize: 11.5 }}>🫶 Care: {currentCompleteStreak} now · {savedBestStreak} best</span>
-                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#EAF8F4", color: "#318C79", fontWeight: 900, fontSize: 11.5 }}>✨ {unlockedOutfits.length}/{MASCOT_OUTFITS.length} unlocked</span>
+                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#EAF8F4", color: "#318C79", fontWeight: 900, fontSize: 11.5 }}>✨ {unlockedOutfits.length}/{MASCOT_OUTFITS.length} outfits · {earnedBadgeIdSet.size}/{BADGE_DEFS.length} badges</span>
                 </div>
                 <div style={{ marginTop: 7, fontSize: 10.5, color: "#8C6B9E" }}>Opening Plushlist once in a Chicago calendar day counts as showing up. Missing a day restarts the current number, but your best and unlocked rewards are kept.</div>
               </div>
             </div>
 
+            <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
+              <button type="button" onClick={() => setCollectionTab("mascot")} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: collectionTab === "mascot" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "mascot" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🧸 Mascot Closet</button>
+              <button type="button" onClick={() => setCollectionTab("badges")} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: collectionTab === "badges" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "badges" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🏅 Badges</button>
+            </div>
+
+            {collectionTab === "mascot" && (
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(132px,1fr))", gap: 8, marginTop: 14 }}>
               {MASCOT_OUTFITS.map((outfit) => {
                 const unlocked = unlockedIdSet.has(outfit.id);
@@ -3559,32 +3631,25 @@ function GlowUpTracker() {
                 );
               })}
             </div>
+            )}
 
-            <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #EADDB8" }}>
-              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".16em", color: "#A56D14" }}>🏅 BADGES</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Earned for all kinds of caring, not just streaks — showing up, reflecting, connecting, and growing habits. Once earned, a badge is yours forever.</div>
+            {collectionTab === "badges" && (
+            <div style={{ marginTop: 14 }}>
+              <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Earned for all kinds of caring, not just streaks — showing up, reflecting, connecting, organizing, and growing habits. Once earned, a badge is yours forever.</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(112px,1fr))", gap: 8, marginTop: 10 }}>
-                {[
-                  { badge: "🌱", name: "First Step", hint: "Complete a full caring day.", unlocked: savedBestStreak >= 1 },
-                  { badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", unlocked: savedBestStreak >= 7 },
-                  { badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", unlocked: savedBestStreak >= 14 },
-                  { badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", unlocked: savedBestStreak >= 30 },
-                  { badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", unlocked: savedBestStreak >= 100 },
-                  { badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", unlocked: mascotCollection.bestVisitStreak >= 7 },
-                  { badge: "💫", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", unlocked: mascotCollection.bestVisitStreak >= 30 },
-                  { badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", unlocked: reflectionDates.length >= 1 },
-                  { badge: "📚", name: "Reflection Habit", hint: "Write 10 private reflections.", unlocked: reflectionDates.length >= 10 },
-                  { badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", unlocked: ownedSupportLinks.length >= 1 },
-                  { badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", unlocked: habitTasks.some((item) => item.stats.earnedReward) },
-                ].map((item) => (
-                  <div key={item.name} style={{ minHeight: 88, padding: "10px 8px", borderRadius: 13, border: item.unlocked ? "1px solid #E4D7B4" : "1px solid #E9E4E7", background: item.unlocked ? "#FFFFFFC9" : "#F1ECEF", color: item.unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", opacity: item.unlocked ? 1 : .68 }}>
-                    <div style={{ fontSize: 24 }}>{item.unlocked ? item.badge : "🔒"}</div>
-                    <div style={{ marginTop: 3, fontSize: 11, fontWeight: 900 }}>{item.name}</div>
-                    <div style={{ marginTop: 3, fontSize: 9, lineHeight: 1.35 }}>{item.unlocked ? "Earned" : item.hint}</div>
-                  </div>
-                ))}
+                {BADGE_DEFS.map((item) => {
+                  const unlocked = earnedBadgeIdSet.has(item.id);
+                  return (
+                    <div key={item.id} style={{ minHeight: 88, padding: "10px 8px", borderRadius: 13, border: unlocked ? "1px solid #E4D7B4" : "1px solid #E9E4E7", background: unlocked ? "#FFFFFFC9" : "#F1ECEF", color: unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", opacity: unlocked ? 1 : .68 }}>
+                      <div style={{ fontSize: 24 }}>{unlocked ? item.badge : "🔒"}</div>
+                      <div style={{ marginTop: 3, fontSize: 11, fontWeight: 900 }}>{item.name}</div>
+                      <div style={{ marginTop: 3, fontSize: 9, lineHeight: 1.35 }}>{unlocked ? "Earned" : item.hint}</div>
+                    </div>
+                  );
+                })}
               </div>
             </div>
+            )}
 
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 13, paddingTop: 12, borderTop: "1px solid #EADDB8", fontSize: 12.5, fontWeight: 800 }}>
               <input type="checkbox" checked={mascotCollection.celebrationSound} onChange={(event) => saveMascotCollection({ ...mascotCollection, bestStreak: savedBestStreak, unlockedIds: [...unlockedIdSet], celebrationSound: event.target.checked })} />
