@@ -3560,6 +3560,32 @@ function GlowUpTracker() {
               })}
             </div>
 
+            <div style={{ marginTop: 16, paddingTop: 14, borderTop: "1px solid #EADDB8" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".16em", color: "#A56D14" }}>🏅 BADGES</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Earned for all kinds of caring, not just streaks — showing up, reflecting, connecting, and growing habits. Once earned, a badge is yours forever.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(112px,1fr))", gap: 8, marginTop: 10 }}>
+                {[
+                  { badge: "🌱", name: "First Step", hint: "Complete a full caring day.", unlocked: savedBestStreak >= 1 },
+                  { badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", unlocked: savedBestStreak >= 7 },
+                  { badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", unlocked: savedBestStreak >= 14 },
+                  { badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", unlocked: savedBestStreak >= 30 },
+                  { badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", unlocked: savedBestStreak >= 100 },
+                  { badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", unlocked: mascotCollection.bestVisitStreak >= 7 },
+                  { badge: "💫", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", unlocked: mascotCollection.bestVisitStreak >= 30 },
+                  { badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", unlocked: reflectionDates.length >= 1 },
+                  { badge: "📚", name: "Reflection Habit", hint: "Write 10 private reflections.", unlocked: reflectionDates.length >= 10 },
+                  { badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", unlocked: ownedSupportLinks.length >= 1 },
+                  { badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", unlocked: habitTasks.some((item) => item.stats.earnedReward) },
+                ].map((item) => (
+                  <div key={item.name} style={{ minHeight: 88, padding: "10px 8px", borderRadius: 13, border: item.unlocked ? "1px solid #E4D7B4" : "1px solid #E9E4E7", background: item.unlocked ? "#FFFFFFC9" : "#F1ECEF", color: item.unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", opacity: item.unlocked ? 1 : .68 }}>
+                    <div style={{ fontSize: 24 }}>{item.unlocked ? item.badge : "🔒"}</div>
+                    <div style={{ marginTop: 3, fontSize: 11, fontWeight: 900 }}>{item.name}</div>
+                    <div style={{ marginTop: 3, fontSize: 9, lineHeight: 1.35 }}>{item.unlocked ? "Earned" : item.hint}</div>
+                  </div>
+                ))}
+              </div>
+            </div>
+
             <label style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 13, paddingTop: 12, borderTop: "1px solid #EADDB8", fontSize: 12.5, fontWeight: 800 }}>
               <input type="checkbox" checked={mascotCollection.celebrationSound} onChange={(event) => saveMascotCollection({ ...mascotCollection, bestStreak: savedBestStreak, unlockedIds: [...unlockedIdSet], celebrationSound: event.target.checked })} />
               Play a soft chime at 100% (automatically silent during quiet hours)
