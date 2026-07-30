@@ -3328,17 +3328,15 @@ function GlowUpTracker() {
           animation: confettiFall 2.4s linear forwards;
         }
         .baby-mode button {
-          min-height: 42px;
-          border-radius: 999px !important;
-          box-shadow: 0 5px 12px rgba(166,93,193,.12);
+          min-height: 38px;
+          border-radius: 14px;
+          box-shadow: 0 4px 10px rgba(166,93,193,.10);
         }
         .baby-mode input,
         .baby-mode select,
         .baby-mode textarea {
-          min-height: 42px;
-          border-radius: 18px !important;
-          border-width: 2px !important;
-          font-size: 16px;
+          min-height: 38px;
+          border-radius: 14px;
         }
         .baby-mode .baby-shell {
           padding: 10px;
@@ -3568,28 +3566,17 @@ function GlowUpTracker() {
       )}
       <div style={{ position: "absolute", top: 0, left: 0, right: 0, bottom: 0, pointerEvents: "none", zIndex: 0, overflow: "visible" }}>
         {(preferences.simple_mode ? [] : (babyMode ? [
-          { e: "🧸", top: "1%", left: "3%", size: 58 }, { e: "🍼", top: "3%", left: "82%", size: 58 },
-          { e: "🫧", top: "10%", left: "20%", size: 38 }, { e: "🐥", top: "15%", left: "72%", size: 48 },
-          { e: "🌈", top: "22%", left: "4%", size: 48 }, { e: "🧸", top: "29%", left: "86%", size: 54 },
-          { e: "🍼", top: "37%", left: "10%", size: 48 }, { e: "⭐", top: "44%", left: "76%", size: 38 },
-          { e: "🐥", top: "52%", left: "3%", size: 48 }, { e: "🫧", top: "59%", left: "89%", size: 42 },
-          { e: "🧸", top: "68%", left: "14%", size: 54 }, { e: "🌈", top: "76%", left: "82%", size: 48 },
-          { e: "🍼", top: "85%", left: "5%", size: 48 }, { e: "⭐", top: "94%", left: "76%", size: 38 },
+          { e: "🧸", top: "2%", left: "4%", size: 52 }, { e: "🍼", top: "4%", left: "84%", size: 52 },
+          { e: "🌈", top: "24%", left: "6%", size: 42 }, { e: "⭐", top: "30%", left: "88%", size: 34 },
+          { e: "🫧", top: "58%", left: "3%", size: 36 }, { e: "🐥", top: "64%", left: "90%", size: 40 },
+          { e: "🧸", top: "88%", left: "6%", size: 44 }, { e: "🍼", top: "92%", left: "84%", size: 40 },
         ] : dinoTheme ? [
-          { e: "🦕", top: "1%", left: "3%", size: 60 }, { e: "🦖", top: "3%", left: "80%", size: 68 },
-          { e: "🥚", top: "9%", left: "20%", size: 34 }, { e: "🦴", top: "12%", left: "55%", size: 30 },
-          { e: "🌴", top: "17%", left: "88%", size: 44 }, { e: "🦕", top: "21%", left: "8%", size: 50 },
-          { e: "🦖", top: "26%", left: "60%", size: 56 }, { e: "🥚", top: "31%", left: "35%", size: 30 },
-          { e: "🌋", top: "35%", left: "85%", size: 46 }, { e: "🦴", top: "39%", left: "12%", size: 26 },
-          { e: "🦕", top: "43%", left: "70%", size: 54 }, { e: "🌴", top: "47%", left: "2%", size: 40 },
-          { e: "🦖", top: "52%", left: "45%", size: 50 }, { e: "🥚", top: "56%", left: "90%", size: 32 },
-          { e: "🦴", top: "60%", left: "25%", size: 28 }, { e: "🦕", top: "64%", left: "65%", size: 58 },
-          { e: "🌋", top: "68%", left: "6%", size: 42 }, { e: "🦖", top: "73%", left: "82%", size: 52 },
-          { e: "🥚", top: "77%", left: "40%", size: 30 }, { e: "🌴", top: "81%", left: "15%", size: 38 },
-          { e: "🦕", top: "85%", left: "58%", size: 56 }, { e: "🦴", top: "89%", left: "92%", size: 26 },
-          { e: "🦖", top: "93%", left: "30%", size: 48 }, { e: "🌴", top: "97%", left: "75%", size: 36 },
+          { e: "🦕", top: "2%", left: "4%", size: 54 }, { e: "🦖", top: "4%", left: "82%", size: 58 },
+          { e: "🌴", top: "22%", left: "88%", size: 38 }, { e: "🥚", top: "28%", left: "6%", size: 28 },
+          { e: "🦴", top: "56%", left: "4%", size: 26 }, { e: "🦕", top: "60%", left: "86%", size: 46 },
+          { e: "🌋", top: "86%", left: "8%", size: 36 }, { e: "🦖", top: "90%", left: "80%", size: 44 },
         ] : [])).map((d, i) => (
-          <span key={i} style={{ position: "absolute", top: d.top, left: d.left, fontSize: d.size, opacity: 0.55 }}>
+          <span key={i} style={{ position: "absolute", top: d.top, left: d.left, fontSize: d.size, opacity: 0.4 }}>
             {d.e}
           </span>
         ))}
