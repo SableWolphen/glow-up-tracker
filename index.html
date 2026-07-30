@@ -658,6 +658,7 @@ function GlowUpTracker() {
   const [personalSchedules, setPersonalSchedules] = useState([]);
   const [manageSchedule, setManageSchedule] = useState(false);
   const [scheduleEditDayId, setScheduleEditDayId] = useState(null);
+  const [copyToDayIds, setCopyToDayIds] = useState([]);
   const [scheduleDraft, setScheduleDraft] = useState({ entries: [] });
   const [scheduleMessage, setScheduleMessage] = useState("");
   const [settingsOpen, setSettingsOpen] = useState(false);
@@ -1744,6 +1745,29 @@ function GlowUpTracker() {
     setScheduleMessage("Copied this schedule to every day ✨");
   };
 
+  const toggleCopyToDay = (dayId) => {
+    setCopyToDayIds((current) => current.includes(dayId) ? current.filter((id) => id !== dayId) : [...current, dayId]);
+  };
+
+  const copyScheduleToSelectedDays = async () => {
+    if (copyToDayIds.length === 0) {
+      setScheduleMessage("Pick at least one day to copy to first.");
+      return;
+    }
+    const dayLabels = copyToDayIds.map((id) => DAYS.find((item) => item.id === id)?.label || id.toUpperCase()).join(", ");
+    if (!window.confirm(`Copy this schedule to ${dayLabels}? Any existing schedule on ${copyToDayIds.length === 1 ? "that day" : "those days"} will be replaced.`)) return;
+    setScheduleMessage("Copying to selected days…");
+    const rows = copyToDayIds.map((dayId) => buildScheduleRow(dayId, scheduleDraft.entries));
+    const { error } = await supabase.from("tracker_schedules").upsert(rows, { onConflict: "user_id,day_id" });
+    if (error) {
+      setScheduleMessage(`Couldn't copy to those days: ${error.message}`);
+      return;
+    }
+    setPersonalSchedules((items) => [...items.filter((item) => !copyToDayIds.includes(item.day_id)), ...rows]);
+    setCopyToDayIds([]);
+    setScheduleMessage(`Copied this schedule to ${dayLabels} ✨`);
+  };
+
   const addScheduleEntry = () => {
     setScheduleDraft((draft) => ({ entries: [...draft.entries, { id: crypto.randomUUID(), time: "", text: "" }] }));
   };
@@ -2253,6 +2277,7 @@ function GlowUpTracker() {
       : legacyScheduleToEntries(editingSchedule);
     setScheduleDraft({ entries });
     setScheduleMessage("");
+    setCopyToDayIds([]);
   }, [scheduleEditingDayId, personalSchedules]);
 
   const syncNow = async () => {
@@ -3561,6 +3586,23 @@ function GlowUpTracker() {
               <button onClick={savePersonalSchedule} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, cursor: "pointer" }}>Save this day ✨</button>
               <button onClick={copyScheduleToAllDays} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #4C8FE855", background: "#EAF4FF", color: "#2D6BB5", fontWeight: 800, cursor: "pointer" }}>📋 Same every day? Copy to all 7</button>
               {personalSchedules.some((entry) => entry.day_id === scheduleEditingDayId) && <button onClick={clearPersonalSchedule} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 800, cursor: "pointer" }}>Erase this day's schedule</button>}
+            </div>
+            <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E4E9F5" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 900, color: "#4C8FE8", letterSpacing: "0.06em" }}>OR COPY TO JUST A FEW DAYS</div>
+              <div style={{ marginTop: 3, fontSize: 11.5, color: "#6B7C99" }}>Example: pick MON + FRI if those two should match this one.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 6, marginTop: 8 }}>
+                {DAYS.filter((item) => item.id !== scheduleEditingDayId).map((item) => {
+                  const selected = copyToDayIds.includes(item.id);
+                  return (
+                    <button key={item.id} type="button" aria-pressed={selected} onClick={() => toggleCopyToDay(item.id)} style={{ padding: "7px 5px", borderRadius: 9, border: selected ? "2px solid #4C8FE8" : "1px solid #D6DEEE", background: selected ? "#DDEEFF" : "white", color: selected ? "#2D6BB5" : "#6B7C99", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+              <button type="button" onClick={copyScheduleToSelectedDays} disabled={copyToDayIds.length === 0} style={{ marginTop: 9, padding: "8px 12px", borderRadius: 10, border: "1px solid #4C8FE855", background: copyToDayIds.length === 0 ? "#F4F7FC" : "#EAF4FF", color: copyToDayIds.length === 0 ? "#A7B4CC" : "#2D6BB5", fontWeight: 800, cursor: copyToDayIds.length === 0 ? "not-allowed" : "pointer" }}>
+                📋 Copy to {copyToDayIds.length === 0 ? "selected days" : copyToDayIds.map((id) => DAYS.find((d) => d.id === id)?.label).join(", ")}
+              </button>
             </div>
             {scheduleMessage && <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>{scheduleMessage}</div>}
           </div>
