@@ -171,7 +171,7 @@ const REFLECTION_PROMPT_ROTATIONS = {
   thu: ["What do you need more of right now?", "What can you set down for tonight?", "What helped you feel steady today?", "What is one gentle next step for tomorrow?"],
   fri: ["What are you celebrating from this week?", "What helped you get through today?", "What felt fun, comforting, or meaningful?", "What do you want to carry into the weekend?"],
   sat: ["What gave you energy today?", "What comforted you today?", "What did you enjoy, even a little?", "What would make tomorrow kinder?"],
-  sun: ["What are three wins from this week?", "What are you ready to leave behind from this week?", "What support would help next week?", "What is one intention for the week ahead?"],
+  sun: ["What are three wins from this week?", "What are you ready to leave behind from this week?", "What support would help next week?", "What's one thing about this week you want to remember?"],
 };
 function reflectionPromptForDay(dayId, date, fallback) {
   const prompts = REFLECTION_PROMPT_ROTATIONS[dayId];
@@ -688,6 +688,10 @@ function GlowUpTracker() {
   const [onboardingMessage, setOnboardingMessage] = useState("");
   const [privateNote, setPrivateNote] = useState("");
   const [lastWeekReflection, setLastWeekReflection] = useState("");
+  const [weeklyIntentionText, setWeeklyIntentionText] = useState("");
+  const [weeklyIntentionEditing, setWeeklyIntentionEditing] = useState(false);
+  const [weeklyIntentionDraft, setWeeklyIntentionDraft] = useState("");
+  const [weeklyIntentionMessage, setWeeklyIntentionMessage] = useState("");
   const [weeklyKickoffOpen, setWeeklyKickoffOpen] = useState(false);
   const [weeklyKickoffNote, setWeeklyKickoffNote] = useState("");
   const [weeklyKickoffMessage, setWeeklyKickoffMessage] = useState("");
@@ -1408,6 +1412,45 @@ function GlowUpTracker() {
       });
     return () => { alive = false; };
   }, [user, selectedProgressDate]);
+
+  useEffect(() => {
+    if (!user) { setWeeklyIntentionText(""); return; }
+    let alive = true;
+    const sundayDate = dateForDayId("sun", period);
+    supabase
+      .from("private_notes")
+      .select("body")
+      .eq("user_id", user.id)
+      .eq("note_date", sundayDate)
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        setWeeklyIntentionText(data?.body || "");
+      });
+    return () => { alive = false; };
+  }, [user, period.weekStart]);
+
+  const saveWeeklyIntentionEdit = async () => {
+    if (!user) return;
+    setWeeklyIntentionMessage("Saving…");
+    const sundayDate = dateForDayId("sun", period);
+    const text = weeklyIntentionDraft.trim();
+    const { error } = await supabase.from("private_notes").upsert({
+      user_id: user.id,
+      note_date: sundayDate,
+      body: text,
+      updated_at: new Date().toISOString(),
+    }, { onConflict: "user_id,note_date" });
+    if (error) {
+      setWeeklyIntentionMessage(`Couldn't save that: ${error.message}`);
+      return;
+    }
+    setWeeklyIntentionText(text);
+    setReflectionDates((dates) => text ? Array.from(new Set([...dates, sundayDate])) : dates.filter((date) => date !== sundayDate));
+    setWeeklyIntentionEditing(false);
+    setWeeklyIntentionMessage("");
+  };
+
 
   useEffect(() => {
     if (!user || dayIdForDate(period.date) !== "sun") { setWeeklyKickoffOpen(false); return; }
@@ -4378,6 +4421,30 @@ function GlowUpTracker() {
             </div>
           </div>
         )}
+
+        <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "#F7ECFB", border: "1px solid #E0C3EC" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
+            {!weeklyIntentionEditing && (
+              <button type="button" onClick={() => { setWeeklyIntentionDraft(weeklyIntentionText); setWeeklyIntentionEditing(true); }} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer", flexShrink: 0 }}>{weeklyIntentionText ? "✏️ Edit" : "＋ Add one"}</button>
+            )}
+          </div>
+          {weeklyIntentionEditing ? (
+            <>
+              <textarea value={weeklyIntentionDraft} onChange={(event) => setWeeklyIntentionDraft(event.target.value)} maxLength={2000} placeholder="Example: Be a little gentler with myself this week." style={{ width: "100%", boxSizing: "border-box", minHeight: 70, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
+              <div style={{ display: "flex", gap: 7, marginTop: 8 }}>
+                <button type="button" onClick={saveWeeklyIntentionEdit} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button>
+                <button type="button" onClick={() => { setWeeklyIntentionEditing(false); setWeeklyIntentionMessage(""); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
+              </div>
+              {weeklyIntentionMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{weeklyIntentionMessage}</div>}
+            </>
+          ) : weeklyIntentionText ? (
+            <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#6B5A7D", whiteSpace: "pre-wrap" }}>{weeklyIntentionText}</div>
+          ) : (
+            <div style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.5, color: "#8C6B9E" }}>You haven't set one for this week yet.</div>
+          )}
+        </div>
+
         <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
           <button type="button" aria-label="Previous card" onClick={() => setTodayCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setTodayCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 0 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 0 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Schedule</button>
