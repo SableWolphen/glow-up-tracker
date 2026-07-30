@@ -1194,18 +1194,21 @@ function GlowUpTracker() {
   useEffect(() => {
     if (!user) { setLongHistory([]); return; }
     let alive = true;
+    const monthStart = `${reflectionCalendarMonth}-01`;
+    const monthStartDate = new Date(`${monthStart}T12:00:00Z`);
+    const monthEnd = new Date(Date.UTC(monthStartDate.getUTCFullYear(), monthStartDate.getUTCMonth() + 1, 0)).toISOString().slice(0, 10);
     supabase
       .from("daily_progress")
       .select("progress_date, completed_keys")
       .eq("user_id", user.id)
-      .gte("progress_date", offsetDate(period.date, -34))
-      .lte("progress_date", period.date)
+      .gte("progress_date", monthStart)
+      .lte("progress_date", monthEnd)
       .then(({ data, error }) => {
         if (!alive || error) return;
         setLongHistory(data || []);
       });
     return () => { alive = false; };
-  }, [user, period.date]);
+  }, [user, reflectionCalendarMonth]);
 
   useEffect(() => {
     if (!user) return;
@@ -2426,14 +2429,13 @@ function GlowUpTracker() {
     todayDailyCoreKeys.every((key) => completedKeysForToday.has(key));
 
   const longHistoryByDate = new Map(longHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
-  const heatmapDays = Array.from({ length: 35 }, (_, index) => {
-    const date = offsetDate(period.date, index - 34);
+  const dayCompletionPct = (date) => {
+    if (date > period.date) return null;
     const requiredKeys = requiredKeysForDate(date);
     const completed = date === period.date ? completedKeysForToday : (longHistoryByDate.get(date) || new Set());
     const doneCountForDate = requiredKeys.filter((key) => completed.has(key)).length;
-    const dayPct = requiredKeys.length ? Math.round((doneCountForDate / requiredKeys.length) * 100) : null;
-    return { date, pct: dayPct };
-  });
+    return requiredKeys.length ? Math.round((doneCountForDate / requiredKeys.length) * 100) : null;
+  };
   const todayEssentialsPercent = todayRequiredKeys.length
     ? Math.round((todayRequiredDone / todayRequiredKeys.length) * 100)
     : 0;
@@ -3702,41 +3704,18 @@ function GlowUpTracker() {
           </div>
         </div>
 
-        <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>LAST 35 DAYS</div>
-          <div style={{ marginTop: 4, fontSize: 12, color: "#8C6B9E" }}>The shape of your effort over time — darker means more completed that day.</div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 5, marginTop: 12 }}>
-            {heatmapDays.map((day) => {
-              const label = new Date(`${day.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
-              const bg = day.pct === null ? "#F2E8F8" : day.pct === 0 ? "#F7EFFA" : day.pct < 50 ? "#E4C6EE" : day.pct < 100 ? "#C77DD6" : "#8E4EAA";
-              return (
-                <div key={day.date} title={`${label}${day.pct === null ? " · nothing scheduled" : ` · ${day.pct}%`}`} onClick={() => { setSelectedProgressDate(day.date); if (day.date === period.date) setActive("daily"); }}
-                  style={{ aspectRatio: "1", borderRadius: 6, background: bg, cursor: "pointer", border: day.date === selectedProgressDate ? "2px solid #4C8FE8" : "1px solid rgba(255,255,255,0.5)" }} />
-              );
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>
-            Less
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
-            More
-          </div>
-        </div>
-
         <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
           <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
             <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📝 REFLECTION CALENDAR</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>A purple dot means you saved a private reflection. Tap a past day to open it.</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📅 PROGRESS CALENDAR</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Darker means more completed that day. A purple dot means you saved a private reflection — tap a past day to open it.</div>
             </div>
             <div style={{ display: "flex", gap: 5 }}>
-              <button type="button" aria-label="Previous reflection month" onClick={() => {
+              <button type="button" aria-label="Previous month" onClick={() => {
                 const previous = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() - 1, 1));
                 setReflectionCalendarMonth(previous.toISOString().slice(0, 7));
               }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
-              <button type="button" aria-label="Next reflection month" disabled={reflectionCalendarMonth >= period.date.slice(0, 7)} onClick={() => {
+              <button type="button" aria-label="Next month" disabled={reflectionCalendarMonth >= period.date.slice(0, 7)} onClick={() => {
                 const next = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() + 1, 1));
                 setReflectionCalendarMonth(next.toISOString().slice(0, 7));
               }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: reflectionCalendarMonth >= period.date.slice(0, 7) ? "not-allowed" : "pointer", opacity: reflectionCalendarMonth >= period.date.slice(0, 7) ? 0.4 : 1 }}>→</button>
@@ -3754,14 +3733,26 @@ function GlowUpTracker() {
               const hasReflection = reflectionDateSet.has(date);
               const isFutureDate = date > period.date;
               const isSelectedDate = date === selectedProgressDate;
-              const canOpenReflection = hasReflection && !isFutureDate;
-              return <button key={date} type="button" disabled={!canOpenReflection} onClick={() => {
-                if (!canOpenReflection) return;
-                setReflectionViewerDate(date);
-              }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : hasReflection ? "1px solid #C992D8" : "1px solid #E9DDEC", background: isSelectedDate ? "#F4E8FA" : "rgba(255,255,255,0.82)", color: !canOpenReflection ? "#C7BBCF" : "#6D5A7C", fontWeight: 800, cursor: canOpenReflection ? "pointer" : "not-allowed", opacity: canOpenReflection ? 1 : 0.5 }}>
-                {number}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: "#A65DC1", fontSize: 12 }}>•</span>}
+              const pct = dayCompletionPct(date);
+              const bg = isSelectedDate ? "#F4E8FA" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+              const textColor = isFutureDate ? "#C7BBCF" : pct >= 50 ? "#FFFFFF" : "#6D5A7C";
+              return <button key={date} type="button" disabled={isFutureDate} title={pct === null ? undefined : `${pct}% complete`} onClick={() => {
+                if (isFutureDate) return;
+                setSelectedProgressDate(date);
+                if (date === period.date) setActive("daily");
+                if (hasReflection) setReflectionViewerDate(date);
+              }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : "1px solid #E9DDEC", background: bg, color: textColor, fontWeight: 800, cursor: isFutureDate ? "not-allowed" : "pointer", opacity: isFutureDate ? 0.5 : 1 }}>
+                {number}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
               </button>;
             })}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>
+            Less
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
+            More
           </div>
         </div>
 
