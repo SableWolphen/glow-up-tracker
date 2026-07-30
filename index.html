@@ -348,6 +348,7 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
       <style>{`
         @import url('https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@400;600;700;800&family=IBM+Plex+Mono:wght@500&display=swap');
         @keyframes plushBob { 0%,100% { transform:translateY(0) rotate(-1.5deg) } 50% { transform:translateY(-10px) rotate(1.5deg) } }
+        @keyframes checkPop { 0% { transform:scale(1) } 40% { transform:scale(1.35) rotate(-8deg) } 70% { transform:scale(0.92) rotate(4deg) } 100% { transform:scale(1) rotate(0) } }
         @keyframes demoPop { 0% { transform:scale(.88);opacity:0 } 65% { transform:scale(1.05);opacity:1 } 100% { transform:scale(1);opacity:1 } }
         @keyframes demoSparkle { 0%,100% { transform:rotate(-8deg) scale(1) } 50% { transform:rotate(8deg) scale(1.18) } }
         .plush-feature-grid { display:grid;grid-template-columns:repeat(3,1fr);gap:22px }
@@ -620,6 +621,7 @@ function GlowUpTracker() {
   const [dragOverTaskKey, setDragOverTaskKey] = useState(null);
   const [editTaskDraft, setEditTaskDraft] = useState(null);
   const [pendingTaskDelete, setPendingTaskDelete] = useState(null);
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const [personalSchedules, setPersonalSchedules] = useState([]);
   const [manageSchedule, setManageSchedule] = useState(false);
   const [scheduleEditDayId, setScheduleEditDayId] = useState(null);
@@ -663,6 +665,12 @@ function GlowUpTracker() {
     lastCelebratedDate: "",
   });
   const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [celebrateKey, setCelebrateKey] = useState(null);
+  const triggerCelebrate = (key) => {
+    setCelebrateKey(key);
+    if (navigator.vibrate) { try { navigator.vibrate(16); } catch (_error) {} }
+    window.setTimeout(() => setCelebrateKey((current) => current === key ? null : current), 550);
+  };
   const [returnGapDays, setReturnGapDays] = useState(0);
   const [returnBannerDismissed, setReturnBannerDismissed] = useState(false);
 
@@ -1408,14 +1416,11 @@ function GlowUpTracker() {
     setTaskMessage(`Added “${task}” inside ${section} ✨`);
   };
 
+  const [recentlyDeletedTask, setRecentlyDeletedTask] = useState(null);
+  const undoDeleteTimer = React.useRef(null);
+
   const deleteTrackerTask = async (taskKey, taskLabel) => {
-    setTaskMessage("Deleting task…");
-    const { error } = await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
-    if (error) {
-      setTaskMessage("Couldn't delete that task.");
-      return;
-    }
-    await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    const taskRow = trackerTasks.find((task) => task.task_key === taskKey);
     setTrackerTasks((tasks) => tasks.filter((task) => task.task_key !== taskKey));
     setDone((current) => {
       const next = { ...current };
@@ -1423,7 +1428,22 @@ function GlowUpTracker() {
       return next;
     });
     setPendingTaskDelete(null);
-    setTaskMessage("Task deleted.");
+    setTaskMessage("");
+    if (undoDeleteTimer.current) window.clearTimeout(undoDeleteTimer.current);
+    setRecentlyDeletedTask(taskRow ? { ...taskRow, label: taskLabel } : null);
+    undoDeleteTimer.current = window.setTimeout(async () => {
+      setRecentlyDeletedTask(null);
+      await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
+      await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    }, 6000);
+  };
+
+  const undoDeleteTask = () => {
+    if (!recentlyDeletedTask) return;
+    if (undoDeleteTimer.current) window.clearTimeout(undoDeleteTimer.current);
+    setTrackerTasks((tasks) => [...tasks, recentlyDeletedTask]);
+    setRecentlyDeletedTask(null);
+    setTaskMessage("Task restored ✨");
   };
 
   const moveTrackerTask = async (taskKey, direction) => {
@@ -2189,7 +2209,7 @@ function GlowUpTracker() {
         : new Set((weeklyHistory.find((entry) => entry.progress_date === targetDate)?.completed_keys) || []);
       const nextKeys = new Set(dateDoneKeys);
       if (nextKeys.has(key)) nextKeys.delete(key);
-      else nextKeys.add(key);
+      else { nextKeys.add(key); triggerCelebrate(key); }
       const completedKeys = [...nextKeys];
       const previousHistory = [...weeklyHistory];
       setWeeklyHistory((entries) => [
@@ -2219,6 +2239,7 @@ function GlowUpTracker() {
     }
 
     const next = !done[key];
+    if (next) triggerCelebrate(key);
     const previousDone = { ...done };
     const nextDone = { ...done, [key]: next };
     if (!next) delete nextDone[key];
@@ -3339,25 +3360,33 @@ function GlowUpTracker() {
           </div>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "#318C79" }}>STEP 3 · EDIT OR DELETE {(newTaskDay === "daily" ? "EVERY DAY" : DAYS.find((day) => day.id === newTaskDay)?.label || newTaskDay.toUpperCase())} TASKS</div>
-            {trackerTasks.filter((task) => task.day_id === newTaskDay).length === 0 ? (
-              <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: "#F4FAF8", color: "#6B7F78", fontSize: 12 }}>No tasks are saved for this list yet. Add one above, or pick a different list in Step 1.</div>
-            ) : (
-              <div style={{ display: "grid", gap: 7, marginTop: 11 }}>
-                {[...trackerTasks]
-                  .filter((task) => task.day_id === newTaskDay)
-                  .sort((a, b) => (a.section || "").localeCompare(b.section || "") || Number(a.sort_order) - Number(b.sort_order))
-                  .map((task) => (
-                      <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: "1px solid #DDEBE7" }}>
-                        <div style={{ flex: "1 1 190px", minWidth: 0 }}>
-                          <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}</div>
-                          <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{task.section || "My tasks"}</div>
+            <input value={taskSearchQuery} onChange={(event) => setTaskSearchQuery(event.target.value)} placeholder="🔎 Search all your tasks by name…" aria-label="Search tasks" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, padding: 9, borderRadius: 10, border: "1px solid #CFE8E1" }} />
+            {(() => {
+              const query = taskSearchQuery.trim().toLowerCase();
+              const isSearching = query.length > 0;
+              const visibleTasks = isSearching
+                ? trackerTasks.filter((task) => task.task.toLowerCase().includes(query))
+                : trackerTasks.filter((task) => task.day_id === newTaskDay);
+              if (visibleTasks.length === 0) {
+                return <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: "#F4FAF8", color: "#6B7F78", fontSize: 12 }}>{isSearching ? "No tasks match that search." : "No tasks are saved for this list yet. Add one above, or pick a different list in Step 1."}</div>;
+              }
+              return (
+                <div style={{ display: "grid", gap: 7, marginTop: 11 }}>
+                  {[...visibleTasks]
+                    .sort((a, b) => (a.section || "").localeCompare(b.section || "") || Number(a.sort_order) - Number(b.sort_order))
+                    .map((task) => (
+                        <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: "1px solid #DDEBE7" }}>
+                          <div style={{ flex: "1 1 190px", minWidth: 0 }}>
+                            <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}</div>
+                            <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{isSearching ? `${task.day_id === "daily" ? "Every day" : DAYS.find((d) => d.id === task.day_id)?.label || task.day_id} · ` : ""}{task.section || "My tasks"}</div>
+                          </div>
+                          <button type="button" onClick={() => openTaskEditor(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
+                          <button type="button" onClick={() => setPendingTaskDelete({ key: task.task_key, label: task.task, section: task.section })} aria-label={`Delete ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, cursor: "pointer" }}>🗑️ Delete</button>
                         </div>
-                        <button type="button" onClick={() => openTaskEditor(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
-                        <button type="button" onClick={() => setPendingTaskDelete({ key: task.task_key, label: task.task, section: task.section })} aria-label={`Delete ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, cursor: "pointer" }}>🗑️ Delete</button>
-                      </div>
-                  ))}
-              </div>
-            )}
+                    ))}
+                </div>
+              );
+            })()}
           </div>
           </ToolPanel>
         )}
@@ -3716,7 +3745,7 @@ function GlowUpTracker() {
                             border: `2px solid ${checked ? day.accent : "#E3B8D8"}`,
                             background: checked ? day.accent : "transparent",
                             display: "flex", alignItems: "center", justifyContent: "center",
-                            color: "#FFF6FB", fontWeight: 900, fontSize: 12 }}>
+                            color: "#FFF6FB", fontWeight: 900, fontSize: 12, animation: celebrateKey === r.key ? "checkPop 0.5s ease" : "none" }}>
                           {checked ? "✓" : ""}
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
@@ -4065,7 +4094,7 @@ function GlowUpTracker() {
                         border: `2px solid ${checked ? day.accent : "#E3B8D8"}`,
                         background: checked ? day.accent : "transparent",
                         display: "flex", alignItems: "center", justifyContent: "center",
-                        color: "#FFF6FB", fontWeight: 900, fontSize: 12 }}>
+                        color: "#FFF6FB", fontWeight: 900, fontSize: 12, animation: celebrateKey === r.key ? "checkPop 0.5s ease" : "none" }}>
                       {checked ? "✓" : ""}
                     </span>
                     <span style={{ flex: 1, fontSize: 14, fontWeight: 500,
@@ -4202,6 +4231,12 @@ function GlowUpTracker() {
         )}
       </div>
       </div>
+      {recentlyDeletedTask && (
+        <div style={{ position: "fixed", left: "50%", bottom: 20, transform: "translateX(-50%)", zIndex: 60, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "#3B2E46", color: "white", boxShadow: "0 10px 30px rgba(0,0,0,0.25)", maxWidth: "92vw" }}>
+          <span style={{ fontSize: 12.5 }}>🗑️ "{recentlyDeletedTask.label}" removed</span>
+          <button type="button" onClick={undoDeleteTask} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.4)", background: "transparent", color: "#F2D9FF", fontWeight: 900, cursor: "pointer", fontSize: 12.5, whiteSpace: "nowrap" }}>Undo</button>
+        </div>
+      )}
     </div>
   );
 }
