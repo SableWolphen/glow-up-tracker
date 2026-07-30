@@ -2622,6 +2622,7 @@ function GlowUpTracker() {
   const [adminMessage, setAdminMessage] = useState("");
   const [supporterEmailDraft, setSupporterEmailDraft] = useState("");
   const [supporterGrantMessage, setSupporterGrantMessage] = useState("");
+  const [checkoutTestMessage, setCheckoutTestMessage] = useState("");
 
   const setSupporterStatus = async (grant) => {
     const email = supporterEmailDraft.trim().toLowerCase();
@@ -2636,6 +2637,18 @@ function GlowUpTracker() {
       return;
     }
     setSupporterGrantMessage(`${email} is now ${grant ? "a Supporter 🌟" : "on the free plan"}.`);
+  };
+
+  const startSupporterCheckout = async () => {
+    setCheckoutTestMessage("Starting checkout…");
+    const { data, error } = await supabase.functions.invoke("create-supporter-checkout", {
+      body: { origin: window.location.origin + window.location.pathname },
+    });
+    if (error || !data?.url) {
+      setCheckoutTestMessage(data?.error || error?.message || "Checkout isn't set up yet — add Stripe secrets first.");
+      return;
+    }
+    window.location.href = data.url;
   };
 
   const loadAdminData = async () => {
@@ -4490,6 +4503,12 @@ function GlowUpTracker() {
               <button type="button" onClick={() => setSupporterStatus(false)} style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid #E8D4B6", background: "white", color: "#C9954A", fontWeight: 800, cursor: "pointer" }}>Revoke</button>
             </div>
             {supporterGrantMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{supporterGrantMessage}</div>}
+            <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #F0D5DB" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: "#8C6B9E" }}>REAL CHECKOUT (admin-only test)</div>
+              <div style={{ marginTop: 3, fontSize: 10.5, color: "#8C6B9E" }}>Triggers the actual Stripe flow. Only works once STRIPE_SECRET_KEY and STRIPE_SUPPORTER_PRICE_ID are set as edge function secrets.</div>
+              <button type="button" onClick={startSupporterCheckout} style={{ marginTop: 7, padding: "7px 11px", borderRadius: 9, border: "1px solid #E8D4B6", background: "white", color: "#C9954A", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🌟 Test real checkout</button>
+              {checkoutTestMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{checkoutTestMessage}</div>}
+            </div>
           </div>
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
