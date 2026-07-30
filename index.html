@@ -602,6 +602,7 @@ function GlowUpTracker() {
   const [onboardingMode, setOnboardingMode] = useState("cozy");
   const [onboardingMessage, setOnboardingMessage] = useState("");
   const [privateNote, setPrivateNote] = useState("");
+  const [lastWeekReflection, setLastWeekReflection] = useState("");
   const [privateNoteMessage, setPrivateNoteMessage] = useState("");
   const [supportTrackerTasks, setSupportTrackerTasks] = useState([]);
   const [manageTasks, setManageTasks] = useState(false);
@@ -1257,6 +1258,22 @@ function GlowUpTracker() {
           return;
         }
         setPrivateNote(data?.body || "");
+      });
+    return () => { alive = false; };
+  }, [user, selectedProgressDate]);
+
+  useEffect(() => {
+    if (!user || dayIdForDate(selectedProgressDate) !== "sun") { setLastWeekReflection(""); return; }
+    let alive = true;
+    supabase
+      .from("private_notes")
+      .select("body")
+      .eq("user_id", user.id)
+      .eq("note_date", offsetDate(selectedProgressDate, -7))
+      .maybeSingle()
+      .then(({ data }) => {
+        if (!alive) return;
+        setLastWeekReflection(data?.body || "");
       });
     return () => { alive = false; };
   }, [user, selectedProgressDate]);
@@ -4236,6 +4253,12 @@ function GlowUpTracker() {
               </div>
               <div style={{ fontSize: 14, fontStyle: "italic", color: "#8C6B9E" }}>{reflectionPrompt}</div>
               <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Only you can read what you write here. It is never shared with a guardian.</div>
+              {lastWeekReflection && (
+                <div style={{ marginTop: 9, padding: "10px 12px", borderRadius: 10, background: "rgba(255,255,255,0.55)", border: `1px solid ${day.accent}33` }}>
+                  <div style={{ fontSize: 10, letterSpacing: "0.14em", color: day.accent, fontWeight: 800, marginBottom: 4 }}>📮 A LETTER FROM LAST SUNDAY'S YOU</div>
+                  <div style={{ fontSize: 12.5, lineHeight: 1.5, color: "#6B5A7D", whiteSpace: "pre-wrap" }}>{lastWeekReflection}</div>
+                </div>
+              )}
               <textarea value={privateNote} readOnly={isFutureView} onChange={(event) => setPrivateNote(event.target.value)} maxLength={5000} placeholder={isFutureView ? "Reflections unlock on this day." : "Write your private reflection…"} style={{ width: "100%", boxSizing: "border-box", minHeight: 86, marginTop: 9, padding: 10, borderRadius: 10, border: `1px solid ${day.accent}55`, background: isFutureView ? "rgba(245,242,247,0.8)" : "rgba(255,255,255,0.68)", color: "#5B4B6B", resize: "vertical" }} />
               <button onClick={savePrivateNote} disabled={isFutureView} style={{ marginTop: 7, padding: "7px 11px", borderRadius: 9, border: 0, background: day.accent, color: "white", fontWeight: 900, cursor: isFutureView ? "not-allowed" : "pointer", opacity: isFutureView ? 0.5 : 1 }}>{isFutureView ? "Available on this day" : "Save reflection privately 🔒"}</button>
               {privateNoteMessage && <div style={{ marginTop: 7, fontSize: 11.5, color: "#8C6B9E" }}>{privateNoteMessage}</div>}
