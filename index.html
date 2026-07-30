@@ -1730,6 +1730,15 @@ function GlowUpTracker() {
     setRestRangeDraft({ start: "", end: "" });
   };
 
+  const moveTaskToTomorrow = async (taskKey, fromDate) => {
+    const tomorrow = offsetDate(fromDate, 1);
+    const { error } = await supabase.from("tracker_tasks").update({ one_time_date: tomorrow }).eq("user_id", user.id).eq("task_key", taskKey);
+    if (!error) {
+      setTrackerTasks((tasks) => tasks.map((task) => task.task_key === taskKey ? { ...task, one_time_date: tomorrow } : task));
+      setTaskMessage("Moved to tomorrow 🌙");
+    }
+  };
+
   const goToFeedback = () => {
     setSettingsOpen(true);
     window.setTimeout(() => {
@@ -5134,7 +5143,8 @@ function GlowUpTracker() {
                 const header = r.section !== lastSection ? r.section : null;
                 lastSection = r.section;
                 const checked = !!viewDone[r.key];
-                const expandable = !!(r.how || r.why);
+                const isMovable = r.sourceTask?.schedule_type === "once" && !checked && !isFutureView;
+                const expandable = !!(r.how || r.why) || isMovable;
                 const expanded = openRow === r.key;
                 return (
                   <div key={r.key}>
@@ -5167,6 +5177,9 @@ function GlowUpTracker() {
                         <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
                           {r.how && <div>{r.how}</div>}
                           {r.why && <div style={{ marginTop: r.how ? 6 : 0, fontStyle: "italic", color: day.accent }}>💛 Why: {r.why}</div>}
+                          {isMovable && (
+                            <button type="button" onClick={(event) => { event.stopPropagation(); moveTaskToTomorrow(r.key, period.date); setOpenRow(null); }} style={{ marginTop: r.how || r.why ? 8 : 0, padding: "6px 10px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>📅 Move to tomorrow</button>
+                          )}
                         </div>
                       )}
                     </div>
