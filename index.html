@@ -1975,6 +1975,26 @@ function GlowUpTracker() {
     setSettingsMessage(error ? "Other devices couldn't be signed out." : "Other sessions have been signed out. This device stays connected.");
   };
 
+  const [feedbackText, setFeedbackText] = useState("");
+  const [feedbackMessage, setFeedbackMessage] = useState("");
+
+  const submitFeedback = async () => {
+    const trimmed = feedbackText.trim();
+    if (!trimmed) { setFeedbackMessage("Write a little something first 💛"); return; }
+    setFeedbackMessage("Sending…");
+    const { error } = await supabase.from("feedback_messages").insert({
+      user_id: user?.id || null,
+      email: user?.email || null,
+      message: trimmed.slice(0, 2000),
+    });
+    if (error) {
+      setFeedbackMessage(`Couldn't send that: ${error.message}`);
+      return;
+    }
+    setFeedbackText("");
+    setFeedbackMessage("Thank you — this was sent 💛");
+  };
+
   const exportMyData = async () => {
     if (!user) return;
     setSettingsMessage("Preparing your data for download…");
@@ -3178,6 +3198,13 @@ function GlowUpTracker() {
               <button onClick={signOutOtherDevices} style={{ padding: "8px 11px", borderRadius: 9, border: "1px solid #E4C2C9", background: "#FFF8F9", color: "#B0576B", fontWeight: 900, cursor: "pointer" }}>Sign out other devices</button>
             </div>
             <div style={{ marginTop: 14, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "#6D5A7C" }}>FEEDBACK & SUPPORT</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Found a bug, or something feel off? Tell me here — it goes straight to the person who maintains Plushlist.</div>
+              <textarea value={feedbackText} onChange={(event) => setFeedbackText(event.target.value)} maxLength={2000} placeholder="What's going on?" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, minHeight: 70, padding: 9, borderRadius: 10, border: "1px solid #DCC9E8", resize: "vertical" }} />
+              <button type="button" onClick={submitFeedback} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>💌 Send feedback</button>
+              {feedbackMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{feedbackMessage}</div>}
+            </div>
+            <div style={{ marginTop: 14, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
               <div style={{ fontSize: 11, fontWeight: 900, color: "#6D5A7C" }}>YOUR DATA</div>
               <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Your tasks, schedules, reflections, and progress are yours. Download a copy anytime.</div>
               <button type="button" onClick={exportMyData} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
@@ -4190,6 +4217,14 @@ class AppErrorBoundary extends React.Component {
   }
   componentDidCatch(error, info) {
     console.error("Plushlist crashed:", error, info);
+    supabase.auth.getUser().then(({ data }) => {
+      supabase.from("app_error_logs").insert({
+        user_id: data?.user?.id || null,
+        message: String(error?.message || error || "Unknown error").slice(0, 2000),
+        stack: String(error?.stack || "").slice(0, 4000),
+        url: window.location.href,
+      }).then(() => {}, () => {});
+    }).catch(() => {});
   }
   render() {
     if (this.state.hasError) {
