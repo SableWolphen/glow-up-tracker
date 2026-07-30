@@ -1,0 +1,42 @@
+{
+  "name": "Plushlist — Gentle Daily Tracker",
+  "short_name": "Plushlist",
+  "description": "A private, gentle routine and progress tracker.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fff8fc",
+  "theme_color": "#b75acb",
+  "icons": [
+    {
+      "src": "./icon.svg?v=2",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Today's tasks",
+      "short_name": "Today",
+      "description": "Jump straight to today's checklist",
+      "url": "./?view=today",
+      "icons": [{ "src": "./icon.svg?v=2", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Change tasks",
+      "short_name": "Change tasks",
+      "description": "Add, edit, or delete tasks",
+      "url": "./?view=tasks",
+      "icons": [{ "src": "./icon.svg?v=2", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Week progress",
+      "short_name": "Week",
+      "description": "See this week's progress",
+      "url": "./?view=week",
+      "icons": [{ "src": "./icon.svg?v=2", "sizes": "any", "type": "image/svg+xml" }]
+    }
+  ]
+}
+

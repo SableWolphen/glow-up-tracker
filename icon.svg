@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="Plushlist">
+  <rect width="512" height="512" fill="#fff9fd"/>
+  <rect x="78" y="78" width="356" height="356" rx="112" fill="#f8def6" stroke="#edc4ee" stroke-width="10"/>
+  <circle cx="256" cy="256" r="112" fill="#efd0f2"/>
+  <circle cx="256" cy="256" r="78" fill="#bd58d2"/>
+</svg>
