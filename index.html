@@ -4556,24 +4556,43 @@ function GlowUpTracker() {
               Good habits grow here, and habits you are reducing count as caring wins too. A reset never takes away a badge you already earned.
             </div>
             <div style={{ display: "grid", gap: 8, marginTop: 11 }}>
-              {habitTasks.map((habit) => (
+              {habitTasks.map((habit) => {
+                const nextCount = habit.stats.nextReward?.count;
+                const progressPct = nextCount ? Math.min(100, Math.round((habit.stats.current / nextCount) * 100)) : 100;
+                const remaining = nextCount ? Math.max(0, nextCount - habit.stats.current) : 0;
+                return (
                 <div key={habit.task_key} style={{ padding: "10px 11px", borderRadius: 12, background: "#FFFFFFB8", border: "1px solid #D7EEE2" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 900, color: "#4F405C" }}>
                       {habit.habitType === "build" ? "🌱" : "🛡️"} {habit.task}
                     </div>
-                    <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
-                      {habit.stats.current} in a row
+                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                      <span style={{ padding: "3px 7px", borderRadius: 999, background: habit.habitType === "build" ? "#EAF4FF" : "#FFF3E4", color: habit.habitType === "build" ? "#4C8FE8" : "#B4761D", fontSize: 9.5, fontWeight: 800 }}>
+                        {habit.habitType === "build" ? "Building" : "Reducing"}
+                      </span>
+                      <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
+                        {habit.stats.current} in a row
+                      </div>
                     </div>
                   </div>
-                  <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
-                    {habit.stats.earnedReward
-                      ? `Earned: ${habit.stats.earnedReward.badge} ${habit.stats.earnedReward.label} · best ${habit.stats.best}`
-                      : "Your first successful check-in unlocks the First sprout badge 🌱"}
-                    {habit.stats.nextReward && ` · Next: ${habit.stats.nextReward.badge} ${habit.stats.nextReward.label} at ${habit.stats.nextReward.count}`}
-                  </div>
+                  {habit.stats.earnedReward && (
+                    <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
+                      Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Best streak: {habit.stats.best} {habit.stats.best === 1 ? "day" : "days"}
+                    </div>
+                  )}
+                  {habit.stats.nextReward && (
+                    <>
+                      <div style={{ marginTop: 6, fontSize: 11.5, color: "#6B7E78" }}>
+                        Next: {habit.stats.nextReward.badge} {habit.stats.nextReward.label} — {remaining === 0 ? "almost there!" : `${remaining} more ${remaining === 1 ? "check-in" : "check-ins"} to go`}
+                      </div>
+                      <div style={{ height: 6, background: "#E2F3EA", borderRadius: 4, marginTop: 5, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${progressPct}%`, background: habit.habitType === "build" ? "#4C8FE8" : "#D4A017", borderRadius: 4, transition: "width .4s ease" }} />
+                      </div>
+                    </>
+                  )}
                 </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}
