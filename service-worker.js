@@ -1,5 +1,5 @@
-const CACHE_NAME = "plushlist-v13";
-const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./icon.svg?v=2"];
+const CACHE_NAME = "plushlist-v14";
+const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
 function privateTrackerUrl(candidate) {
@@ -66,8 +66,8 @@ self.addEventListener("push", (event) => {
   try { data = event.data ? event.data.json() : {}; } catch (_error) {}
   event.waitUntil(self.registration.showNotification(data.title || "Just checking on you 💛", {
     body: data.body || "Hi sweetheart, how are you doing? Come check in when you're ready.",
-    icon: "./icon.svg?v=2",
-    badge: "./icon.svg?v=2",
+    icon: "./icon-192.png",
+    badge: "./icon-192.png",
     tag: data.tag || "plushlist-reminder",
     data: { url: privateTrackerUrl(data.url) },
   }));
