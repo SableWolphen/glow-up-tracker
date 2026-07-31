@@ -863,6 +863,9 @@ function GlowUpTracker() {
   const [privateNoteMessage, setPrivateNoteMessage] = useState("");
   const [supportTrackerTasks, setSupportTrackerTasks] = useState([]);
   const [manageTasks, setManageTasks] = useState(false);
+  const [importOpen, setImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
+  const [importMessage, setImportMessage] = useState("");
   const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDay, setNewTaskDay] = useState("daily");
@@ -1994,6 +1997,50 @@ function GlowUpTracker() {
       setNewTaskSection(newTaskSectionOptions[0] || "My tasks");
     }
   }, [newTaskDay, trackerTasks, newTaskSection]);
+
+  const importTasksFromText = async () => {
+    const lines = importText.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 50);
+    if (lines.length === 0) {
+      setImportMessage("Paste one task per line first.");
+      return;
+    }
+    if (SUPPORTER_FEATURES_ENABLED && !isSupporterAccount) {
+      const existingCount = trackerTasks.filter((item) => item.day_id === "daily" || item.day_id === newTaskDay).length;
+      if (existingCount + lines.length > FREE_TASK_LIMIT_PER_DAY) {
+        setImportMessage(`🌟 Free accounts can have up to ${FREE_TASK_LIMIT_PER_DAY} tasks for this day — that's not enough room for all ${lines.length} pasted lines. Become a Supporter for unlimited tasks, or paste fewer.`);
+        return;
+      }
+    }
+    const dayTasks = trackerTasks
+      .filter((item) => item.day_id === newTaskDay)
+      .sort((a, b) => Number(a.sort_order) - Number(b.sort_order));
+    const startIndex = dayTasks.length;
+    const section = newTaskSection || newTaskSectionOptions[0] || "My tasks";
+    const rows = lines.map((task, index) => ({
+      user_id: user.id,
+      task_key: `custom-${crypto.randomUUID()}`,
+      day_id: newTaskDay,
+      section,
+      task: task.slice(0, 140),
+      detail: "",
+      sort_order: startIndex + index + 1,
+      is_bonus: sectionIsOptional(newTaskDay, section),
+      schedule_type: "weekly",
+      start_date: null,
+      end_date: null,
+      one_time_date: null,
+      why_note: "",
+    }));
+    setImportMessage("Importing…");
+    const { error } = await supabase.from("tracker_tasks").insert(rows);
+    if (error) {
+      setImportMessage("Couldn't import those tasks.");
+      return;
+    }
+    setTrackerTasks((tasks) => [...tasks, ...rows]);
+    setImportText("");
+    setImportMessage(`✨ Imported ${rows.length} ${rows.length === 1 ? "task" : "tasks"} into ${section}.`);
+  };
 
   const addTrackerTask = async () => {
     const task = newTaskName.trim();
@@ -4895,6 +4942,21 @@ function GlowUpTracker() {
                 );
               })}
             </div>
+          </div>
+
+          <div style={{ marginBottom: 14, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.72)", border: "1px solid #E6D4F2" }}>
+            <button type="button" onClick={() => setImportOpen((open) => !open)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", background: "none", border: 0, padding: 0, cursor: "pointer" }}>
+              <span style={{ fontSize: 13, fontWeight: 900, color: "#4C8FE8" }}>📥 Import a list of tasks</span>
+              <span style={{ color: "#4C8FE8", fontSize: 12, transform: importOpen ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>
+            </button>
+            {importOpen && (
+              <div style={{ marginTop: 10 }}>
+                <div style={{ fontSize: 11.5, color: "#7B6888", lineHeight: 1.45 }}>Paste one task per line — switching from another app? Just paste your list here. They'll all go into "{newTaskDay === "daily" ? "Every day" : DAYS.find((d) => d.id === newTaskDay)?.label}" under {newTaskSection || "your first section"}.</div>
+                <textarea value={importText} onChange={(event) => setImportText(event.target.value)} placeholder={"Drink water\nTake medication\nStretch for 5 minutes"} style={{ width: "100%", boxSizing: "border-box", minHeight: 90, marginTop: 8, padding: 9, borderRadius: 10, border: "1px solid #B9DCF6", resize: "vertical" }} />
+                <button type="button" onClick={importTasksFromText} style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, cursor: "pointer" }}>Import tasks</button>
+                {importMessage && <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>{importMessage}</div>}
+              </div>
+            )}
           </div>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.72)", border: "1px solid #E6D4F2" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "#A65DC1" }}>STEP 2 · ADD A TASK</div>
