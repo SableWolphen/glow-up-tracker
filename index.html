@@ -4447,20 +4447,14 @@ function GlowUpTracker() {
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🎯 DAILY CHECK-IN & REST DAYS</div>
-            <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>The capacity/essentials popup shows once a day on Today — reopen or change it anytime.</div>
-            <button type="button" onClick={() => { setSettingsOpen(false); setDashboard("today"); setCheckInPopupOpen(true); }} style={{ marginTop: 9, padding: "8px 12px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Open today's check-in</button>
-
-            <div style={{ marginTop: 13, paddingTop: 12, borderTop: "1px solid #E4EEEA" }}>
-              <div style={{ fontSize: 11, fontWeight: 900, color: "#318C79" }}>🌴 REST DAYS / VACATION MODE</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days are protected from ever breaking your streak.</div>
-              <div style={{ display: "flex", gap: 7, marginTop: 9, flexWrap: "wrap", alignItems: "flex-end" }}>
-                <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>From<input type="date" value={restRangeDraft.start} onChange={(event) => setRestRangeDraft((current) => ({ ...current, start: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
-                <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>To<input type="date" value={restRangeDraft.end} onChange={(event) => setRestRangeDraft((current) => ({ ...current, end: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
-                <button type="button" onClick={saveRestRange} style={{ padding: "8px 12px", borderRadius: 9, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Mark as resting</button>
-              </div>
-              {restDates.length > 0 && <div style={{ marginTop: 9, fontSize: 11.5, color: "#8C6B9E" }}>{restDates.length} rest {restDates.length === 1 ? "day" : "days"} marked so far.</div>}
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🌴 REST DAYS / VACATION MODE</div>
+            <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days are protected from ever breaking your streak.</div>
+            <div style={{ display: "flex", gap: 7, marginTop: 9, flexWrap: "wrap", alignItems: "flex-end" }}>
+              <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>From<input type="date" value={restRangeDraft.start} onChange={(event) => setRestRangeDraft((current) => ({ ...current, start: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>To<input type="date" value={restRangeDraft.end} onChange={(event) => setRestRangeDraft((current) => ({ ...current, end: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
+              <button type="button" onClick={saveRestRange} style={{ padding: "8px 12px", borderRadius: 9, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Mark as resting</button>
             </div>
+            {restDates.length > 0 && <div style={{ marginTop: 9, fontSize: 11.5, color: "#8C6B9E" }}>{restDates.length} rest {restDates.length === 1 ? "day" : "days"} marked so far.</div>}
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
