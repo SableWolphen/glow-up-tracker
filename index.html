@@ -3409,6 +3409,13 @@ function GlowUpTracker() {
   ]);
 
   useEffect(() => {
+    if (!user || collectionLoadedFor !== user.id || syncStatus !== "ready") return;
+    if (!todayIsComplete && mascotCollection.lastCelebratedDate === period.date) {
+      saveMascotCollection({ ...mascotCollection, lastCelebratedDate: "" });
+    }
+  }, [user?.id, collectionLoadedFor, syncStatus, todayIsComplete, mascotCollection.lastCelebratedDate, period.date]);
+
+  useEffect(() => {
     if (
       !user ||
       collectionLoadedFor !== user.id ||
