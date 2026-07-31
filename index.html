@@ -454,6 +454,13 @@ const COMFORT_TOOLS = [
   { id: "change_rooms", icon: "🚶", name: "Change the Scene", steps: ["Stand up, if you're able to.", "Walk to another room, or step outside for a moment.", "Notice one new thing about this space.", "Take a breath here before you go back.", "A change of scenery can be enough of a reset."] },
 ];
 
+const NOTIFICATION_NUDGE_REASONS = [
+  "A gentle nudge at the right time can be the difference between remembering and forgetting — you choose exactly when.",
+  "You don't have to rely on remembering by yourself. A quiet reminder can carry some of that for you.",
+  "Notifications here are quiet check-ins, not pressure — and you can turn them off just as easily.",
+  "A lot of people find it easier to build a rhythm with a small reminder, rather than trying to just remember.",
+];
+
 const MAKE_IT_EASIER_SUGGESTIONS = [
   "Just do the very first tiny part — that's enough for now.",
   "Set a timer for 2 minutes. When it rings, you're allowed to stop.",
@@ -902,6 +909,7 @@ function GlowUpTracker() {
     is_supporter: false,
     onboarding_reason: null,
     colorblind_mode: false,
+    notification_nudge_dismissed_at: null,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -944,6 +952,8 @@ function GlowUpTracker() {
   const [comfortToolOpen, setComfortToolOpen] = useState(null);
   const [checkInPopupDismissedToday, setCheckInPopupDismissedToday] = useState(false);
   const [dailyCheckInLoaded, setDailyCheckInLoaded] = useState(false);
+  const [notificationNudgeOpen, setNotificationNudgeOpen] = useState(false);
+  const [notificationNudgeReason] = useState(() => NOTIFICATION_NUDGE_REASONS[Math.floor(Math.random() * NOTIFICATION_NUDGE_REASONS.length)]);
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
@@ -2422,6 +2432,7 @@ function GlowUpTracker() {
       simple_mode: !!nextPreferences.simple_mode,
       gentle_streaks: !!nextPreferences.gentle_streaks,
       colorblind_mode: !!nextPreferences.colorblind_mode,
+      notification_nudge_dismissed_at: nextPreferences.notification_nudge_dismissed_at || null,
       dino_theme: !!nextPreferences.dino_theme,
       weekly_intention_intro_seen: !!nextPreferences.weekly_intention_intro_seen,
       focus_mode: !!nextPreferences.focus_mode,
@@ -2666,6 +2677,19 @@ function GlowUpTracker() {
     setSettingsMessage("Signing out your other devices…");
     const { error } = await supabase.auth.signOut({ scope: "others" });
     setSettingsMessage(error ? "Other devices couldn't be signed out." : "Other sessions have been signed out. This device stays connected.");
+  };
+
+  useEffect(() => {
+    if (!preferences.onboarding_complete || preferences.notifications_enabled) return;
+    const lastDismissed = preferences.notification_nudge_dismissed_at;
+    const cooldownOk = !lastDismissed || (Date.now() - new Date(lastDismissed).getTime()) > 14 * 24 * 60 * 60 * 1000;
+    if (!cooldownOk) return;
+    if (Math.random() < 0.15) setNotificationNudgeOpen(true);
+  }, [preferences.onboarding_complete, preferences.notifications_enabled, preferences.notification_nudge_dismissed_at]);
+
+  const dismissNotificationNudge = () => {
+    setNotificationNudgeOpen(false);
+    updatePreference({ notification_nudge_dismissed_at: new Date().toISOString() });
   };
 
   const [feedbackText, setFeedbackText] = useState("");
@@ -3885,6 +3909,19 @@ function GlowUpTracker() {
           </div>
         );
       })()}
+      {notificationNudgeOpen && (
+        <div role="dialog" aria-modal="true" aria-labelledby="notif-nudge-title" onClick={dismissNotificationNudge} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
+          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#F1FFF9 58%,#EBFBFF)", border: "2px solid #A9DFC4", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#268A50", fontWeight: 900 }}>🔔 JUST A THOUGHT</div>
+            <div id="notif-nudge-title" style={{ marginTop: 5, fontSize: 19, fontWeight: 900, color: "#1F5C3B" }}>Want a gentle reminder?</div>
+            <p style={{ marginTop: 8, fontSize: 13, lineHeight: 1.55, color: "#2F6E48" }}>{notificationNudgeReason}</p>
+            <div style={{ display: "flex", gap: 7, marginTop: 14 }}>
+              <button type="button" onClick={() => { dismissNotificationNudge(); enableNotifications(); }} style={{ flex: 1, padding: "10px 12px", borderRadius: 11, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Turn on notifications</button>
+              <button type="button" onClick={dismissNotificationNudge} style={{ flex: 1, padding: "10px 12px", borderRadius: 11, border: "1px solid #A9DFC4", background: "white", color: "#268A50", fontWeight: 800, cursor: "pointer" }}>Not now</button>
+            </div>
+          </div>
+        </div>
+      )}
       {essentialsPickerOpen && (
         <div role="dialog" aria-modal="true" aria-labelledby="essentials-picker-title" onClick={() => setEssentialsPickerOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 420px)", maxHeight: "82vh", overflowY: "auto", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
@@ -4050,6 +4087,16 @@ function GlowUpTracker() {
                     <button key={value} type="button" onClick={() => setOnboardingReason((current) => current === value ? null : value)} style={{ padding: "7px 11px", borderRadius: 999, border: onboardingReason === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: onboardingReason === value ? "#F7ECFB" : "white", color: "#5B4B6B", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
+              </div>
+              <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #E9DAF2" }}>
+                <div style={{ fontSize: 12.5, fontWeight: 800, color: "#6B5A7D" }}>🔔 Want gentle reminders?</div>
+                <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>Also optional. Plushlist can send a check-in nudge at times you choose — nothing pushy, and you can turn it off anytime.</div>
+                {preferences.notifications_enabled ? (
+                  <div style={{ marginTop: 8, fontSize: 12.5, fontWeight: 800, color: "#318C79" }}>🔔 Notifications are on</div>
+                ) : (
+                  <button type="button" onClick={enableNotifications} style={{ marginTop: 8, padding: "8px 12px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 12.5, cursor: "pointer" }}>Turn on notifications</button>
+                )}
+                {settingsMessage && <div style={{ marginTop: 6, fontSize: 11, color: "#8C6B9E" }}>{settingsMessage}</div>}
               </div>
             </>}
             {onboardingMessage && <div style={{ marginTop: 11, fontSize: 12, color: "#B0576B", lineHeight: 1.45 }}>{onboardingMessage}</div>}
@@ -4436,12 +4483,20 @@ function GlowUpTracker() {
             <div style={{ marginTop: 13, fontSize: 11, fontWeight: 900, color: "#6D5A7C" }}>CHECK-IN TIMES</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2, minmax(0, 1fr))", gap: 7, marginTop: 7 }}>
               {preferences.reminder_times.map((time, index) => (
-                <label key={index} style={{ display: "grid", gap: 3, minWidth: 0, fontSize: 10.5, fontWeight: 900, color: "#6D5A7C" }}>
-                  REMINDER {index + 1}
+                <div key={index} style={{ display: "grid", gap: 3, minWidth: 0 }}>
+                  <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span style={{ fontSize: 10.5, fontWeight: 900, color: "#6D5A7C" }}>REMINDER {index + 1}</span>
+                    {preferences.reminder_times.length > 1 && (
+                      <button type="button" onClick={() => updatePreference({ reminder_times: preferences.reminder_times.filter((_, itemIndex) => itemIndex !== index) })} aria-label={`Remove reminder ${index + 1}`} style={{ padding: "1px 6px", borderRadius: 7, border: "1px solid #E4C2C9", background: "#FFF8F9", color: "#B0576B", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>✕</button>
+                    )}
+                  </div>
                   <input aria-label={`Reminder ${index + 1}`} type="time" value={time} onChange={(event) => updatePreference({ reminder_times: preferences.reminder_times.map((item, itemIndex) => itemIndex === index ? event.target.value : item) })} style={{ minWidth: 0, width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 9, border: "1px solid #CFE8E1" }} />
-                </label>
+                </div>
               ))}
             </div>
+            {preferences.reminder_times.length < 8 && (
+              <button type="button" onClick={() => updatePreference({ reminder_times: [...preferences.reminder_times, "12:00"] })} style={{ marginTop: 8, padding: "6px 10px", borderRadius: 9, border: "1px solid #CFE8E1", background: "white", color: "#318C79", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>＋ Add another reminder time</button>
+            )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 7 }}>
               <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet starts<input type="time" value={preferences.quiet_start} onChange={(event) => updatePreference({ quiet_start: event.target.value })} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
               <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet ends<input type="time" value={preferences.quiet_end} onChange={(event) => updatePreference({ quiet_end: event.target.value })} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
