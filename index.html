@@ -3375,28 +3375,6 @@ function GlowUpTracker() {
     return requiredKeys.length > 0 && requiredKeys.every((key) => completed.has(key));
   };
 
-  const heatmapDays = (() => {
-    const days = [];
-    let cursor = offsetDate(period.date, -90);
-    for (let i = 0; i < 91; i++) {
-      const keys = requiredKeysForDate(cursor);
-      const completed = habitHistoryByDate.get(cursor) || new Set();
-      const isRest = restDatesSet.has(cursor);
-      const pct = keys.length > 0 ? Math.round((keys.filter((key) => completed.has(key)).length / keys.length) * 100) : null;
-      days.push({ date: cursor, pct, isRest });
-      cursor = offsetDate(cursor, 1);
-    }
-    return days;
-  })();
-  const heatmapColorFor = (day) => {
-    if (day.isRest) return "#8FD4B8";
-    if (day.pct === null) return "#F5F1F7";
-    if (day.pct === 0) return "#EFE4F2";
-    if (day.pct < 40) return "#DDBEEA";
-    if (day.pct < 75) return "#C285D9";
-    if (day.pct < 100) return "#A65DC1";
-    return "#7A3B99";
-  };
   let bestCompleteStreak = 0;
   let runningCompleteStreak = 0;
   let careCursor = firstCareHistoryDate;
@@ -5713,24 +5691,6 @@ function GlowUpTracker() {
             </div>
           </div>
 
-          <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E9DDEC" }}>
-            <div style={{ fontSize: 10, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>LAST 13 WEEKS AT A GLANCE</div>
-            <div style={{ overflowX: "auto" }}>
-              <div style={{ display: "grid", gridTemplateRows: "repeat(7, 12px)", gridAutoFlow: "column", gridAutoColumns: 12, gap: 3, width: "max-content" }}>
-                {heatmapDays.map((day) => (
-                  <div key={day.date} title={`${day.date}${day.isRest ? " · Resting" : day.pct === null ? "" : ` · ${day.pct}%`}`} style={{ width: 12, height: 12, borderRadius: 3, background: heatmapColorFor(day) }} />
-                ))}
-              </div>
-            </div>
-            <div style={{ display: "flex", alignItems: "center", gap: 5, marginTop: 8, fontSize: 9.5, color: "#8C6B9E" }}>
-              <span>Less</span>
-              {["#F5F1F7", "#EFE4F2", "#DDBEEA", "#C285D9", "#A65DC1", "#7A3B99"].map((color) => (
-                <span key={color} style={{ width: 10, height: 10, borderRadius: 3, background: color }} />
-              ))}
-              <span>More</span>
-              <span style={{ width: 10, height: 10, borderRadius: 3, background: "#8FD4B8", marginLeft: 8 }} /> <span>Resting</span>
-            </div>
-          </div>
           <div style={{ marginTop: 10, textAlign: "center", color: "#5B4B6B", fontSize: 14, fontWeight: 900 }}>
             {reflectionMonthDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}
           </div>
