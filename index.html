@@ -901,6 +901,7 @@ function GlowUpTracker() {
     last_seen_changelog: "",
     is_supporter: false,
     onboarding_reason: null,
+    colorblind_mode: false,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
@@ -2420,6 +2421,7 @@ function GlowUpTracker() {
       high_contrast: !!nextPreferences.high_contrast,
       simple_mode: !!nextPreferences.simple_mode,
       gentle_streaks: !!nextPreferences.gentle_streaks,
+      colorblind_mode: !!nextPreferences.colorblind_mode,
       dino_theme: !!nextPreferences.dino_theme,
       weekly_intention_intro_seen: !!nextPreferences.weekly_intention_intro_seen,
       focus_mode: !!nextPreferences.focus_mode,
@@ -3649,7 +3651,9 @@ function GlowUpTracker() {
       `,
       fontFamily: babyMode ? "'Comic Sans MS','Nunito','Segoe UI',sans-serif" : "'Avenir Next','Segoe UI',system-ui,sans-serif",
       color: preferences.high_contrast ? "#2D2038" : "#5B4B6B",
-      fontSize: preferences.large_text || babyMode ? "118%" : "100%",
+      fontSize: babyMode ? "118%" : "100%",
+      zoom: preferences.large_text ? 1.18 : 1,
+      filter: [preferences.high_contrast && "contrast(1.3) saturate(1.15)", preferences.colorblind_mode && "saturate(1.5) contrast(1.15)"].filter(Boolean).join(" ") || "none",
       padding: "24px 16px 48px",
       position: "relative",
     }}>
@@ -4472,6 +4476,7 @@ function GlowUpTracker() {
               ["reduced_motion", "Reduce animation"],
               ["high_contrast", "Higher contrast"],
               ["simple_mode", "Simpler, quieter layout"],
+              ["colorblind_mode", "Colorblind-friendly colors"],
             ].map(([key, label]) => (
               <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontSize: 12.5, fontWeight: 700 }}>
                 <input type="checkbox" checked={!!preferences[key]} onChange={(event) => updatePreference({ [key]: event.target.checked })} />
