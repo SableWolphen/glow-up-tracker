@@ -785,6 +785,7 @@ function GlowUpTracker() {
   const [focusModeShowAll, setFocusModeShowAll] = useState(false);
   const [user, setUser] = useState(null);
   const [syncStatus, setSyncStatus] = useState("loading");
+  const pendingQueueRef = React.useRef([]);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [email, setEmail] = useState("");
@@ -988,6 +989,49 @@ function GlowUpTracker() {
   const [celebrationOpen, setCelebrationOpen] = useState(false);
   const [celebrateKey, setCelebrateKey] = useState(null);
   const [recentlyCompletedKeys, setRecentlyCompletedKeys] = useState([]);
+  const flushPendingQueue = async () => {
+    if (!user || !navigator.onLine || pendingQueueRef.current.length === 0) return;
+    setSyncStatus("syncing");
+    const queue = [...pendingQueueRef.current];
+    pendingQueueRef.current = [];
+    for (const item of queue) {
+      const { error: dailyError } = await supabase.from("daily_progress").upsert({
+        user_id: user.id,
+        progress_date: item.progressDate,
+        completed_keys: item.completedKeys,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,progress_date" });
+      let taskError = null;
+      if (item.taskKey) {
+        const result = await supabase.from("tracker_progress").upsert(
+          { user_id: user.id, task_key: item.taskKey, completed: item.completed, updated_at: new Date().toISOString() },
+          { onConflict: "user_id,task_key" }
+        );
+        taskError = result.error;
+      }
+      if (dailyError || taskError) pendingQueueRef.current.push(item);
+    }
+    try { window.localStorage.setItem(`plushlist-pending-${user.id}`, JSON.stringify(pendingQueueRef.current)); } catch (_error) {}
+    if (pendingQueueRef.current.length === 0) {
+      setSyncStatus("ready");
+      setLastSyncedAt(new Date().toISOString());
+    } else {
+      setSyncStatus("offline");
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    try {
+      const stored = window.localStorage.getItem(`plushlist-pending-${user.id}`);
+      if (stored) pendingQueueRef.current = JSON.parse(stored);
+    } catch (_error) {}
+    flushPendingQueue();
+    const handleOnline = () => flushPendingQueue();
+    window.addEventListener("online", handleOnline);
+    return () => window.removeEventListener("online", handleOnline);
+  }, [user?.id]);
+
   const triggerCelebrate = (key) => {
     setCelebrateKey(key);
     if (navigator.vibrate) { try { navigator.vibrate(16); } catch (_error) {} }
@@ -3060,6 +3104,12 @@ function GlowUpTracker() {
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,progress_date" }).then(({ error }) => {
         if (error) {
+          if (!navigator.onLine) {
+            pendingQueueRef.current.push({ progressDate: targetDate, completedKeys, taskKey: null, completed: null });
+            try { window.localStorage.setItem(`plushlist-pending-${user.id}`, JSON.stringify(pendingQueueRef.current)); } catch (_error) {}
+            setSyncStatus("offline");
+            return;
+          }
           setWeeklyHistory(previousHistory);
           setSyncStatus("error");
           return;
@@ -3099,6 +3149,12 @@ function GlowUpTracker() {
       }, { onConflict: "user_id,progress_date" }),
     ]).then(([legacyResult, dailyResult]) => {
         if (legacyResult.error || dailyResult.error) {
+          if (!navigator.onLine) {
+            pendingQueueRef.current.push({ progressDate: period.date, completedKeys, taskKey: key, completed: next });
+            try { window.localStorage.setItem(`plushlist-pending-${user.id}`, JSON.stringify(pendingQueueRef.current)); } catch (_error) {}
+            setSyncStatus("offline");
+            return;
+          }
           setDone(previousDone);
           setWeeklyHistory((entries) => [
             ...entries.filter((entry) => entry.progress_date !== period.date),
