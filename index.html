@@ -5701,28 +5701,30 @@ function GlowUpTracker() {
               const number = index + 1;
               const date = reflectionCalendarMonth + "-" + String(number).padStart(2, "0");
               const hasReflection = reflectionDateSet.has(date);
+              const isRestDay = restDatesSet.has(date);
               const isFutureDate = date > period.date;
               const isSelectedDate = date === selectedProgressDate;
               const pct = dayCompletionPct(date);
-              const bg = isSelectedDate ? "#F4E8FA" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
-              const textColor = isFutureDate ? "#C7BBCF" : pct >= 50 ? "#FFFFFF" : "#6D5A7C";
-              return <button key={date} type="button" disabled={isFutureDate} title={pct === null ? undefined : `${pct}% complete`} onClick={() => {
+              const bg = isSelectedDate ? "#F4E8FA" : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+              const textColor = isFutureDate ? "#C7BBCF" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
+              return <button key={date} type="button" disabled={isFutureDate} title={isRestDay ? "Resting" : pct === null ? undefined : `${pct}% complete`} onClick={() => {
                 if (isFutureDate) return;
                 setSelectedProgressDate(date);
                 if (date === period.date) setActive("daily");
                 if (hasReflection) setReflectionViewerDate(date);
               }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : "1px solid #E9DDEC", background: bg, color: textColor, fontWeight: 800, cursor: isFutureDate ? "not-allowed" : "pointer", opacity: isFutureDate ? 0.5 : 1 }}>
-                {number}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
+                {isRestDay ? "🌴" : number}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
               </button>;
             })}
           </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E", flexWrap: "wrap" }}>
             Less
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
             <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
             More
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8FD4B8", display: "inline-block", marginLeft: 8 }} /> 🌴 Resting
           </div>
         </div>
         </>}
