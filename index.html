@@ -1727,10 +1727,10 @@ function GlowUpTracker() {
   }, [user, period.date]);
 
   useEffect(() => {
-    if (dailyCheckInLoaded && !dailyCheckIn.capacity && !checkInPopupDismissedToday) {
+    if (preferences.onboarding_complete && dailyCheckInLoaded && !dailyCheckIn.capacity && !checkInPopupDismissedToday) {
       setCheckInPopupOpen(true);
     }
-  }, [dailyCheckInLoaded, dailyCheckIn.capacity, checkInPopupDismissedToday]);
+  }, [preferences.onboarding_complete, dailyCheckInLoaded, dailyCheckIn.capacity, checkInPopupDismissedToday]);
 
   const saveDailyCheckIn = async (patch) => {
     const next = { ...dailyCheckIn, ...patch };
