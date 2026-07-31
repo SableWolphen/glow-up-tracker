@@ -921,6 +921,17 @@ function GlowUpTracker() {
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
+
+  useEffect(() => {
+    if (!user || onboardingStep < 1) return;
+    supabase.from("onboarding_events").insert({
+      user_id: user.id,
+      step: onboardingStep,
+      onboarding_mode: onboardingMode,
+      event: "step_viewed",
+    }).then(() => {});
+  }, [user?.id, onboardingStep, onboardingMode]);
+
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [shareCardOpen, setShareCardOpen] = useState(false);
   const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, soft_day: false, custom_essentials: null });
@@ -2599,6 +2610,7 @@ function GlowUpTracker() {
     };
     setPreferences(next);
     await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    supabase.from("onboarding_events").insert({ user_id: user.id, step: onboardingStep, onboarding_mode: onboardingMode, event: "completed" }).then(() => {});
     setTrackerProfile(profileData);
     setOnboardingMessage("");
     setOnboardingStep(0);
@@ -2679,6 +2691,7 @@ function GlowUpTracker() {
   const [adminErrors, setAdminErrors] = useState([]);
   const [adminStats, setAdminStats] = useState(null);
   const [adminOnline, setAdminOnline] = useState(0);
+  const [adminFunnel, setAdminFunnel] = useState(null);
   const [adminMessage, setAdminMessage] = useState("");
   const [supporterEmailDraft, setSupporterEmailDraft] = useState("");
   const [supporterGrantMessage, setSupporterGrantMessage] = useState("");
@@ -2715,16 +2728,18 @@ function GlowUpTracker() {
     if (!isAdminUser) return;
     setAdminMessage("Loading…");
     const onlineSince = new Date(Date.now() - 5 * 60000).toISOString();
-    const [feedbackRes, errorsRes, statsRes, onlineRes] = await Promise.all([
+    const [feedbackRes, errorsRes, statsRes, onlineRes, funnelRes] = await Promise.all([
       supabase.from("feedback_messages").select("id, email, message, resolved, created_at").order("created_at", { ascending: false }),
       supabase.from("app_error_logs").select("id, message, stack, url, user_id, created_at").order("created_at", { ascending: false }).limit(100),
       supabase.rpc("admin_dashboard_stats"),
       supabase.from("user_presence").select("user_id", { count: "exact", head: true }).gte("last_active_at", onlineSince),
+      supabase.rpc("admin_onboarding_funnel"),
     ]);
     setAdminFeedback(feedbackRes.data || []);
     setAdminErrors(errorsRes.data || []);
     setAdminStats(statsRes.data || null);
     setAdminOnline(onlineRes.count || 0);
+    setAdminFunnel(funnelRes.data || null);
     setAdminMessage(feedbackRes.error || errorsRes.error || statsRes.error || onlineRes.error ? "Some admin data couldn't load." : "");
   };
 
@@ -4581,6 +4596,34 @@ function GlowUpTracker() {
               <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{adminOnline === 1 ? "PERSON ONLINE" : "PEOPLE ONLINE"}</div>
             </div>
           </div>
+
+          {adminFunnel && (
+            <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>🚦 ONBOARDING FUNNEL</div>
+              <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>How many distinct accounts reached each onboarding step, versus how many finished.</div>
+              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
+                {(adminFunnel.by_step || []).map((row) => {
+                  const started = adminFunnel.started || 1;
+                  const pct = Math.round((row.reached / started) * 100);
+                  return (
+                    <div key={row.step}>
+                      <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6B5A7D", marginBottom: 3 }}>
+                        <span>Step {row.step}</span>
+                        <span>{row.reached} ({pct}%)</span>
+                      </div>
+                      <div style={{ height: 8, borderRadius: 5, background: "#EAF4FF", overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${pct}%`, background: "#4C8FE8", borderRadius: 5 }} />
+                      </div>
+                    </div>
+                  );
+                })}
+                <div style={{ marginTop: 4, paddingTop: 8, borderTop: "1px solid #EAF4FF", display: "flex", justifyContent: "space-between" }}>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#318C79" }}>✓ Completed</span>
+                  <span style={{ fontSize: 12, fontWeight: 800, color: "#318C79" }}>{adminFunnel.completed} / {adminFunnel.started} ({adminFunnel.started ? Math.round((adminFunnel.completed / adminFunnel.started) * 100) : 0}%)</span>
+                </div>
+              </div>
+            </div>
+          )}
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#C9954A" }}>🌟 SUPPORTER STATUS {!SUPPORTER_FEATURES_ENABLED && <span style={{ fontWeight: 700, color: "#8C6B9E" }}>(gate is currently OFF for everyone)</span>}</div>
