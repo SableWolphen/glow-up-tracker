@@ -672,6 +672,20 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
           ))}
         </div>
       </section>
+
+      <section style={{ padding: "0 28px 70px", maxWidth: 900, margin: "0 auto" }}>
+        <div style={{ background: "linear-gradient(135deg, #EAF4FF, #F7ECFB)", borderRadius: 28, padding: "36px 30px", textAlign: "center" }}>
+          <div style={{ fontSize: 32 }}>🔒</div>
+          <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 22, margin: "10px 0 8px", color: colors.plum }}>We will never sell your data. Ever.</h3>
+          <p style={{ color: colors.soft, fontSize: 15, lineHeight: 1.6, maxWidth: 560, margin: "0 auto" }}>No ads. No data brokers. No "anonymized insights" quietly sold to anyone. Your habits, moods, and reflections are not a product — they're yours, and you can download or delete them anytime.</p>
+        </div>
+        <div style={{ marginTop: 30, textAlign: "center" }}>
+          <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 22, margin: "0 0 10px", color: colors.plum }}>Support that fits real relationships</h3>
+          <p style={{ color: colors.soft, fontSize: 15, lineHeight: 1.7, maxWidth: 620, margin: "0 auto" }}>
+            A parent gently checking in on a teen. An adult child keeping an eye on an aging parent. A partner supporting a partner through a hard season. Plushlist's Guardian system was built for the relationships that already exist in your life — not a stranger on a leaderboard.
+          </p>
+        </div>
+      </section>
       <footer style={{ padding: "42px 28px", textAlign: "center", borderTop: `1px solid ${colors.line}`, color: colors.soft, fontSize: 13.5 }}>
         <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 900, color: colors.plum }}>Plushlist—little tasks, big comfort.</div>
         <div style={{ marginTop: 4 }}>Made for days that need structure, and ones that need softness.</div>
@@ -4471,6 +4485,10 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #B9DCF6" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>📦 YOUR DATA</div>
             <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Your tasks, schedules, reflections, and progress are yours. Download a copy anytime.</div>
+            <div style={{ marginTop: 9, padding: "10px 12px", borderRadius: 11, background: "#F7FBFF", border: "1px solid #D9ECFA" }}>
+              <div style={{ fontSize: 12, fontWeight: 900, color: "#2D6BB5" }}>🔒 We will never sell your data. Ever.</div>
+              <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.45, color: "#4C7AA8" }}>No ads, no data brokers, no "anonymized insights" sold to anyone. Your habits, moods, and reflections are not a product.</div>
+            </div>
             <button type="button" onClick={exportMyData} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
           </div>
 
