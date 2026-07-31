@@ -1014,7 +1014,12 @@ function GlowUpTracker() {
         setVoiceMessage(`Heard "${transcript}" but couldn't match it to a task. Try saying part of the task's name.`);
       }
     };
-    recognition.start();
+    try {
+      recognition.start();
+    } catch (startError) {
+      setVoiceListening(false);
+      setVoiceMessage("Couldn't start listening — check that this browser allows microphone access, then try again.");
+    }
   };
 
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(false);
@@ -4378,7 +4383,7 @@ function GlowUpTracker() {
             </button>
           )}
           {dashboard === "today" && typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition) && (
-            <button type="button" onClick={startVoiceQuickAdd} disabled={voiceListening} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: voiceListening ? "#F7ECFB" : "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: voiceListening ? "wait" : "pointer" }}>
+            <button type="button" onClick={startVoiceQuickAdd} disabled={voiceListening} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: voiceListening ? "#F7ECFB" : "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: voiceListening ? "wait" : "pointer", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none", touchAction: "manipulation" }}>
               {voiceListening ? "🎙️ Listening…" : "🎙️ Voice"}
             </button>
           )}
