@@ -826,6 +826,7 @@ function GlowUpTracker() {
   const [supportWeeklyHistory, setSupportWeeklyHistory] = useState([]);
   const [supportOwnerId, setSupportOwnerId] = useState(null);
   const [supportPeople, setSupportPeople] = useState([]);
+  const [supportRelationships, setSupportRelationships] = useState([]);
   const [taskSuggestions, setTaskSuggestions] = useState([]);
   const [suggestionSectionsById, setSuggestionSectionsById] = useState({});
   const [suggestedTask, setSuggestedTask] = useState("");
@@ -1377,7 +1378,7 @@ function GlowUpTracker() {
     setSupportMessage("");
     const { data: links, error: linksError } = await supabase
       .from("caregiver_links")
-      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, created_at, last_viewed_at")
+      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, created_at, last_viewed_at, accepted_at")
       .order("created_at", { ascending: false });
     if (linksError) {
       setSupportMessage("Couldn't load guardian access right now.");
@@ -1388,6 +1389,7 @@ function GlowUpTracker() {
     const adultLink = linkRows.find((link) =>
       link.owner_user_id !== currentUser.id &&
       link.active &&
+      !!link.accepted_at &&
       link.caregiver_email === (currentUser.email || "").toLowerCase()
     );
     const invitedOwnerIds = linkRows
@@ -1397,6 +1399,8 @@ function GlowUpTracker() {
       ? await supabase.from("tracker_profiles").select("user_id, display_name").in("user_id", invitedOwnerIds)
       : { data: [] };
     setSupportPeople(people || []);
+    const { data: relationships } = await supabase.rpc("list_my_support_relationships");
+    setSupportRelationships(relationships || []);
     const currentTargetStillAvailable = supportViewMode === "caretaker" && invitedOwnerIds.includes(supportOwnerId);
     const targetOwnerId = currentTargetStillAvailable
       ? supportOwnerId
@@ -1435,7 +1439,7 @@ function GlowUpTracker() {
       return;
     }
     setInviteEmail("");
-    setSupportMessage("Invitation access added. They can now sign in with that exact email.");
+    setSupportMessage("Invitation sent. They'll see it once they sign in with that exact email, and nothing is shared until they accept.");
     await loadSupportData(user);
   };
 
@@ -1504,6 +1508,24 @@ function GlowUpTracker() {
     if (!window.confirm("Permanently end this guardian relationship? They will immediately lose access.")) return;
     const { error } = await supabase.from("caregiver_links").delete().eq("id", linkId);
     setSupportMessage(error ? "Couldn't end access." : "Guardian relationship ended.");
+    if (!error) await loadSupportData(user);
+  };
+
+  const acceptSupportInvitation = async (linkId) => {
+    setSupportMessage("Accepting invitation…");
+    const { error } = await supabase.rpc("accept_support_invitation", { link_id: linkId });
+    if (error) {
+      setSupportMessage("Couldn't accept that invitation. Please try again.");
+      return;
+    }
+    setSupportMessage("Invitation accepted 💛");
+    await loadSupportData(user);
+  };
+
+  const declineSupportInvitation = async (linkId) => {
+    if (!window.confirm("Decline this invitation?")) return;
+    const { error } = await supabase.rpc("decline_support_invitation", { link_id: linkId });
+    setSupportMessage(error ? "Couldn't decline that invitation." : "Invitation declined.");
     if (!error) await loadSupportData(user);
   };
 
@@ -3579,11 +3601,13 @@ function GlowUpTracker() {
     mascotCollection.celebrationSound,
   ]);
 
-  const invitedSupportLinks = supportLinks.filter((link) =>
+  const myInboundLinks = supportLinks.filter((link) =>
     link.owner_user_id !== user?.id &&
     link.active &&
     link.caregiver_email === (user?.email || "").toLowerCase()
   );
+  const invitedSupportLinks = myInboundLinks.filter((link) => !!link.accepted_at);
+  const pendingSupportInvites = myInboundLinks.filter((link) => !link.accepted_at);
   const canUseCaretakerDashboard = invitedSupportLinks.length > 0;
   const dashboardItems = DASHBOARDS;
 
@@ -3622,7 +3646,7 @@ function GlowUpTracker() {
   const canViewSupportProgress = !isSupportAdult || !!activeSupportLink?.can_view_progress;
   const canSendSupportNotes = !isSupportAdult || !!activeSupportLink?.can_send_notes;
   const canAddSupportRewards = !isSupportAdult || !!activeSupportLink?.can_add_rewards;
-  const selectedSupportName = supportPeople.find((person) => person.user_id === supportOwnerId)?.display_name || "Tracker owner";
+  const selectedSupportName = supportPeople.find((person) => person.user_id === supportOwnerId)?.display_name || "your Cozy";
   const supportTaskSource = isSupportAdult ? supportTrackerTasks : trackerTasks;
   const supportTodayDayId = dayIdForDate(period.date);
   const supportTodayDayLabel = DAYS.find((item) => item.id === supportTodayDayId)?.label || supportTodayDayId.toUpperCase();
@@ -5083,9 +5107,28 @@ function GlowUpTracker() {
         {user && dashboard === "guardian" && (
           <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
+            {pendingSupportInvites.length > 0 && (
+              <div style={{ marginBottom: 14, display: "grid", gap: 8 }}>
+                {pendingSupportInvites.map((invite) => {
+                  const inviter = supportPeople.find((person) => person.user_id === invite.owner_user_id);
+                  return (
+                    <div key={invite.id} style={{ padding: 12, borderRadius: 13, background: "#FFF9E9", border: "1px solid #F0D99E" }}>
+                      <div style={{ fontSize: 11, letterSpacing: "0.1em", fontWeight: 900, color: "#A56D14" }}>💌 GUARDIAN INVITATION</div>
+                      <div style={{ marginTop: 4, fontSize: 13, lineHeight: 1.45, color: "#5B4B6B" }}>
+                        {inviter?.display_name || "Someone"} invited you to be their Guardian. Nothing is shared until you accept.
+                      </div>
+                      <div style={{ display: "flex", gap: 7, marginTop: 9 }}>
+                        <button type="button" onClick={() => acceptSupportInvitation(invite.id)} style={{ padding: "7px 12px", borderRadius: 9, border: 0, background: "#318C79", color: "white", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Accept</button>
+                        <button type="button" onClick={() => declineSupportInvitation(invite.id)} style={{ padding: "7px 12px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Decline</button>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            )}
             {canUseCaretakerDashboard && (
               <div role="tablist" aria-label="Guardian views" style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-                <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🧸 My Guardians</button>
+                <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🧸 My Support</button>
                 <button type="button" role="tab" aria-selected={supportViewMode === "caretaker"} onClick={() => { setSupportViewMode("caretaker"); if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "caretaker" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "caretaker" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💛 People I Support</button>
               </div>
             )}
@@ -5125,7 +5168,7 @@ function GlowUpTracker() {
               <div style={{ marginTop: 7, fontSize: 11.5, lineHeight: 1.5, color: "#8C6B9E" }}>
                 {isSupportAdult
                   ? `${selectedSupportName} invited this email. You may only see and do what they allowed. If they pause access, this page stops working right away.`
-                  : "Add a trusted person's email here. They will see your Guardian Dashboard only after signing in with that exact email. You can pause or remove them whenever you want."}
+                  : "Add a trusted person's email here to invite them as your Guardian. They'll see this once they sign in with that exact email and accept your invitation. You can pause or remove them whenever you want."}
               </div>
             </div>
 
@@ -5158,7 +5201,7 @@ function GlowUpTracker() {
                   </div>
                   <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{displayedSupportCompleted}/{displayedSupportPossible} completed · read-only access</div>
                   {supportProgressView === "daily" && <div style={{ marginTop: 5, fontSize: 10.5, lineHeight: 1.45, color: "#8C6B9E" }}>Daily essentials: {supportDailyEssentialCompleted}/{supportDailyEssentialKeys.length} · {supportTodayDayLabel} schedule: {supportScheduledTodayCompleted}/{supportScheduledTodayKeys.length} · Bonus groups do not lower this score.</div>}
-                </div> : <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: "#F6F3F8", color: "#75677D", fontSize: 12 }}>Progress sharing is turned off by the tracker owner.</div>}
+                </div> : <div style={{ marginTop: 14, padding: 12, borderRadius: 12, background: "#F6F3F8", color: "#75677D", fontSize: 12 }}>Progress sharing is turned off by {selectedSupportName}.</div>}
 
                 {canSendSupportNotes && <>
                 <div style={{ marginTop: 14, fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>SEND AN ENCOURAGING NOTE</div>
@@ -5226,17 +5269,33 @@ function GlowUpTracker() {
                 </div>
                 <div style={{ marginTop: 12 }}>
                   {ownedSupportLinks.length === 0 ? (
-                    <div style={{ fontSize: 12, color: "#8C6B9E" }}>No guardians have access yet.</div>
-                  ) : ownedSupportLinks.map((link) => (
+                    <div style={{ fontSize: 12, color: "#8C6B9E" }}>You haven't added a Guardian yet.</div>
+                  ) : ownedSupportLinks.map((link) => {
+                    const pending = !link.accepted_at;
+                    const mutual = supportRelationships.find((rel) => rel.they_support_me_link_id === link.id && rel.i_support_them);
+                    const statusLabel = pending ? "WAITING TO ACCEPT" : link.active ? "ACTIVE" : "PAUSED";
+                    const statusColor = pending ? "#A56D14" : link.active ? "#268A50" : "#75677D";
+                    const statusBg = pending ? "#FFF3D6" : link.active ? "#E9F8EF" : "#EEE9F1";
+                    return (
                     <div key={link.id} style={{ padding: "10px", marginTop: 6, borderRadius: 10, background: link.active ? "#F5FAFF" : "#F6F3F8", border: link.active ? "1px solid #D9ECFA" : "1px solid #DDD4E3" }}>
                       <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
                         <span style={{ fontSize: 12.5, fontWeight: 700 }}>{link.caregiver_email}</span>
-                        <span style={{ padding: "3px 7px", borderRadius: 999, background: link.active ? "#E9F8EF" : "#EEE9F1", color: link.active ? "#268A50" : "#75677D", fontSize: 10.5, fontWeight: 900 }}>{link.active ? "ACTIVE" : "PAUSED"}</span>
+                        <span style={{ padding: "3px 7px", borderRadius: 999, background: statusBg, color: statusColor, fontSize: 10.5, fontWeight: 900 }}>{statusLabel}</span>
                       </div>
-                      <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>👀 Last checked in: {formatRelativeTime(link.last_viewed_at)}</div>
+                      {mutual && (
+                        <div style={{ marginTop: 6, padding: "7px 9px", borderRadius: 8, background: "#FFF9FD", border: "1px solid #E9D7F0", fontSize: 11, color: "#8D5CA5" }}>
+                          💛 You're also {mutual.partner_display_name ? `${mutual.partner_display_name}'s` : "their"} Guardian.
+                          {mutual.i_support_them_accepted ? (
+                            <button type="button" onClick={() => { setSupportViewMode("caretaker"); loadSupportOwner(mutual.partner_user_id); }} style={{ marginLeft: 6, padding: "3px 7px", borderRadius: 7, border: "1px solid #E3C9EC", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>View</button>
+                          ) : (
+                            <span style={{ marginLeft: 4, fontStyle: "italic" }}>Waiting on your acceptance of their invite.</span>
+                          )}
+                        </div>
+                      )}
+                      {!pending && <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>👀 Last checked in: {formatRelativeTime(link.last_viewed_at)}</div>}
                       <div style={{ display: "flex", gap: 6, marginTop: 8, flexWrap: "wrap" }}>
-                        <button onClick={() => setSupportAdultActive(link.id, !link.active)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>{link.active ? "Pause access" : "Resume access"}</button>
-                        <button onClick={() => removeSupportAdult(link.id)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 800, cursor: "pointer" }}>End relationship</button>
+                        {!pending && <button onClick={() => setSupportAdultActive(link.id, !link.active)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>{link.active ? "Pause access" : "Resume access"}</button>}
+                        <button onClick={() => removeSupportAdult(link.id)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 800, cursor: "pointer" }}>{pending ? "Cancel invitation" : "End relationship"}</button>
                       </div>
                       <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 6, marginTop: 9, paddingTop: 8, borderTop: "1px solid #D9ECFA" }}>
                         {[
@@ -5252,7 +5311,8 @@ function GlowUpTracker() {
                         ))}
                       </div>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
                 {taskSuggestions.filter((item) => item.status === "pending").length > 0 && (
                   <div style={{ marginTop: 14 }}>
