@@ -469,6 +469,17 @@ const SUPPORTER_FEATURES_ENABLED = false;
 const FREE_TASK_LIMIT_PER_DAY = 5;
 const FREE_GUARDIAN_LIMIT = 1;
 
+// ————— Internal access-tier architecture (groundwork only, beta today) —————
+// Never surfaced in the UI — no tier name, price, or lock icon anywhere while
+// ACCESS_STATE is "beta". This just gives future billing code one place to
+// check instead of scattering feature flags through the app. See the
+// entitlements table (database/entitlements.sql) for the provider-neutral
+// purchase-record shape this will eventually read from.
+const ACCESS_STATE = "beta"; // "beta" | "free" | "plus"
+const ALL_FEATURES_UNLOCKED = true;
+const BILLING_ENABLED = false;
+const PAYWALLS_ENABLED = false;
+
 const CURRENT_CHANGELOG_VERSION = "2026-07-30-7";
 const CHANGELOG_ITEMS = [
   "🎉 Fixed the 100% celebration not firing again after an accidental completion was undone",
