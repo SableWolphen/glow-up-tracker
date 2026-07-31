@@ -21,6 +21,7 @@ const SITE_FILES = [
   "login.html",
   "oauth.html",
   "legal.html",
+  "account-deletion.html",
   "service-worker.js",
   "manifest.webmanifest",
   "icon.svg",

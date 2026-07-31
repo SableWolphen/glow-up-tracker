@@ -16,10 +16,30 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    // Release signing comes entirely from environment variables (set as GitHub
+    // Actions secrets in .github/workflows/android-release.yml) so the keystore,
+    // its password, and the key alias/password never appear in this repo. A
+    // local `./gradlew assembleDebug` for day-to-day development doesn't need
+    // any of this — only `bundleRelease`/`assembleRelease` read it, and only
+    // once those four env vars are actually set.
+    def hasReleaseSigning = System.getenv('PLUSHLIFE_KEYSTORE_PATH') != null
+    if (hasReleaseSigning) {
+        signingConfigs {
+            release {
+                storeFile file(System.getenv('PLUSHLIFE_KEYSTORE_PATH'))
+                storePassword System.getenv('PLUSHLIFE_KEYSTORE_PASSWORD')
+                keyAlias System.getenv('PLUSHLIFE_KEY_ALIAS')
+                keyPassword System.getenv('PLUSHLIFE_KEY_PASSWORD')
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            if (hasReleaseSigning) {
+                signingConfig signingConfigs.release
+            }
         }
     }
 }
