@@ -1,0 +1,76 @@
+name: Build signed Android App Bundle
+
+# Manual only — this never runs on a push, and never publishes to Play
+# Console. It builds app-release.aab and uploads it as a workflow artifact
+# for you to download and upload yourself.
+on:
+  workflow_dispatch:
+    inputs:
+      versionCode:
+        description: "Android versionCode (positive integer, must increase each release)"
+        required: true
+        type: string
+      versionName:
+        description: "Android versionName (e.g. 1.0.0)"
+        required: true
+        type: string
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build www/ and sync Android
+        run: npm run android:sync
+
+      - name: Set release version
+        working-directory: android/app
+        run: |
+          sed -i "s/versionCode 1/versionCode ${{ inputs.versionCode }}/" build.gradle
+          sed -i 's/versionName "1.0"/versionName "${{ inputs.versionName }}"/' build.gradle
+
+      - name: Decode signing keystore
+        run: |
+          echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+      - name: Build signed AAB
+        working-directory: android
+        env:
+          PLUSHLIFE_KEYSTORE_PATH: release.keystore
+          PLUSHLIFE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          PLUSHLIFE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          PLUSHLIFE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+        run: ./gradlew bundleRelease
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f android/app/release.keystore
+
+      - name: SHA-256 of the AAB
+        run: sha256sum android/app/build/outputs/bundle/release/app-release.aab
+
+      - name: Upload AAB
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-${{ inputs.versionCode }}
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
