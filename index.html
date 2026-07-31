@@ -2510,7 +2510,6 @@ function GlowUpTracker() {
     setTrackerTasks([]);
     setPersonalSchedules([]);
     setWeeklyHistory([]);
-    setSupportOpen(false);
     setShowSignIn(true);
     setSyncStatus("signed-out");
 
@@ -2578,37 +2577,6 @@ function GlowUpTracker() {
         <button type="button" onClick={() => markFeatureSeen(id)} aria-label="Dismiss tip" style={{ padding: "2px 6px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 900, fontSize: 10.5, cursor: "pointer", flexShrink: 0 }}>Got it</button>
       </div>
     );
-  };
-
-  const saveAccountType = async (nextType) => {
-    if (!user || !["little", "caretaker"].includes(nextType)) return;
-    setSettingsMessage("Switching your account home…");
-    const row = {
-      user_id: user.id,
-      display_name: trackerProfile?.display_name || (user.email || "My").split("@")[0],
-      show_personal_schedule: !!trackerProfile?.show_personal_schedule,
-      account_type: nextType,
-      updated_at: new Date().toISOString(),
-    };
-    const { data, error } = await supabase
-      .from("tracker_profiles")
-      .upsert(row, { onConflict: "user_id" })
-      .select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only")
-      .single();
-    if (error) {
-      setSettingsMessage("Your account home couldn't be changed.");
-      return;
-    }
-    setTrackerProfile(data);
-    if (nextType === "caretaker" && invitedSupportLinks[0]) {
-      setSupportViewMode("caretaker");
-      setSupportOpen(true);
-      await loadSupportOwner(invitedSupportLinks[0].owner_user_id);
-    } else {
-      setSupportViewMode("mine");
-      setSupportOpen(false);
-    }
-    setSettingsMessage(nextType === "caretaker" ? "Guardian dashboard is now your home 💛" : "Your personal tracker is now your home 💛");
   };
 
   const saveDisplayName = async () => {
@@ -2689,7 +2657,7 @@ function GlowUpTracker() {
       comfort_item_name: comfortItemDraft.trim().replace(/\s+/g, " ").slice(0, 80),
       guardian_read_only: true,
       show_personal_schedule: false,
-      account_type: onboardingMode === "guardian" ? "caretaker" : "little",
+      account_type: "little",
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id" }).select("*").single();
     if (profileError) {
@@ -3647,8 +3615,6 @@ function GlowUpTracker() {
       document.getElementById(`dashboard-tab-${nextItem.id}`)?.focus();
     }
   };
-  const accountType = trackerProfile?.account_type || (canUseCaretakerDashboard ? "caretaker" : "little");
-  const isCaretakerOnlyAccount = accountType === "caretaker" && canUseCaretakerDashboard;
   const isAdminUser = ["johnston.alexander.k@gmail.com", "johnston.alexander.k+plushlisttest@gmail.com"].includes((user?.email || "").toLowerCase());
   const isSupporterAccount = !!preferences.is_supporter || isAdminUser;
   const personalPlushlistTitle = trackerProfile?.display_name
@@ -3711,13 +3677,6 @@ function GlowUpTracker() {
 
   useEffect(() => {
     if (!user) return;
-    if (isCaretakerOnlyAccount && supportViewMode !== "caretaker") {
-      setSupportViewMode("caretaker");
-      setSupportOpen(false);
-      setDashboard("today");
-      loadSupportOwner(invitedSupportLinks[0].owner_user_id);
-      return;
-    }
     if (supportViewMode === "caretaker") {
       const selectedInviteStillActive = invitedSupportLinks.some((link) => link.owner_user_id === supportOwnerId);
       if (selectedInviteStillActive) return;
@@ -3726,13 +3685,12 @@ function GlowUpTracker() {
         loadSupportOwner(firstInvite.owner_user_id);
       } else {
         setSupportViewMode("mine");
-        setSupportOpen(false);
         loadSupportOwner(user.id);
       }
       return;
     }
     if (supportOwnerId !== user.id) loadSupportOwner(user.id);
-  }, [user?.id, supportViewMode, supportLinks.length, isCaretakerOnlyAccount]);
+  }, [user?.id, supportViewMode, supportLinks.length]);
 
   useEffect(() => {
     if (!user || dashboard !== "guardian" || supportViewMode !== "mine" || unreadNoteCount === 0) return;
@@ -4354,12 +4312,10 @@ function GlowUpTracker() {
           <div>
             <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"}</div>
             <h1 style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              {isCaretakerOnlyAccount
-                ? <>Plushlist <span style={{ color: "#4C8FE8" }}>Guardian Dashboard</span> 💛</>
-                : <>{user ? personalPlushlistTitle : "Plushlist"} 💜</>}
+              {user ? personalPlushlistTitle : "Plushlist"} 💜
             </h1>
           </div>
-          {user && !isCaretakerOnlyAccount && (
+          {user && (
             <button type="button" onClick={() => setCollectionOpen(true)} aria-label="Open mascot collection" title="Your mascot — tap to see the collection" style={{ border: 0, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }}>
               <PlushMascot outfit={selectedOutfit} size={58} mood={mascotMood} />
             </button>
@@ -4415,7 +4371,7 @@ function GlowUpTracker() {
         <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>Swipe or tap to change sections</div>
 
         {/* Routine tabs */}
-        {!isCaretakerOnlyAccount && dashboard === "routines" && <>
+        {dashboard === "routines" && <>
           <div role="tablist" aria-label="Planner dashboards" style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
             {ALL.map((d) => {
               const on = d.id === active;
@@ -4450,11 +4406,9 @@ function GlowUpTracker() {
             <button type="button" onClick={() => setSettingsOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #73B7A855", background: "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span style={{ fontSize: 18 }}>⚙️</span> Settings <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Accessibility, notifications, account ›</span>
             </button>
-            {!isCaretakerOnlyAccount && (
-              <button type="button" onClick={() => setCollectionOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
-                <span style={{ fontSize: 18 }}>🏅</span> Rewards <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Mascot closet & badges ›</span>
-              </button>
-            )}
+            <button type="button" onClick={() => setCollectionOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 18 }}>🏅</span> Rewards <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Mascot closet & badges ›</span>
+            </button>
             <button type="button" onClick={() => setHelpOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span style={{ fontSize: 18 }}>❓</span> Help & FAQ <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>How this app works ›</span>
             </button>
@@ -4472,23 +4426,14 @@ function GlowUpTracker() {
         {helpOpen && (
           <ToolPanel title="Help" onClose={() => setHelpOpen(false)}>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFDF4", border: "1px solid #E9C96E", boxShadow: "0 8px 22px rgba(166,109,20,.08)" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#A56D14" }}>❓ HOW THIS PAGE WORKS</div>
-            {isCaretakerOnlyAccount ? (
-              <div style={{ display: "grid", gap: 7, marginTop: 9, fontSize: 12.5, lineHeight: 1.45, color: "#5B4B6B" }}>
-                <div><strong>Today / This week:</strong> changes which progress score you see.</div>
-                <div><strong>Read-only:</strong> you can encourage, but you cannot check off or change another person’s private tasks.</div>
-                <div><strong>Notes, rewards, and suggestions:</strong> only appear when the tracker owner gives that permission.</div>
-                <div><strong>Privacy:</strong> private reflections are never shown here.</div>
-              </div>
-            ) : (
-              <div style={{ display: "grid", gap: 7, marginTop: 9, fontSize: 12.5, lineHeight: 1.45, color: "#5B4B6B" }}>
-                <div><strong>DAILY:</strong> shows today’s everyday tasks and today’s schedule.</div>
-                <div><strong>MON–SUN:</strong> lets you preview or change a particular day.</div>
-                <div><strong>Required:</strong> counts toward your main score. <strong>Bonus:</strong> is optional and never lowers it.</div>
-                <div><strong>Guardian tab:</strong> is where you invite, pause, or remove a trusted guardian.</div>
-                <div><strong>Private reflection:</strong> belongs only to you and stays with the date you wrote it on.</div>
-              </div>
-            )}
+            <div style={{ display: "grid", gap: 7, marginTop: 9, fontSize: 12.5, lineHeight: 1.45, color: "#5B4B6B" }}>
+              <div><strong>DAILY:</strong> shows today’s everyday tasks and today’s schedule.</div>
+              <div><strong>MON–SUN:</strong> lets you preview or change a particular day.</div>
+              <div><strong>Required:</strong> counts toward your main score. <strong>Bonus:</strong> is optional and never lowers it.</div>
+              <div><strong>Guardian tab:</strong> is where you invite, pause, or remove a trusted guardian, and where you view anyone you support.</div>
+              <div><strong>People I Support:</strong> read-only. You can encourage, but you can't check off or change someone else's tasks, and their private reflections are never shown to you.</div>
+              <div><strong>Private reflection:</strong> belongs only to you and stays with the date you wrote it on.</div>
+            </div>
           </div>
 
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFDF4", border: "1px solid #E9C96E", boxShadow: "0 8px 22px rgba(166,109,20,.08)" }}>
@@ -4516,7 +4461,7 @@ function GlowUpTracker() {
           </ToolPanel>
         )}
 
-        {collectionOpen && !isCaretakerOnlyAccount && (
+        {collectionOpen && (
           <ToolPanel title="Rewards" onClose={() => setCollectionOpen(false)}>
           <FeatureTip id="rewards_panel" text="Everything here is earned from all kinds of care, not just streaks — and once unlocked, nothing is ever taken away." />
           <div style={{ marginBottom: 18, padding: 17, borderRadius: 20, background: "linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,245,218,.8))", border: "1px solid #E9C96E", boxShadow: "0 10px 28px rgba(166,109,20,.11)" }}>
@@ -4940,7 +4885,7 @@ function GlowUpTracker() {
           </ToolPanel>
         )}
 
-        {manageTasks && !isCaretakerOnlyAccount && (
+        {manageTasks && (
           <ToolPanel title="Change my tasks" onClose={() => setManageTasks(false)}>
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "linear-gradient(145deg,#FFF9FD,#F3FAFF)", border: "2px solid #DCC9E8", boxShadow: "0 8px 22px rgba(118,85,138,.09)" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "#76558A" }}>STEP 1 · CHOOSE A LIST</div>
@@ -5077,7 +5022,7 @@ function GlowUpTracker() {
           </ToolPanel>
         )}
 
-        {manageSchedule && !isCaretakerOnlyAccount && (
+        {manageSchedule && (
           <ToolPanel title="Change my schedule" onClose={() => setManageSchedule(false)}>
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "linear-gradient(145deg,#F3FAFF,#FFF9FD)", border: "2px solid #B9DCF6", boxShadow: "0 8px 22px rgba(76,143,232,.09)" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "#4C8FE8" }}>WHICH DAY DO I WANT TO CHANGE?</div>
@@ -5142,7 +5087,7 @@ function GlowUpTracker() {
         {user && dashboard === "guardian" && (
           <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
-            {!isCaretakerOnlyAccount && canUseCaretakerDashboard && (
+            {canUseCaretakerDashboard && (
               <div role="tablist" aria-label="Guardian views" style={{ display: "flex", gap: 6, marginBottom: 14 }}>
                 <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🧸 My Guardians</button>
                 <button type="button" role="tab" aria-selected={supportViewMode === "caretaker"} onClick={() => { setSupportViewMode("caretaker"); if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "caretaker" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "caretaker" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💛 People I Support</button>
@@ -5527,7 +5472,7 @@ function GlowUpTracker() {
             </div>
           )}
         </div>
-        ) : !isCaretakerOnlyAccount && (
+        ) : (
         <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px dashed #C9B3DC", textAlign: "center" }}>
           <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#8C6B9E", fontWeight: 800 }}>🗓️ NO SCHEDULE YET</div>
           <div style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.5, color: "#6B5A7D" }}>
