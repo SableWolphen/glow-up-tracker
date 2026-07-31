@@ -26,6 +26,44 @@
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script>
+// Native-shell integration for the Capacitor Android build. window.Capacitor
+// only exists inside the packaged native app, so this is a complete no-op on
+// the regular web/GitHub Pages version — one script, both deployments.
+(function () {
+  if (!window.Capacitor || !window.Capacitor.Plugins) return;
+  var Plugins = window.Capacitor.Plugins;
+
+  if (Plugins.StatusBar) {
+    Plugins.StatusBar.setBackgroundColor({ color: "#FFF8FC" }).catch(function () {});
+    Plugins.StatusBar.setStyle({ style: "DARK" }).catch(function () {});
+  }
+
+  if (Plugins.App) {
+    var exitArmed = false;
+    Plugins.App.addListener("backButton", function (state) {
+      // Every full-screen ToolPanel modal (Settings, Guardian, Help, Rewards, task
+      // editors, etc.) already closes itself on Escape — reuse that instead of
+      // teaching the native shell about each panel's own close handler.
+      document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape" }));
+      if (state && state.canGoBack) {
+        window.history.back();
+        return;
+      }
+      if (exitArmed) {
+        Plugins.App.exitApp();
+        return;
+      }
+      exitArmed = true;
+      window.setTimeout(function () { exitArmed = false; }, 2000);
+    });
+  }
+
+  window.addEventListener("load", function () {
+    if (Plugins.SplashScreen) Plugins.SplashScreen.hide().catch(function () {});
+  });
+})();
+</script>
 <script id="app-source" type="text/plain">
 const { useState, useEffect } = React;
 const supabase = window.supabase.createClient(
