@@ -1,0 +1,25 @@
+{
+  "appId": "com.PlushLife",
+  "appName": "PlushLife",
+  "webDir": "www",
+  "backgroundColor": "#fff8fc",
+  "android": {
+    "backgroundColor": "#fff8fc"
+  },
+  "plugins": {
+    "SplashScreen": {
+      "launchShowDuration": 600,
+      "backgroundColor": "#fff8fc",
+      "androidScaleType": "CENTER_CROP",
+      "showSpinner": false
+    },
+    "StatusBar": {
+      "style": "DARK",
+      "backgroundColor": "#fff8fc"
+    },
+    "Keyboard": {
+      "resize": "body",
+      "resizeOnFullScreen": true
+    }
+  }
+}
