@@ -299,8 +299,10 @@ const TEMPLATE_PACKS = [
 const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
-  { id: "week", label: "Week", icon: "📅", accent: "#4C8FE8" },
+  { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
   { id: "routines", label: "Routines", icon: "✨", accent: "#FF7A94" },
+  { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
+  { id: "more", label: "More", icon: "⋯", accent: "#318C79" },
 ];
 const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -807,7 +809,6 @@ function GlowUpTracker() {
   const [reflectionViewerDate, setReflectionViewerDate] = useState(null);
   const [reflectionViewerNote, setReflectionViewerNote] = useState("");
   const [reflectionViewerLoading, setReflectionViewerLoading] = useState(false);
-  const [supportOpen, setSupportOpen] = useState(false);
   const [supportViewMode, setSupportViewMode] = useState("mine");
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportNotes, setSupportNotes] = useState([]);
@@ -2713,7 +2714,7 @@ function GlowUpTracker() {
         },
       });
       if (guardianEmailError) {
-        setOnboardingMessage("Your guardian was added, but we couldn't send their email yet. Try again from Add a Guardian.");
+        setOnboardingMessage("Your guardian was added, but we couldn't send their email yet. Try again from the Guardian tab.");
         return;
       }
     }
@@ -3620,9 +3621,7 @@ function GlowUpTracker() {
     link.caregiver_email === (user?.email || "").toLowerCase()
   );
   const canUseCaretakerDashboard = invitedSupportLinks.length > 0;
-  const dashboardItems = canUseCaretakerDashboard
-    ? [...DASHBOARDS, { id: "guardian", label: "Guardian's Page", icon: "💛", accent: "#4C8FE8" }]
-    : DASHBOARDS;
+  const dashboardItems = DASHBOARDS;
 
   const goToDashboard = (id) => {
     setDashboard(id);
@@ -3631,9 +3630,21 @@ function GlowUpTracker() {
       setSelectedProgressDate(period.date);
     }
     if (id === "guardian") {
-      setSupportViewMode("caretaker");
-      setSupportOpen(true);
-      if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id);
+      if (canUseCaretakerDashboard) {
+        setSupportViewMode("caretaker");
+        if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id);
+      } else {
+        setSupportViewMode("mine");
+      }
+    }
+  };
+  const dashboardIndex = dashboardItems.findIndex((item) => item.id === dashboard);
+  const stepDashboard = (direction) => {
+    const currentIndex = dashboardIndex === -1 ? 0 : dashboardIndex;
+    const nextItem = dashboardItems[Math.max(0, Math.min(dashboardItems.length - 1, currentIndex + direction))];
+    if (nextItem && nextItem.id !== dashboard) {
+      goToDashboard(nextItem.id);
+      document.getElementById(`dashboard-tab-${nextItem.id}`)?.focus();
     }
   };
   const accountType = trackerProfile?.account_type || (canUseCaretakerDashboard ? "caretaker" : "little");
@@ -3722,6 +3733,12 @@ function GlowUpTracker() {
     }
     if (supportOwnerId !== user.id) loadSupportOwner(user.id);
   }, [user?.id, supportViewMode, supportLinks.length, isCaretakerOnlyAccount]);
+
+  useEffect(() => {
+    if (!user || dashboard !== "guardian" || supportViewMode !== "mine" || unreadNoteCount === 0) return;
+    setUnreadNoteCount(0);
+    supabase.from("support_notes").update({ is_read: true }).eq("owner_user_id", user.id).eq("is_read", false).then(() => {});
+  }, [user?.id, dashboard, supportViewMode]);
 
   const babyMode = preferences.nickname_style === "baby";
   const dinoTheme = !!preferences.dino_theme;
@@ -4301,11 +4318,7 @@ function GlowUpTracker() {
           const deltaX = endX - startX;
           const deltaY = endY - startY;
           if (Math.abs(deltaX) < 60 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
-          const currentIndex = DASHBOARDS.findIndex((item) => item.id === dashboard);
-          const direction = deltaX < 0 ? 1 : -1;
-          const nextIndex = Math.max(0, Math.min(DASHBOARDS.length - 1, currentIndex + direction));
-          const nextDashboard = DASHBOARDS[nextIndex];
-          if (nextDashboard && nextDashboard.id !== dashboard) goToDashboard(nextDashboard.id);
+          stepDashboard(deltaX < 0 ? 1 : -1);
         }}
         style={{ maxWidth: 520, margin: "0 auto", touchAction: "pan-y" }}>
         <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 12, background: "rgba(255,255,255,0.55)", border: "1px solid #F3D9EC", fontSize: 12.5, color: "#8C6B9E" }}>
@@ -4377,15 +4390,25 @@ function GlowUpTracker() {
           <>
 
         {/* Dashboards */}
-        <div role="tablist" aria-label="Plushlist dashboards" style={{ display: "grid", gridTemplateColumns: `repeat(${dashboardItems.length}, minmax(0, 1fr))`, gap: 6, marginBottom: 10 }}>
-          {dashboardItems.map((item) => {
-            const on = item.id === dashboard;
-            return <button key={item.id} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
-              <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
-            </button>;
-          })}
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
+          <button type="button" aria-label="Previous section" disabled={dashboardIndex === 0} onClick={() => stepDashboard(-1)} style={{ flexShrink: 0, minWidth: 32, minHeight: 44, borderRadius: 11, border: "1px solid #F3D9EC", background: "#FFFFFF", color: "#8C6B9E", fontWeight: 900, cursor: dashboardIndex === 0 ? "not-allowed" : "pointer", opacity: dashboardIndex === 0 ? 0.4 : 1 }}>‹</button>
+          <div role="tablist" aria-label="Plushlist dashboards" onKeyDown={(event) => {
+            if (event.key === "ArrowRight") { event.preventDefault(); stepDashboard(1); }
+            else if (event.key === "ArrowLeft") { event.preventDefault(); stepDashboard(-1); }
+          }} style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${dashboardItems.length}, minmax(0, 1fr))`, gap: 6, minWidth: 0 }}>
+            {dashboardItems.map((item) => {
+              const on = item.id === dashboard;
+              return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
+                <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
+                {item.id === "guardian" && unreadNoteCount > 0 && (
+                  <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
+                )}
+              </button>;
+            })}
+          </div>
+          <button type="button" aria-label="Next section" disabled={dashboardIndex === dashboardItems.length - 1} onClick={() => stepDashboard(1)} style={{ flexShrink: 0, minWidth: 32, minHeight: 44, borderRadius: 11, border: "1px solid #F3D9EC", background: "#FFFFFF", color: "#8C6B9E", fontWeight: 900, cursor: dashboardIndex === dashboardItems.length - 1 ? "not-allowed" : "pointer", opacity: dashboardIndex === dashboardItems.length - 1 ? 0.4 : 1 }}>›</button>
         </div>
-        <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>← Swipe left or right to change dashboards · or tap a button</div>
+        <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>← Swipe, use the arrows, or press the arrow keys to change sections</div>
 
         {/* Routine tabs */}
         {!isCaretakerOnlyAccount && dashboard === "routines" && <>
@@ -4409,47 +4432,38 @@ function GlowUpTracker() {
           </div>
         </>}
 
-        <div style={{ display: "flex", justifyContent: "flex-end", gap: 7, margin: "-10px 0 14px", flexWrap: "wrap" }}>
-          {dashboard === "today" && (
+        {dashboard === "today" && (
+          <div style={{ display: "flex", justifyContent: "flex-end", margin: "-10px 0 14px" }}>
             <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
               🎯 {dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
               {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
             </button>
-          )}
-          {!isCaretakerOnlyAccount && <button type="button" onClick={() => {
-            const shouldOpen = !(supportOpen && supportViewMode === "mine");
-            setSupportViewMode("mine");
-            setSupportOpen(shouldOpen);
-            if (shouldOpen) {
-              loadSupportOwner(user.id);
-              if (unreadNoteCount > 0) {
-                setUnreadNoteCount(0);
-                supabase.from("support_notes").update({ is_read: true }).eq("owner_user_id", user.id).eq("is_read", false).then(() => {});
-              }
-            }
-          }} style={{ position: "relative", padding: "7px 10px", borderRadius: 9, border: "1px solid #4C8FE855", background: supportOpen && supportViewMode === "mine" ? "#EAF4FF" : "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            🧸 {ownedSupportLinks.length === 0 ? "Add a Guardian" : ownedSupportLinks.length === 1 ? "My Guardian" : `My Guardians (${ownedSupportLinks.length})`}
-            {unreadNoteCount > 0 && (
-              <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
-            )}
-          </button>}
+          </div>
+        )}
 
-          <button type="button" onClick={() => setSettingsOpen((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #73B7A855", background: settingsOpen ? "#E9FBF6" : "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            ⚙️ {settingsOpen ? "Close settings" : "Settings"}
-          </button>
-          {isAdminUser && (
-            <button type="button" onClick={() => { const next = !adminOpen; setAdminOpen(next); if (next) loadAdminData(); }} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #C45D7455", background: adminOpen ? "#FFEFF3" : "#FFFFFFAA", color: "#C45D74", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-              🛠️ {adminOpen ? "Close admin" : "Admin"}
+        {dashboard === "more" && (
+          <div style={{ marginBottom: 18, display: "grid", gap: 8 }}>
+            <button type="button" onClick={() => setSettingsOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #73B7A855", background: "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 18 }}>⚙️</span> Settings <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Accessibility, notifications, account ›</span>
             </button>
-          )}
-          <button type="button" onClick={() => setHelpOpen((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #D9A64C66", background: helpOpen ? "#FFF6D9" : "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            ❓ {helpOpen ? "Close help" : "Help"}
-          </button>
-          {!isCaretakerOnlyAccount && <button type="button" onClick={() => setCollectionOpen((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #D9A64C66", background: collectionOpen ? "#FFF6D9" : "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-            🏅 {collectionOpen ? "Close rewards" : "Rewards"}
-          </button>}
-
-        </div>
+            {!isCaretakerOnlyAccount && (
+              <button type="button" onClick={() => setCollectionOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+                <span style={{ fontSize: 18 }}>🏅</span> Rewards <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Mascot closet & badges ›</span>
+              </button>
+            )}
+            <button type="button" onClick={() => setHelpOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 18 }}>❓</span> Help & FAQ <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>How this app works ›</span>
+            </button>
+            <button type="button" onClick={goToFeedback} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #4C8FE855", background: "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 18 }}>💌</span> Send feedback <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Report a bug or suggest something ›</span>
+            </button>
+            {isAdminUser && (
+              <button type="button" onClick={() => { setAdminOpen(true); loadAdminData(); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #C45D7455", background: "#FFFFFFAA", color: "#C45D74", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+                <span style={{ fontSize: 18 }}>🛠️</span> Admin <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>›</span>
+              </button>
+            )}
+          </div>
+        )}
 
         {helpOpen && (
           <ToolPanel title="Help" onClose={() => setHelpOpen(false)}>
@@ -4467,7 +4481,7 @@ function GlowUpTracker() {
                 <div><strong>DAILY:</strong> shows today’s everyday tasks and today’s schedule.</div>
                 <div><strong>MON–SUN:</strong> lets you preview or change a particular day.</div>
                 <div><strong>Required:</strong> counts toward your main score. <strong>Bonus:</strong> is optional and never lowers it.</div>
-                <div><strong>Add a Guardian:</strong> is where you invite, pause, or remove a trusted guardian.</div>
+                <div><strong>Guardian tab:</strong> is where you invite, pause, or remove a trusted guardian.</div>
                 <div><strong>Private reflection:</strong> belongs only to you and stays with the date you wrote it on.</div>
               </div>
             )}
@@ -5121,19 +5135,18 @@ function GlowUpTracker() {
           </ToolPanel>
         )}
 
-        {user && ((dashboard === "guardian" && canUseCaretakerDashboard) || (supportOpen && supportViewMode === "mine")) && (
-          <ToolPanel inline={dashboard === "guardian"} title={dashboard === "guardian" ? "Guardian's Page" : "Add a Guardian"} onClose={() => {
-            setSupportOpen(false);
-            if (dashboard === "guardian") {
-              setDashboard("today");
-              setSupportViewMode("mine");
-              loadSupportOwner(user.id);
-            }
-          }}>
+        {user && dashboard === "guardian" && (
+          <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
+            {!isCaretakerOnlyAccount && canUseCaretakerDashboard && (
+              <div role="tablist" aria-label="Guardian views" style={{ display: "flex", gap: 6, marginBottom: 14 }}>
+                <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🧸 My Guardians</button>
+                <button type="button" role="tab" aria-selected={supportViewMode === "caretaker"} onClick={() => { setSupportViewMode("caretaker"); if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "caretaker" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "caretaker" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💛 People I Support</button>
+              </div>
+            )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#4C8FE8", fontWeight: 800 }}>{isSupportAdult ? "💛 PEOPLE I HELP" : "🧸 ADD A GUARDIAN"}</div>
+                <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#4C8FE8", fontWeight: 800 }}>{isSupportAdult ? "💛 PEOPLE I HELP" : "🧸 MY GUARDIANS"}</div>
                 <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900 }}>{isSupportAdult ? `${selectedSupportName}'s progress` : "My trusted guardians"}</div>
               </div>
               <button onClick={() => loadSupportData(user)} style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F5FAFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>↻ Refresh</button>
