@@ -987,10 +987,13 @@ function GlowUpTracker() {
   });
   const [celebrationOpen, setCelebrationOpen] = useState(false);
   const [celebrateKey, setCelebrateKey] = useState(null);
+  const [recentlyCompletedKeys, setRecentlyCompletedKeys] = useState([]);
   const triggerCelebrate = (key) => {
     setCelebrateKey(key);
     if (navigator.vibrate) { try { navigator.vibrate(16); } catch (_error) {} }
     window.setTimeout(() => setCelebrateKey((current) => current === key ? null : current), 550);
+    setRecentlyCompletedKeys((keys) => [...keys, key]);
+    window.setTimeout(() => setRecentlyCompletedKeys((keys) => keys.filter((item) => item !== key)), 1100);
   };
   const [returnGapDays, setReturnGapDays] = useState(0);
   const [returnBannerDismissed, setReturnBannerDismissed] = useState(false);
@@ -5462,8 +5465,8 @@ function GlowUpTracker() {
               const visibleRows = dailyCheckIn.custom_essentials?.length
                 ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
                 : dailyCheckIn.soft_day ? rows.filter((r) => !r.isBonus) : rows;
-              const incompleteRows = visibleRows.filter((r) => !viewDone[r.key]);
-              const completedRows = visibleRows.filter((r) => viewDone[r.key]);
+              const incompleteRows = visibleRows.filter((r) => !viewDone[r.key] || recentlyCompletedKeys.includes(r.key));
+              const completedRows = visibleRows.filter((r) => viewDone[r.key] && !recentlyCompletedKeys.includes(r.key));
               const renderRow = (r) => {
                 const header = r.section !== lastSection ? r.section : null;
                 lastSection = r.section;
