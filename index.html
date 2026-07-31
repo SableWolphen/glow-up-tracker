@@ -1192,6 +1192,12 @@ function GlowUpTracker() {
   useEffect(() => {
     if (!user) {
       setDone({});
+      setTrackerTasks([]);
+      setTrackerProfile(null);
+      setDisplayNameDraft("");
+      setPersonalSchedules([]);
+      setPrivateNote("");
+      setPrivateNoteMessage("");
       return;
     }
     let active = true;
@@ -1208,8 +1214,25 @@ function GlowUpTracker() {
         .from("tracker_progress")
         .select("task_key, completed, updated_at")
         .eq("user_id", user.id),
-    ]).then(async ([dailyResult, legacyResult]) => {
+      supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", user.id).order("sort_order"),
+      supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
+    ]).then(async ([dailyResult, legacyResult, profileResult, tasksResult, schedulesResult]) => {
         if (!active) return;
+
+        // Tasks/profile/schedule are loaded in the same round trip as today's
+        // completions so syncStatus only reaches "ready" once everything
+        // needed to compute today's progress is actually in state — loading
+        // them on a separate, unsynchronized timer previously let a brief
+        // window with an empty task list masquerade as "today undone" and
+        // wipe (then immediately re-fire) the 100% celebration.
+        setTrackerProfile(profileResult.data || null);
+        setDisplayNameDraft(profileResult.data?.display_name || "");
+        setComfortItemDraft(profileResult.data?.comfort_item_name || "");
+        setTrackerTasks(tasksResult.data || []);
+        setPersonalSchedules(schedulesResult.data || []);
+        if (profileResult.error || tasksResult.error || schedulesResult.error) setTaskMessage("Couldn't load your private tracker.");
+
         if (dailyResult.error || legacyResult.error) {
           setSyncStatus("error");
           return;
@@ -1602,33 +1625,6 @@ function GlowUpTracker() {
     setSupportRewards((items) => action === "claim" ? items.filter((item) => item.id !== reward.id) : items.map((item) => item.id === reward.id ? { ...item, ...changes } : item));
     setSupportMessage(action === "approve" ? "Reward approved ✨" : "Reward marked claimed—enjoy it 💛");
   };
-
-  useEffect(() => {
-    if (!user) {
-      setTrackerTasks([]);
-      setTrackerProfile(null);
-      setDisplayNameDraft("");
-      setPersonalSchedules([]);
-      setPrivateNote("");
-      setPrivateNoteMessage("");
-      return;
-    }
-    let alive = true;
-    Promise.all([
-      supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", user.id).order("sort_order"),
-      supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
-    ]).then(([profileResult, tasksResult, schedulesResult]) => {
-      if (!alive) return;
-      setTrackerProfile(profileResult.data || null);
-      setDisplayNameDraft(profileResult.data?.display_name || "");
-      setComfortItemDraft(profileResult.data?.comfort_item_name || "");
-      setTrackerTasks(tasksResult.data || []);
-      setPersonalSchedules(schedulesResult.data || []);
-      if (profileResult.error || tasksResult.error || schedulesResult.error) setTaskMessage("Couldn't load your private tracker.");
-    });
-    return () => { alive = false; };
-  }, [user]);
 
   useEffect(() => {
     if (!user) { setLongHistory([]); return; }
