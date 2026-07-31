@@ -952,9 +952,6 @@ function GlowUpTracker() {
   const [checkInPopupOpen, setCheckInPopupOpen] = useState(false);
   const [completedTodayExpanded, setCompletedTodayExpanded] = useState(false);
   const [comfortToolOpen, setComfortToolOpen] = useState(null);
-  const [voiceListening, setVoiceListening] = useState(false);
-  const [voiceMatch, setVoiceMatch] = useState(null);
-  const [voiceMessage, setVoiceMessage] = useState("");
   const [checkInPopupDismissedToday, setCheckInPopupDismissedToday] = useState(false);
   const [dailyCheckInLoaded, setDailyCheckInLoaded] = useState(false);
 
@@ -974,53 +971,6 @@ function GlowUpTracker() {
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
   const pickEasierSuggestion = (taskKey) => setNextStepHint({ key: taskKey, text: MAKE_IT_EASIER_SUGGESTIONS[Math.floor(Math.random() * MAKE_IT_EASIER_SUGGESTIONS.length)] });
-
-  const startVoiceQuickAdd = () => {
-    const SpeechRecognitionApi = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (!SpeechRecognitionApi) {
-      setVoiceMessage("Voice input isn't available in this browser.");
-      return;
-    }
-    setVoiceMatch(null);
-    setVoiceMessage("");
-    const recognition = new SpeechRecognitionApi();
-    recognition.lang = "en-US";
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onstart = () => setVoiceListening(true);
-    recognition.onend = () => setVoiceListening(false);
-    recognition.onerror = () => {
-      setVoiceListening(false);
-      setVoiceMessage("Didn't catch that — try again whenever you'd like.");
-    };
-    recognition.onresult = (event) => {
-      const transcript = (event.results[0]?.[0]?.transcript || "").toLowerCase().trim();
-      if (!transcript) return;
-      const candidates = rows.filter((r) => !viewDone[r.key]);
-      const wordsOf = (text) => text.toLowerCase().replace(/[^a-z0-9\s]/g, "").split(/\s+/).filter(Boolean);
-      const transcriptWords = new Set(wordsOf(transcript));
-      let best = null;
-      let bestScore = 0;
-      candidates.forEach((r) => {
-        const labelWords = wordsOf(r.label);
-        if (!labelWords.length) return;
-        const overlap = labelWords.filter((word) => transcriptWords.has(word)).length;
-        const score = overlap / labelWords.length;
-        if (score > bestScore) { bestScore = score; best = r; }
-      });
-      if (best && bestScore >= 0.5) {
-        setVoiceMatch(best);
-      } else {
-        setVoiceMessage(`Heard "${transcript}" but couldn't match it to a task. Try saying part of the task's name.`);
-      }
-    };
-    try {
-      recognition.start();
-    } catch (startError) {
-      setVoiceListening(false);
-      setVoiceMessage("Couldn't start listening — check that this browser allows microphone access, then try again.");
-    }
-  };
 
   const [betaBannerDismissed, setBetaBannerDismissed] = useState(false);
   const [collectionTab, setCollectionTab] = useState("mascot");
@@ -4382,11 +4332,6 @@ function GlowUpTracker() {
               {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
             </button>
           )}
-          {dashboard === "today" && typeof window !== "undefined" && (window.SpeechRecognition || window.webkitSpeechRecognition) && (
-            <button type="button" onClick={startVoiceQuickAdd} disabled={voiceListening} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: voiceListening ? "#F7ECFB" : "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: voiceListening ? "wait" : "pointer", userSelect: "none", WebkitUserSelect: "none", WebkitTouchCallout: "none", touchAction: "manipulation" }}>
-              {voiceListening ? "🎙️ Listening…" : "🎙️ Voice"}
-            </button>
-          )}
           {!isCaretakerOnlyAccount && <button type="button" onClick={() => {
             const shouldOpen = !(supportOpen && supportViewMode === "mine");
             setSupportViewMode("mine");
@@ -4421,21 +4366,6 @@ function GlowUpTracker() {
           </button>}
 
         </div>
-
-        {dashboard === "today" && voiceMatch && (
-          <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "#F7ECFB", border: "1px solid #E3C9EC", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <div style={{ fontSize: 13, color: "#5B4B6B" }}>🎙️ Did you mean: <strong>{voiceMatch.label}</strong>?</div>
-            <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
-              <button type="button" onClick={() => { toggle(voiceMatch.key); setVoiceMatch(null); }} style={{ padding: "6px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>✓ Yes, mark it done</button>
-              <button type="button" onClick={() => setVoiceMatch(null)} style={{ padding: "6px 11px", borderRadius: 9, border: "1px solid #E3C9EC", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>No</button>
-            </div>
-          </div>
-        )}
-        {dashboard === "today" && voiceMessage && !voiceMatch && (
-          <div style={{ marginBottom: 16, padding: "10px 14px", borderRadius: 12, background: "#FFF9E9", border: "1px solid #F0D99E", fontSize: 12.5, color: "#6B5A3D" }}>
-            🎙️ {voiceMessage}
-          </div>
-        )}
 
         {helpOpen && (
           <ToolPanel title="Help" onClose={() => setHelpOpen(false)}>
