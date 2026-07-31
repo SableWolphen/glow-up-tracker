@@ -3674,6 +3674,15 @@ function GlowUpTracker() {
   const comfortItemName = trackerProfile?.comfort_item_name?.trim() || "a comfort item";
   const currentCopingOption = COPING_OPTIONS[copingPick].replace(/Tigger/gi, comfortItemName);
   const onboardingTotalSteps = onboardingMode === "guardian" ? 7 : 6;
+  const autoPopupToShow = (() => {
+    if (weeklyKickoffOpen) return "weekly_kickoff";
+    if (user && preferences.onboarding_complete && preferences.last_seen_changelog !== CURRENT_CHANGELOG_VERSION) return "changelog";
+    if (introIntentionOpen) return "intro_intention";
+    if (celebrationOpen) return "celebration";
+    if (checkInPopupOpen) return "check_in";
+    if (notificationNudgeOpen) return "notification_nudge";
+    return null;
+  })();
 
   return (
     <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
@@ -3753,7 +3762,7 @@ function GlowUpTracker() {
         }
       `}</style>
       {preferences.reduced_motion && <style>{`*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}`}</style>}
-      {weeklyKickoffOpen && (
+      {autoPopupToShow === "weekly_kickoff" && (
         <div role="dialog" aria-modal="true" aria-labelledby="weekly-kickoff-title" style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div style={{ width: "min(100%, 420px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#A65DC1", fontWeight: 900 }}>📮 A NEW WEEK BEGINS</div>
@@ -3796,7 +3805,7 @@ function GlowUpTracker() {
           </div>
         </div>
       )}
-      {user && preferences.onboarding_complete && preferences.last_seen_changelog !== CURRENT_CHANGELOG_VERSION && (
+      {autoPopupToShow === "changelog" && (
         <div role="dialog" aria-modal="true" aria-labelledby="changelog-title" style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div style={{ width: "min(100%, 420px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#A65DC1", fontWeight: 900 }}>✨ WHAT'S NEW</div>
@@ -3841,7 +3850,7 @@ function GlowUpTracker() {
           </div>
         </div>
       )}
-      {checkInPopupOpen && (
+      {autoPopupToShow === "check_in" && (
         <div role="dialog" aria-modal="true" aria-labelledby="checkin-popup-title" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 400px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
@@ -3919,7 +3928,7 @@ function GlowUpTracker() {
           </div>
         );
       })()}
-      {notificationNudgeOpen && (
+      {autoPopupToShow === "notification_nudge" && (
         <div role="dialog" aria-modal="true" aria-labelledby="notif-nudge-title" onClick={dismissNotificationNudge} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#F1FFF9 58%,#EBFBFF)", border: "2px solid #A9DFC4", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#268A50", fontWeight: 900 }}>🔔 JUST A THOUGHT</div>
@@ -3960,7 +3969,7 @@ function GlowUpTracker() {
           </div>
         </div>
       )}
-      {introIntentionOpen && (
+      {autoPopupToShow === "intro_intention" && (
         <div role="dialog" aria-modal="true" aria-labelledby="intro-intention-title" style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div style={{ width: "min(100%, 420px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#A65DC1", fontWeight: 900 }}>✨ NEW</div>
@@ -3976,7 +3985,7 @@ function GlowUpTracker() {
           </div>
         </div>
       )}
-      {celebrationOpen && (
+      {autoPopupToShow === "celebration" && (
         <div role="dialog" aria-modal="true" aria-labelledby="day-complete-title" onClick={() => setCelebrationOpen(false)} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           {!preferences.reduced_motion && ["💛","✨","💜","⭐","🎀","✨","💛","🌟","💜","✨","⭐","🎀"].map((piece, index) => (
             <span key={index} className="celebration-confetti" style={{ left: `${5 + index * 8}%`, animationDelay: `${(index % 5) * 0.12}s`, fontSize: `${18 + index % 3 * 6}px` }}>{piece}</span>
