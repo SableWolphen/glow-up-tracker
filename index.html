@@ -863,6 +863,7 @@ function GlowUpTracker() {
   const [privateNoteMessage, setPrivateNoteMessage] = useState("");
   const [supportTrackerTasks, setSupportTrackerTasks] = useState([]);
   const [manageTasks, setManageTasks] = useState(false);
+  const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const [newTaskName, setNewTaskName] = useState("");
   const [newTaskDay, setNewTaskDay] = useState("daily");
   const [newTaskSection, setNewTaskSection] = useState("");
@@ -880,7 +881,6 @@ function GlowUpTracker() {
   const [dragOverTaskKey, setDragOverTaskKey] = useState(null);
   const [editTaskDraft, setEditTaskDraft] = useState(null);
   const [pendingTaskDelete, setPendingTaskDelete] = useState(null);
-  const [taskSearchQuery, setTaskSearchQuery] = useState("");
   const [personalSchedules, setPersonalSchedules] = useState([]);
   const [manageSchedule, setManageSchedule] = useState(false);
   const [scheduleEditDayId, setScheduleEditDayId] = useState(null);
