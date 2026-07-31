@@ -1417,6 +1417,8 @@ function GlowUpTracker() {
       setSupportWeeklyHistory([]);
       setSupportOwnerId(null);
       setSupportPeople([]);
+      setSupportRelationships([]);
+      setTaskSuggestions([]);
       return;
     }
     loadSupportData(user);
@@ -2523,6 +2525,19 @@ function GlowUpTracker() {
     setSigningOut(true);
     setSignInMessage("Signing out…");
     if ("clearAppBadge" in navigator) { try { navigator.clearAppBadge().catch(() => {}); } catch (_error) {} }
+    if (user && "serviceWorker" in navigator) {
+      // Deactivate this device's push registration before the session clears, so a
+      // reminder meant for this account can never surface after someone else signs
+      // in on the same shared device/browser.
+      try {
+        const registration = await navigator.serviceWorker.getRegistration();
+        const subscription = await registration?.pushManager.getSubscription();
+        if (subscription) {
+          await supabase.from("push_subscriptions").delete().eq("endpoint", subscription.endpoint).eq("user_id", user.id);
+          await subscription.unsubscribe();
+        }
+      } catch (_error) {}
+    }
     setUser(null);
     setDone({});
     setTrackerTasks([]);
