@@ -953,7 +953,7 @@ function GlowUpTracker() {
   const [checkInPopupDismissedToday, setCheckInPopupDismissedToday] = useState(false);
   const [dailyCheckInLoaded, setDailyCheckInLoaded] = useState(false);
   const [notificationNudgeOpen, setNotificationNudgeOpen] = useState(false);
-  const [notificationNudgeReason] = useState(() => NOTIFICATION_NUDGE_REASONS[Math.floor(Math.random() * NOTIFICATION_NUDGE_REASONS.length)]);
+  const [notificationNudgeReason, setNotificationNudgeReason] = useState("");
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
@@ -2679,12 +2679,21 @@ function GlowUpTracker() {
     setSettingsMessage(error ? "Other devices couldn't be signed out." : "Other sessions have been signed out. This device stays connected.");
   };
 
-  useEffect(() => {
-    if (!preferences.onboarding_complete || preferences.notifications_enabled) return;
+  const tryOpenNotificationNudge = (chance) => {
+    if (!preferences.onboarding_complete || preferences.notifications_enabled || notificationNudgeOpen) return;
     const lastDismissed = preferences.notification_nudge_dismissed_at;
     const cooldownOk = !lastDismissed || (Date.now() - new Date(lastDismissed).getTime()) > 14 * 24 * 60 * 60 * 1000;
     if (!cooldownOk) return;
-    if (Math.random() < 0.15) setNotificationNudgeOpen(true);
+    if (Math.random() >= chance) return;
+    const personalized = savedBestStreak >= 3
+      ? `You're on a ${savedBestStreak}-day streak right now. A quiet reminder could help you keep it going without having to remember on your own.`
+      : NOTIFICATION_NUDGE_REASONS[Math.floor(Math.random() * NOTIFICATION_NUDGE_REASONS.length)];
+    setNotificationNudgeReason(personalized);
+    setNotificationNudgeOpen(true);
+  };
+
+  useEffect(() => {
+    tryOpenNotificationNudge(0.15);
   }, [preferences.onboarding_complete, preferences.notifications_enabled, preferences.notification_nudge_dismissed_at]);
 
   const dismissNotificationNudge = () => {
@@ -3455,6 +3464,7 @@ function GlowUpTracker() {
     saveMascotCollection(next);
     setCelebrationOpen(true);
     if (mascotCollection.celebrationSound && !isQuietTime(preferences)) playCelebrationChime();
+    window.setTimeout(() => tryOpenNotificationNudge(0.3), 6000);
   }, [
     user?.id,
     collectionLoadedFor,
