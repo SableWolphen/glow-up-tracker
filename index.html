@@ -3995,6 +3995,44 @@ function GlowUpTracker() {
     };
   })();
 
+  const weeklyHighlights = (() => {
+    const weekDates = datesThroughToday(period);
+    const completedOn = (date) => date === period.date
+      ? new Set(Object.keys(done).filter((key) => done[key]))
+      : (historyByDate.get(date) || new Set());
+
+    const recurringTasks = trackerTasks.filter((task) => !taskIsOptional(task) && task.schedule_type !== "once");
+    const routineCounts = recurringTasks
+      .map((task) => ({
+        task,
+        count: weekDates.filter((date) =>
+          (task.day_id === "daily" || task.day_id === dayIdForDate(date)) &&
+          taskOccursOn(task, date) &&
+          completedOn(date).has(task.task_key)
+        ).length,
+      }))
+      .filter((entry) => entry.count >= 2)
+      .sort((a, b) => b.count - a.count);
+    const mostConsistent = routineCounts[0] || null;
+
+    const weekStart = period.weekStart;
+    const helpfulTools = {};
+    careSessionHistory
+      .filter((entry) => entry.check_date >= weekStart && entry.check_date <= period.date && ["helped", "a_little"].includes(entry.outcome))
+      .forEach((entry) => { helpfulTools[entry.session_id] = (helpfulTools[entry.session_id] || 0) + 1; });
+    const topToolId = Object.keys(helpfulTools).sort((a, b) => helpfulTools[b] - helpfulTools[a])[0] || null;
+    const topTool = topToolId ? [...COMFORT_TOOLS, ...SLEEP_TOOLS, ...PLUSH_PATHS].find((tool) => tool.id === topToolId) : null;
+
+    const weekMoods = {};
+    dailyCheckInHistory
+      .filter((entry) => entry.check_date >= weekStart && entry.check_date <= period.date && entry.mood)
+      .forEach((entry) => { weekMoods[entry.mood] = (weekMoods[entry.mood] || 0) + 1; });
+    const topMood = Object.keys(weekMoods).sort((a, b) => weekMoods[b] - weekMoods[a])[0] || null;
+
+    if (!mostConsistent && !topTool && !topMood) return null;
+    return { mostConsistent, topTool, topMood };
+  })();
+
   const todayDailyCoreKeys = trackerTasks
     .filter((task) =>
       task.day_id === "daily" &&
@@ -6645,7 +6683,22 @@ function GlowUpTracker() {
               <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
             </div>
           )}
-          <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 10, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
+          {weeklyHighlights && (
+            <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#FFF9FD", border: "1px solid #F0D5E8", fontSize: 11.5, lineHeight: 1.6, color: "#6B5A7D" }}>
+              <strong>🌟 This week's highlights:</strong>
+              {weeklyHighlights.mostConsistent && (
+                <div style={{ marginTop: 4 }}>Most consistent routine: <strong>{weeklyHighlights.mostConsistent.task.task}</strong> ({weeklyHighlights.mostConsistent.count} of {datesThroughToday(period).length} days)</div>
+              )}
+              {weeklyHighlights.topTool && (
+                <div style={{ marginTop: 4 }}>Most helpful comfort tool: <strong>{weeklyHighlights.topTool.icon} {weeklyHighlights.topTool.name || weeklyHighlights.topTool.title}</strong></div>
+              )}
+              {weeklyHighlights.topMood && (
+                <div style={{ marginTop: 4 }}>Most common check-in feeling this week: <strong>{weeklyHighlights.topMood}</strong></div>
+              )}
+            </div>
+          )}
+          <button type="button" onClick={goWriteWeeklyIntention} style={{ marginTop: 9, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📝 Set next week's intention</button>
+          <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 8, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
           <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>FORGOT SOMETHING? CHOOSE A DAY TO CORRECT IT</div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
