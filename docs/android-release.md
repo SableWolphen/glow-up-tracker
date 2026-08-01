@@ -40,8 +40,13 @@ Open **Actions → Build signed Android App Bundle → Run workflow** and provid
 
 The workflow installs Android API 36, builds and signs the AAB, validates it
 with Google's `bundletool`, verifies `targetSdkVersion=36`, checks the signing
-certificate owner, and uploads the AAB as a workflow artifact. It does not
-publish to Google Play automatically.
+certificate owner, and uploads the AAB as a workflow artifact.
+
+If the `PLAY_SERVICE_ACCOUNT_JSON` secret is set, it also publishes the AAB
+straight to the Google Play track you choose (`internal` by default) — see
+[`google-play-auto-publish.md`](./google-play-auto-publish.md) for setup.
+Without that secret, the workflow behaves exactly as before: nothing is
+published automatically, you just get a downloadable artifact.
 
 ## Notifications
 
