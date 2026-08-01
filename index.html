@@ -2970,7 +2970,33 @@ function GlowUpTracker() {
   const [adminMessage, setAdminMessage] = useState("");
   const [supporterEmailDraft, setSupporterEmailDraft] = useState("");
   const [supporterGrantMessage, setSupporterGrantMessage] = useState("");
+  const [reviewAccountRole, setReviewAccountRole] = useState("cozy");
+  const [reviewAccountEmail, setReviewAccountEmail] = useState("");
+  const [reviewAccountPassword, setReviewAccountPassword] = useState("");
+  const [reviewAccountMessage, setReviewAccountMessage] = useState("");
 
+  const createOrUpdateReviewAccount = async () => {
+    const email = reviewAccountEmail.trim().toLowerCase();
+    const password = reviewAccountPassword;
+    if (!email || !email.includes("@")) {
+      setReviewAccountMessage("Enter a valid email first.");
+      return;
+    }
+    if (password.length < 8) {
+      setReviewAccountMessage("Password must be at least 8 characters.");
+      return;
+    }
+    setReviewAccountMessage("Saving…");
+    const { data, error } = await supabase.functions.invoke("manage-review-account", {
+      body: { role: reviewAccountRole, email, password },
+    });
+    if (error || data?.error) {
+      setReviewAccountMessage(`Couldn't save: ${data?.error || error?.message}`);
+      return;
+    }
+    setReviewAccountMessage(`${data.status === "created" ? "Created" : "Updated"} the ${reviewAccountRole} review account.`);
+    setReviewAccountPassword("");
+  };
 
   const setSupporterStatus = async (grant) => {
     const email = supporterEmailDraft.trim().toLowerCase();
@@ -4947,6 +4973,21 @@ function GlowUpTracker() {
               <button type="button" onClick={() => setSupporterStatus(false)} style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid #E8D4B6", background: "white", color: "#C9954A", fontWeight: 800, cursor: "pointer" }}>Revoke</button>
             </div>
             {supporterGrantMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{supporterGrantMessage}</div>}
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#5F8CC4" }}>🤖 GOOGLE PLAY REVIEW ACCOUNT</div>
+            <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>Create or update a Cozy/Guardian review account for Play Console. Passwords are sent straight to a secure Edge Function and never stored anywhere in this codebase.</div>
+            <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
+              <select value={reviewAccountRole} onChange={(event) => setReviewAccountRole(event.target.value)} style={{ padding: "8px 10px", borderRadius: 9, border: "1px solid #E8D4B6" }}>
+                <option value="cozy">Cozy reviewer</option>
+                <option value="guardian">Guardian reviewer</option>
+              </select>
+              <input type="email" value={reviewAccountEmail} onChange={(event) => setReviewAccountEmail(event.target.value)} placeholder="googleplay-cozy@yourdomain.com" style={{ flex: "1 1 190px", minWidth: 0, padding: "8px 10px", borderRadius: 9, border: "1px solid #E8D4B6" }} />
+              <input type="password" value={reviewAccountPassword} onChange={(event) => setReviewAccountPassword(event.target.value)} placeholder="password (min 8 chars)" style={{ flex: "1 1 190px", minWidth: 0, padding: "8px 10px", borderRadius: 9, border: "1px solid #E8D4B6" }} />
+              <button type="button" onClick={createOrUpdateReviewAccount} style={{ padding: "8px 12px", borderRadius: 9, border: 0, background: "#5F8CC4", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button>
+            </div>
+            {reviewAccountMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{reviewAccountMessage}</div>}
           </div>
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
