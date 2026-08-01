@@ -598,7 +598,7 @@ function datesThroughToday(period) {
   return dates;
 }
 
-function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShowSignIn, sendSignInLink, verifySignInCode, signInMessage, codeCooldown }) {
+function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShowSignIn, sendSignInLink, verifySignInCode, signInMessage, codeCooldown, password, setPassword, showPasswordField, setShowPasswordField, signInWithPassword }) {
   const colors = { bg: "#FFF8FC", plum: "#4A3A5C", soft: "#8574A0", orchid: "#B95FCE", mint: "#3FC7A6", amber: "#F2A93B", line: "#F0D9EE" };
   const demoTasks = [
     ["💧", "Drink some water"],
@@ -664,6 +664,13 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
             </div>
             {signInMessage && <div style={{ marginTop: 9, fontSize: 12.5, color: colors.soft }}>{signInMessage}</div>}
             {codeCooldown > 0 && <div style={{ marginTop: 5, fontSize: 11.5, color: colors.soft }}>One code is active. Check your inbox before requesting another.</div>}
+            <a href="#" onClick={(event) => { event.preventDefault(); setShowPasswordField((shown) => !shown); }} style={{ display: "block", marginTop: 10, fontSize: 12.5, color: colors.soft }}>{showPasswordField ? "Use the emailed code instead" : "Have a password instead?"}</a>
+            {showPasswordField && (
+              <div style={{ display: "flex", gap: 8, marginTop: 9 }}>
+                <input type="password" autoComplete="current-password" value={password} onChange={(event) => setPassword(event.target.value)} placeholder="Your password" style={{ flex: 1, minWidth: 0, padding: "11px 12px", borderRadius: 11, border: `1px solid ${colors.line}`, fontSize: 14 }} />
+                <button onClick={signInWithPassword} style={{ padding: "11px 14px", borderRadius: 11, border: `1px solid ${colors.orchid}`, background: "white", color: colors.orchid, fontWeight: 800, cursor: "pointer" }}>Sign in</button>
+              </div>
+            )}
           </div>
         )}
 
@@ -858,6 +865,8 @@ function GlowUpTracker() {
   const [showSignIn, setShowSignIn] = useState(false);
   const [signInMessage, setSignInMessage] = useState("");
   const [codeCooldown, setCodeCooldown] = useState(0);
+  const [password, setPassword] = useState("");
+  const [showPasswordField, setShowPasswordField] = useState(false);
   const [emailChangeDraft, setEmailChangeDraft] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const [period, setPeriod] = useState(() => trackerPeriod());
@@ -2583,6 +2592,26 @@ function GlowUpTracker() {
     setSignInMessage("Signed in! This browser will remember you.");
   };
 
+  const signInWithPassword = async () => {
+    const address = email.trim();
+    if (!address) {
+      setSignInMessage("Type your email address first.");
+      return;
+    }
+    if (!password) {
+      setSignInMessage("Type your password first.");
+      return;
+    }
+    setSignInMessage("Signing you in…");
+    const { error } = await supabase.auth.signInWithPassword({ email: address, password });
+    if (error) {
+      setSignInMessage("That email or password didn't work.");
+      return;
+    }
+    setPassword("");
+    setSignInMessage("Signed in! This browser will remember you.");
+  };
+
   const handleSignOut = async () => {
     if (signingOut) return;
     setSigningOut(true);
@@ -3941,7 +3970,7 @@ function GlowUpTracker() {
   let lastSection = null;
 
   if (!user) {
-    return <LandingPage email={email} setEmail={setEmail} otpCode={otpCode} setOtpCode={setOtpCode} showSignIn={showSignIn} setShowSignIn={setShowSignIn} sendSignInLink={sendSignInLink} verifySignInCode={verifySignInCode} signInMessage={signInMessage} codeCooldown={codeCooldown} />;
+    return <LandingPage email={email} setEmail={setEmail} otpCode={otpCode} setOtpCode={setOtpCode} showSignIn={showSignIn} setShowSignIn={setShowSignIn} sendSignInLink={sendSignInLink} verifySignInCode={verifySignInCode} signInMessage={signInMessage} codeCooldown={codeCooldown} password={password} setPassword={setPassword} showPasswordField={showPasswordField} setShowPasswordField={setShowPasswordField} signInWithPassword={signInWithPassword} />;
   }
 
   const themeKey = babyMode ? (preferences.baby_voice === "fatherly" ? "baby_fatherly" : "baby_motherly") : dinoTheme ? "dino" : "warm";
