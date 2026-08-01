@@ -1,10 +1,14 @@
-# Plushlist
+# PlushLife
 
-Plushlist is a gentle, private routine, habit, self-care, workout, and progress tracker with optional Guardian support.
+PlushLife is a gentle, private routine, habit, self-care, workout, and progress companion with optional Guardian support. PlushList is the adaptive daily checklist inside the app.
 
 ## Project status
 
-Plushlist is currently an independently owned, early-stage project. The web version is being tested and improved before a future Google Play release and optional paid subscriptions.
+PlushLife is currently an independently owned, early-stage project. The web version is being tested and improved before a future Google Play release. All current care, routine, Guardian, accessibility, and personalization features are free, with no feature paywalls.
+
+## Deploying the adaptive care update
+
+Before deploying this version, run `database/plushlife-care-system.sql` in the Supabase SQL editor. It adds adaptive habit labels, mood and energy fields, private care-session outcomes, PlushPath progress, consent-based Guardian support requests, and row-level security policies.
 
 ## Ownership and permitted use
 
