@@ -604,6 +604,56 @@ const ALL_FEATURES_UNLOCKED = true;
 const BILLING_ENABLED = false;
 const PAYWALLS_ENABLED = false;
 
+// ————— Provider-neutral billing architecture (groundwork only, inert) —————
+// Never called from any UI while BILLING_ENABLED is false. Both product IDs
+// below are placeholders pending your approval (see original project spec,
+// section 33) - do not invent real ones or wire this to a purchase screen.
+const BILLING_PRODUCT_IDS = { monthly: "plushlife_monthly", yearly: "plushlife_yearly" };
+
+// A BillingProvider is any object implementing this shape. The central app
+// code should only ever call through this interface, never a
+// platform-specific API directly, so adding Apple later doesn't touch
+// anything else. All methods are async because every real implementation
+// crosses a native bridge or network call.
+//   getProducts(): Promise<{ id, price, period }[]>
+//   purchase(productId): Promise<{ success, transactionRef }>
+//   restorePurchases(): Promise<{ success, restoredCount }>
+//   getSubscriptionStatus(): Promise<{ status, expiresAt, autoRenewing } | null>
+//   manageSubscription(): Promise<void>  // opens the platform's own subscription-management UI
+
+const GooglePlayBillingProvider = {
+  provider: "google_play",
+  async getProducts() {
+    throw new Error("Google Play Billing is not wired up yet - this is architecture groundwork only.");
+  },
+  async purchase(_productId) {
+    throw new Error("Google Play Billing is not wired up yet - this is architecture groundwork only.");
+  },
+  async restorePurchases() {
+    throw new Error("Google Play Billing is not wired up yet - this is architecture groundwork only.");
+  },
+  async getSubscriptionStatus() {
+    // Real implementation reads from the entitlements table (database/entitlements.sql),
+    // never trusting a client-reported purchase directly - see project spec section 34.
+    return null;
+  },
+  async manageSubscription() {
+    throw new Error("Google Play Billing is not wired up yet - this is architecture groundwork only.");
+  },
+};
+
+// Documented adapter location for future Apple StoreKit support (iPhone/iPad).
+// Intentionally not implemented - do not build a fake purchase flow here.
+// When built, it must satisfy the exact same BillingProvider shape above so
+// a user who already purchased on one platform is never asked to pay twice.
+// const AppleStoreKitProvider = { provider: "apple_app_store", ... };
+
+function getBillingProvider() {
+  // Add a platform check here (Capacitor.getPlatform() === "ios") once
+  // AppleStoreKitProvider exists. Android and web both use Google Play today.
+  return GooglePlayBillingProvider;
+}
+
 const CURRENT_CHANGELOG_VERSION = "2026-08-01-plushlife";
 const CHANGELOG_ITEMS = [
   "🌤️ New Full, Soft, Tiny, and Recovery Days adapt your PlushList to your real capacity",
