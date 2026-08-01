@@ -6171,7 +6171,7 @@ function GlowUpTracker() {
                   )}
                   <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "center", marginTop: 7, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 10.5, color: "#9A86A7" }}>From {note.caregiver_name} · {new Date(note.created_at).toLocaleDateString()}</div>
-                    {!isSupportAdult && (
+                    {supportOwnerId === user?.id && (
                       <button onClick={() => deleteSupportNote(note.id)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontSize: 11, fontWeight: 800, cursor: "pointer" }}>Delete note</button>
                     )}
                   </div>
