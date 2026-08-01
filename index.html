@@ -109,28 +109,28 @@ function formatRelativeTime(isoString) {
 const MASCOT_OUTFITS = [
   { id: "classic", name: "Classic Plush", badge: "💛", accessory: "", unlock: { type: "always", count: 0 }, hint: "Always available" },
   { id: "bow", name: "Cozy Bow", badge: "🎀", accessory: "🎀", unlock: { type: "daily_core", count: 1 }, hint: "Complete your Every Day Core once" },
-  { id: "glasses", name: "Star Glasses", badge: "🌟", accessory: "🕶️", unlock: { type: "care_streak", count: 2 }, hint: "Complete all required care 2 days in a row" },
-  { id: "crown", name: "Dino Crown", badge: "🦖", accessory: "👑", unlock: { type: "care_streak", count: 3 }, hint: "Complete all required care 3 days in a row" },
-  { id: "cape", name: "Care Hero Cape", badge: "🦸", accessory: "🦸", unlock: { type: "care_streak", count: 5 }, hint: "Complete all required care 5 days in a row" },
-  { id: "party", name: "Week Wonder", badge: "🏆", accessory: "🎉", unlock: { type: "care_streak", count: 7 }, hint: "Complete all required care 7 days in a row" },
-  { id: "scarf", name: "Welcome Scarf", badge: "🧣", accessory: "🧣", unlock: { type: "visit_streak", count: 3 }, hint: "Open Plushlist 3 days in a row" },
-  { id: "backpack", name: "Explorer Backpack", badge: "🎒", accessory: "🎒", unlock: { type: "visit_streak", count: 7 }, hint: "Open Plushlist 7 days in a row" },
-  { id: "cozy-cap", name: "Cozy Cap", badge: "🧢", accessory: "🧢", unlock: { type: "visit_streak", count: 14 }, hint: "Open Plushlist 14 days in a row" },
-  { id: "compass", name: "Monthly Explorer", badge: "🧭", accessory: "🧭", unlock: { type: "visit_streak", count: 30 }, hint: "Open Plushlist 30 days in a row" },
-  { id: "century-gem", name: "Century Gem", badge: "💎", accessory: "💎", unlock: { type: "visit_streak", count: 100 }, hint: "Open Plushlist 100 days in a row" },
-  { id: "moon-halo", name: "Moon Halo", badge: "🌙", accessory: "🌙", unlock: { type: "care_streak", count: 14 }, hint: "Complete all required care 14 days in a row" },
-  { id: "gold-crown", name: "Golden Care Crown", badge: "👑", accessory: "👑", unlock: { type: "care_streak", count: 30 }, hint: "Complete all required care 30 days in a row" },
-  { id: "rainbow-aura", name: "Rainbow Aura", badge: "🌈", accessory: "🌈", unlock: { type: "care_streak", count: 60 }, hint: "Complete all required care 60 days in a row" },
-  { id: "sprout", name: "Sprout Hat", badge: "🌱", accessory: "🌱", unlock: { type: "build_streak", count: 3 }, hint: "Keep one good habit going for 3 check-ins" },
-  { id: "garden", name: "Garden Overalls", badge: "🌼", accessory: "🌼", unlock: { type: "build_streak", count: 7 }, hint: "Keep one good habit going for 7 check-ins" },
-  { id: "sunflower", name: "Sunflower Crown", badge: "🌻", accessory: "🌻", unlock: { type: "build_streak", count: 14 }, hint: "Keep one good habit going for 14 check-ins" },
-  { id: "habit-tree", name: "Habit Tree Cape", badge: "🌳", accessory: "🌳", unlock: { type: "build_streak", count: 30 }, hint: "Keep one good habit going for 30 check-ins" },
-  { id: "garden-glow", name: "Garden Glow", badge: "✨", accessory: "✨", unlock: { type: "build_streak", count: 60 }, hint: "Keep one good habit going for 60 check-ins" },
-  { id: "shield", name: "Habit Shield", badge: "🛡️", accessory: "🛡️", unlock: { type: "reduce_streak", count: 3 }, hint: "Reduce one habit for 3 check-ins" },
-  { id: "boots", name: "Brave Boots", badge: "🥾", accessory: "🥾", unlock: { type: "reduce_streak", count: 7 }, hint: "Reduce one habit for 7 check-ins" },
-  { id: "wings", name: "Fresh Start Wings", badge: "🪽", accessory: "🪽", unlock: { type: "reduce_streak", count: 14 }, hint: "Reduce one habit for 14 check-ins" },
-  { id: "change-champion", name: "Change Champion", badge: "⚡", accessory: "⚡", unlock: { type: "reduce_streak", count: 30 }, hint: "Reduce one habit for 30 check-ins" },
-  { id: "diamond-shield", name: "Diamond Shield", badge: "💠", accessory: "💠", unlock: { type: "reduce_streak", count: 60 }, hint: "Reduce one habit for 60 check-ins" },
+  { id: "glasses", name: "Star Glasses", badge: "🌟", accessory: "🕶️", unlock: { type: "care_days", count: 2 }, hint: "Complete your essential care on any 2 days" },
+  { id: "crown", name: "Dino Crown", badge: "🦖", accessory: "👑", unlock: { type: "care_days", count: 3 }, hint: "Complete your essential care on any 3 days" },
+  { id: "cape", name: "Care Hero Cape", badge: "🦸", accessory: "🦸", unlock: { type: "care_days", count: 5 }, hint: "Complete your essential care on any 5 days" },
+  { id: "party", name: "Week Wonder", badge: "🏆", accessory: "🎉", unlock: { type: "care_days", count: 7 }, hint: "Complete your essential care on any 7 days" },
+  { id: "scarf", name: "Welcome Scarf", badge: "🧣", accessory: "🧣", unlock: { type: "activity_days", count: 3 }, hint: "Check in or care for yourself on any 3 days" },
+  { id: "backpack", name: "Explorer Backpack", badge: "🎒", accessory: "🎒", unlock: { type: "activity_days", count: 7 }, hint: "Check in or care for yourself on any 7 days" },
+  { id: "cozy-cap", name: "Cozy Cap", badge: "🧢", accessory: "🧢", unlock: { type: "activity_days", count: 14 }, hint: "Check in or care for yourself on any 14 days" },
+  { id: "compass", name: "Monthly Explorer", badge: "★", accessory: "★", unlock: { type: "activity_days", count: 30 }, hint: "Check in or care for yourself on any 30 days" },
+  { id: "century-gem", name: "Century Gem", badge: "💎", accessory: "💎", unlock: { type: "activity_days", count: 100 }, hint: "Check in or care for yourself on any 100 days" },
+  { id: "moon-halo", name: "Moon Halo", badge: "🌙", accessory: "🌙", unlock: { type: "care_days", count: 14 }, hint: "Complete your essential care on any 14 days" },
+  { id: "gold-crown", name: "Golden Care Crown", badge: "👑", accessory: "👑", unlock: { type: "care_days", count: 30 }, hint: "Complete your essential care on any 30 days" },
+  { id: "rainbow-aura", name: "Rainbow Aura", badge: "🌈", accessory: "🌈", unlock: { type: "care_days", count: 60 }, hint: "Complete your essential care on any 60 days" },
+  { id: "sprout", name: "Sprout Hat", badge: "🌱", accessory: "🌱", unlock: { type: "build_checkins", count: 3 }, hint: "Check in with one habit you are building 3 times" },
+  { id: "garden", name: "Garden Overalls", badge: "🌼", accessory: "🌼", unlock: { type: "build_checkins", count: 7 }, hint: "Check in with one habit you are building 7 times" },
+  { id: "sunflower", name: "Sunflower Crown", badge: "🌻", accessory: "🌻", unlock: { type: "build_checkins", count: 14 }, hint: "Check in with one habit you are building 14 times" },
+  { id: "habit-tree", name: "Habit Tree Cape", badge: "🌳", accessory: "🌳", unlock: { type: "build_checkins", count: 30 }, hint: "Check in with one habit you are building 30 times" },
+  { id: "garden-glow", name: "Garden Glow", badge: "✨", accessory: "✨", unlock: { type: "build_checkins", count: 60 }, hint: "Check in with one habit you are building 60 times" },
+  { id: "shield", name: "Habit Shield", badge: "🛡️", accessory: "🛡️", unlock: { type: "reduce_checkins", count: 3 }, hint: "Check in with one habit you are reducing 3 times" },
+  { id: "boots", name: "Brave Boots", badge: "🥾", accessory: "🥾", unlock: { type: "reduce_checkins", count: 7 }, hint: "Check in with one habit you are reducing 7 times" },
+  { id: "wings", name: "Fresh Start Wings", badge: "✦", accessory: "✦", unlock: { type: "reduce_checkins", count: 14 }, hint: "Check in with one habit you are reducing 14 times" },
+  { id: "change-champion", name: "Change Champion", badge: "⚡", accessory: "⚡", unlock: { type: "reduce_checkins", count: 30 }, hint: "Check in with one habit you are reducing 30 times" },
+  { id: "diamond-shield", name: "Diamond Shield", badge: "💠", accessory: "💠", unlock: { type: "reduce_checkins", count: 60 }, hint: "Check in with one habit you are reducing 60 times" },
   { id: "founders-ribbon", name: "Founder's Ribbon", badge: "🎗️", accessory: "🎗️", unlock: { type: "founding", count: 1 }, hint: "Exclusive to accounts from Plushlist's early access period — can never be earned later." },
 ];
 const OPTIONAL_SECTION_MARKERS = ["bonus", "little space", "reward", "fun"];
@@ -310,7 +310,7 @@ const TEMPLATE_PACKS = [
     { task: "Eat lunch away from my desk", section: "Workday" },
     { task: "Wrap up for the day", section: "Workday" },
   ] },
-  { id: "low_energy", label: "Low-energy day", emoji: "🪫", tasks: [
+  { id: "low_energy", label: "Low-energy day", emoji: "○", tasks: [
     { task: "Drink water", section: "Low-energy" },
     { task: "Take medication if needed", section: "Low-energy" },
     { task: "Rest without guilt", section: "Low-energy" },
@@ -353,7 +353,7 @@ const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
   { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
   { id: "routines", label: "Routines", icon: "✨", accent: "#FF7A94" },
-  { id: "care", label: "Care", icon: "🫶", accent: "#318C79" },
+  { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
   { id: "more", label: "More", icon: "⋯", accent: "#318C79" },
 ];
@@ -366,32 +366,60 @@ const CHECKIN_MOODS = [
 ];
 
 const ENERGY_LEVELS = [
-  ["empty", "🪫", "Empty"], ["low", "🌙", "Low"], ["steady", "🌤️", "Steady"], ["high", "⚡", "High"],
+  ["empty", "○", "Empty"], ["low", "🌙", "Low"], ["steady", "🌤️", "Steady"], ["high", "⚡", "High"],
 ];
 
 const DAY_TYPES = [
   ["full", "☀️", "Full", "Your complete routine"],
   ["soft", "🌤️", "Soft", "Gentler task versions"],
   ["tiny", "🌱", "Tiny", "Smallest meaningful steps"],
-  ["recovery", "🫶", "Recovery", "Essentials and rebuilding"],
+  ["recovery", "↺", "Recovery", "A few gentle rebuilding steps"],
   ["rest", "🌴", "Rest", "Protected rest without guilt"],
 ];
 
 const SUPPORT_PREFERENCES = [
   ["comfort", "🧸", "Comfort"], ["encouragement", "💛", "Encouragement"],
-  ["structure", "📋", "Structure"], ["practical", "🧰", "Practical help"],
-  ["company", "🫂", "Quiet company"], ["space", "🌙", "Space"],
+  ["structure", "≡", "Structure"], ["practical", "🧰", "Practical help"],
+  ["company", "☕", "Quiet company"], ["space", "🌙", "Space"],
 ];
+
+const ONBOARDING_REASON_PROFILES = {
+  general: {
+    description: "Keeps the full cozy experience, nurturing check-ins, and private pattern suggestions on.",
+    preferences: { focus_mode: false, simple_mode: false, nurturing_checkins: true, pattern_insights_enabled: true, reduced_motion: false },
+  },
+  focus: {
+    description: "Turns on Focus Mode and the quieter layout so you see fewer decisions at once.",
+    preferences: { focus_mode: true, simple_mode: true, nurturing_checkins: true, pattern_insights_enabled: true },
+  },
+  burnout: {
+    description: "Starts with a quieter, lower-motion layout and makes today a gentle Recovery Day.",
+    preferences: { focus_mode: false, simple_mode: true, nurturing_checkins: true, pattern_insights_enabled: true, reduced_motion: true },
+  },
+  plain: {
+    description: "Uses a quieter tracker layout with straightforward task language and fewer nurturing prompts.",
+    preferences: { focus_mode: false, simple_mode: true, nurturing_checkins: false, pattern_insights_enabled: false, reduced_motion: false },
+  },
+};
+
+const SUPPORT_GUIDANCE = {
+  comfort: { text: "Open a short Comfort Moment when you are ready.", action: "Open Comfort Moment" },
+  encouragement: { text: "You do not have to do today perfectly. One caring step is enough." },
+  structure: { text: "PlushLife will keep One Next Step at the top so you can begin without sorting the whole list." },
+  practical: { text: "Choose the few tasks that truly need to count today.", action: "Choose what counts" },
+  company: { text: "Use Help Me Say It to ask a trusted Guardian for quiet company.", action: "Open Guardian support" },
+  space: { text: "No extra prompt is needed. Close this check-in and take the space you asked for." },
+};
 
 const HELP_ME_NOW_OPTIONS = [
   { id: "anxious", icon: "🌬️", label: "I feel anxious", tool: "breathing", next: "Afterward, choose one thing your body needs." },
-  { id: "overwhelmed", icon: "🫧", label: "Everything feels like too much", tool: "grounding", next: "Then switch today to Tiny if that would feel kinder." },
+  { id: "overwhelmed", icon: "☁️", label: "Everything feels like too much", tool: "grounding", next: "Then switch today to Tiny if that would feel kinder." },
   { id: "cannot_start", icon: "🌱", label: "I cannot start", tool: "change_rooms", next: "When you return, do only the first two-minute piece." },
   { id: "need_food", icon: "🍞", label: "I need to eat", tool: "water", next: "Pick the easiest available food. It does not need to be a proper meal." },
-  { id: "need_hygiene", icon: "🫧", label: "Hygiene feels hard", tool: "comfort_item", next: "Choose the Tiny version. Partial care is still care." },
+  { id: "need_hygiene", icon: "✦", label: "Hygiene feels hard", tool: "comfort_item", next: "Choose the Tiny version. Partial care is still care." },
   { id: "cannot_sleep", icon: "🌙", label: "I cannot sleep", tool: "bedtime", next: "Resting quietly still helps, even if sleep does not arrive immediately." },
-  { id: "lonely", icon: "🫂", label: "I feel lonely", tool: "comfort_item", next: "You can also send a prepared support request to a Guardian." },
-  { id: "not_sure", icon: "🧭", label: "I do not know what I need", tool: "grounding", next: "Notice what feels most urgent: body, environment, task, or connection." },
+  { id: "lonely", icon: "☕", label: "I feel lonely", tool: "comfort_item", next: "You can also send a prepared support request to a Guardian." },
+  { id: "not_sure", icon: "?", label: "I do not know what I need", tool: "grounding", next: "Notice what feels most urgent: body, environment, task, or connection." },
 ];
 
 const PLUSH_PATHS = [
@@ -548,7 +576,7 @@ const CURRENT_CHANGELOG_VERSION = "2026-08-01-plushlife";
 const CHANGELOG_ITEMS = [
   "🌤️ New Full, Soft, Tiny, and Recovery Days adapt your PlushList to your real capacity",
   "💗 Mood and energy check-ins now appear in the Progress calendar with gentle pattern suggestions",
-  "🫶 New free Care screen with Help Me Now, PlushCare, PlushPaths, and PlushSleep",
+  "♥ New free Care screen with Help Me Now, PlushCare, PlushPaths, and PlushSleep",
   "💬 New Help Me Say It cards let you ask a chosen Guardian for the kind of support you want",
   "🌼 New rewards celebrate honest check-ins, Tiny Days, Recovery Days, and trying care tools",
   "🎉 Fixed the 100% celebration not firing again after an accidental completion was undone",
@@ -560,7 +588,7 @@ const CHANGELOG_ITEMS = [
   "🌴 Guardians can now see when you're resting, with a we're-both-resting message if they are too",
   "💌 Guardians can suggest a Comfort Tool directly — you get a one-tap button to open it",
   "🎗️ Founder's Ribbon — an exclusive mascot outfit for early access accounts, gone once access closes",
-  "🌴 Rest Day / Vacation mode — protects your streak and pauses reminders, plannable ahead in Settings",
+  "🌴 Rest Day / Vacation mode — pauses your list and reminders, and can be planned ahead in Settings",
   "📅 Move to Tomorrow — a real way to push a one-off task forward instead of it just sitting there",
   "🌿 Comfort Toolkit — 6 named guided tools (grounding, water, breathing, bedtime, comfort item, change scene)",
 ];
@@ -599,9 +627,9 @@ const GUARDIAN_ROLE_PRESETS = [
 
 const HABIT_REWARDS = [
   { count: 1, badge: "🌱", label: "First sprout" },
-  { count: 3, badge: "✨", label: "Three in a row" },
-  { count: 7, badge: "🏅", label: "Seven strong" },
-  { count: 14, badge: "🌟", label: "Two-week glow" },
+  { count: 3, badge: "✨", label: "Three caring check-ins" },
+  { count: 7, badge: "🏅", label: "Seven caring check-ins" },
+  { count: 14, badge: "🌟", label: "Fourteen-check-in glow" },
   { count: 30, badge: "👑", label: "Thirty-check-in crown" },
 ];
 
@@ -797,7 +825,7 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
         <div className="plush-feature-grid">
           {[
             ["🌤️","A list that changes with your capacity","Choose a Full, Soft, Tiny, or Recovery Day. Each habit can have a smaller version, so caring for yourself still counts when energy is low."],
-            ["🫶","Help for the moment you’re in","Use short grounding tools, sleep support, and guided PlushPaths—then privately note what helped so suggestions improve over time."],
+            ["♥","Help for the moment you’re in","Use short grounding tools, sleep support, and guided PlushPaths—then privately note what helped so suggestions improve over time."],
             ["📅","Patterns you can actually use","Mood and energy check-ins appear in your calendar. PlushLife can gently notice patterns and offer changes, but never diagnoses you or edits your list without permission."],
             ["💛","A trusted person, if you want one","Invite a Guardian to gently check in — they see only what you allow, can send an encouraging note, and never anything more."],
             ["🌱","Progress that never gets taken away","Celebrate showing up, reflecting, choosing a Tiny Day, or returning after a break. A missed day never erases what you've already earned."],
@@ -907,6 +935,7 @@ function GlowUpTracker() {
   const todaySwipeStartY = React.useRef(null);
   const weekSwipeStartX = React.useRef(null);
   const weekSwipeStartY = React.useRef(null);
+  const newTaskNameInputRef = React.useRef(null);
   const [todayCardIndex, setTodayCardIndex] = useState(0);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
@@ -1100,6 +1129,8 @@ function GlowUpTracker() {
   const [selectedCarePath, setSelectedCarePath] = useState(null);
   const [sleepToolOpen, setSleepToolOpen] = useState(null);
   const [careMessage, setCareMessage] = useState("");
+  const [careSection, setCareSection] = useState("quick");
+  const [careSituationsExpanded, setCareSituationsExpanded] = useState(false);
   const [restDates, setRestDates] = useState([]);
   const [restRangeDraft, setRestRangeDraft] = useState({ start: "", end: "" });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
@@ -2150,13 +2181,7 @@ function GlowUpTracker() {
 
   const toggleRestToday = async () => {
     if (!user) return;
-    if (restDates.includes(period.date)) {
-      await supabase.from("rest_days").delete().eq("user_id", user.id).eq("rest_date", period.date);
-      setRestDates((dates) => dates.filter((date) => date !== period.date));
-    } else {
-      await supabase.from("rest_days").insert({ user_id: user.id, rest_date: period.date });
-      setRestDates((dates) => [...dates, period.date]);
-    }
+    await selectDayType(restDates.includes(period.date) ? "full" : "rest");
   };
 
   const selectDayType = async (value) => {
@@ -2371,6 +2396,7 @@ function GlowUpTracker() {
       .sort((a, b) => Number(a.sort_order) - Number(b.sort_order) || a.task_key.localeCompare(b.task_key));
     if (!task) {
       setTaskMessage("Give the task a name first.");
+      window.requestAnimationFrame(() => newTaskNameInputRef.current?.focus());
       return;
     }
     if (!section) {
@@ -3071,15 +3097,38 @@ function GlowUpTracker() {
       }, { onConflict: "user_id,note_date" });
       setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
     }
+    const reasonProfile = onboardingReason ? ONBOARDING_REASON_PROFILES[onboardingReason] : null;
     const next = {
       ...preferences,
       onboarding_complete: true,
       weekly_intention_intro_seen: true,
       onboarding_reason: onboardingReason,
-      focus_mode: onboardingReason === "focus" ? true : preferences.focus_mode,
+      ...(reasonProfile?.preferences || {}),
     };
     setPreferences(next);
     await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (onboardingReason === "burnout") {
+      const recoveryCheckIn = {
+        capacity: "low",
+        mood: null,
+        energy: "low",
+        day_type: "recovery",
+        support_preference: "comfort",
+        soft_day: true,
+        custom_essentials: null,
+      };
+      await supabase.from("daily_check_ins").upsert({
+        user_id: user.id,
+        check_date: period.date,
+        ...recoveryCheckIn,
+        updated_at: new Date().toISOString(),
+      }, { onConflict: "user_id,check_date" });
+      setDailyCheckIn(recoveryCheckIn);
+      setDailyCheckInHistory((rows) => [
+        ...rows.filter((row) => row.check_date !== period.date),
+        { ...recoveryCheckIn, check_date: period.date },
+      ].sort((a, b) => a.check_date.localeCompare(b.check_date)));
+    }
     supabase.from("onboarding_events").insert({ user_id: user.id, step: onboardingStep, onboarding_mode: onboardingMode, event: "completed" }).then(() => {});
     setTrackerProfile(profileData);
     setOnboardingMessage("");
@@ -3192,8 +3241,8 @@ function GlowUpTracker() {
     const cooldownOk = !lastDismissed || (Date.now() - new Date(lastDismissed).getTime()) > 14 * 24 * 60 * 60 * 1000;
     if (!cooldownOk) return;
     if (Math.random() >= chance) return;
-    const personalized = savedBestStreak >= 3
-      ? `You're on a ${savedBestStreak}-day streak right now. A quiet reminder could help you keep it going without having to remember on your own.`
+    const personalized = careDaysTotal >= 3
+      ? `You've logged ${careDaysTotal} essential-care days. A quiet reminder can help on the days when remembering is hard.`
       : NOTIFICATION_NUDGE_REASONS[Math.floor(Math.random() * NOTIFICATION_NUDGE_REASONS.length)];
     setNotificationNudgeReason(personalized);
     setNotificationNudgeOpen(true);
@@ -3629,8 +3678,10 @@ function GlowUpTracker() {
   const rowForTask = (task) => {
     const cleanDetail = cleanTaskDetail(task.detail || "");
     const selectedDayType = dailyCheckIn.day_type || (dailyCheckIn.soft_day ? "soft" : "full");
-    const adaptiveLabel = selectedDayType === "tiny" || selectedDayType === "recovery"
+    const adaptiveLabel = selectedDayType === "tiny"
       ? (task.tiny_label || task.soft_label || task.task)
+      : selectedDayType === "recovery"
+        ? (task.soft_label || task.tiny_label || task.task)
       : selectedDayType === "soft"
         ? (task.soft_label || task.task)
         : task.task;
@@ -3709,12 +3760,14 @@ function GlowUpTracker() {
       : period.date;
     let best = 0;
     let running = 0;
+    let total = 0;
     let cursor = firstHistoryDate;
     let guard = 0;
     while (cursor <= period.date && guard < 1100) {
       if (taskIsExpectedOnDate(task, cursor)) {
         if (habitHistoryByDate.get(cursor)?.has(task.task_key)) {
           running += 1;
+          total += 1;
           best = Math.max(best, running);
         } else {
           running = 0;
@@ -3743,9 +3796,9 @@ function GlowUpTracker() {
       cursor = offsetDate(cursor, -1);
       guard += 1;
     }
-    const earnedReward = [...HABIT_REWARDS].reverse().find((reward) => best >= reward.count) || null;
-    const nextReward = HABIT_REWARDS.find((reward) => best < reward.count) || null;
-    return { current, best, earnedReward, nextReward };
+    const earnedReward = [...HABIT_REWARDS].reverse().find((reward) => total >= reward.count) || null;
+    const nextReward = HABIT_REWARDS.find((reward) => total < reward.count) || null;
+    return { current, best, total, earnedReward, nextReward };
   };
   const habitTasks = trackerTasks
     .filter((task) => habitTypeForTask(task) !== "regular")
@@ -3757,6 +3810,14 @@ function GlowUpTracker() {
   const bestReduceHabitStreak = Math.max(
     0,
     ...habitTasks.filter((task) => task.habitType === "reduce").map((task) => task.stats.best)
+  );
+  const maxBuildHabitCheckIns = Math.max(
+    0,
+    ...habitTasks.filter((task) => task.habitType === "build").map((task) => task.stats.total)
+  );
+  const maxReduceHabitCheckIns = Math.max(
+    0,
+    ...habitTasks.filter((task) => task.habitType === "reduce").map((task) => task.stats.total)
   );
   const dailyTasks = trackerTasks.filter((task) => task.day_id === "daily" && taskOccursOn(task, period.date));
   const dailyKeys = dailyTasks.map((task) => task.task_key);
@@ -3951,13 +4012,23 @@ function GlowUpTracker() {
 
   const currentUnlockProgress = Math.max(currentCompleteStreak, bestCompleteStreak, todayDailyCoreIsComplete ? 1 : 0);
   const savedBestStreak = Math.max(mascotCollection.bestStreak, currentUnlockProgress);
+  const careDaysTotal = new Set(
+    habitHistory
+      .map((entry) => entry.progress_date)
+      .filter((date) => careDayIsComplete(date))
+  ).size;
+  const activityDaysTotal = new Set([
+    ...habitHistory.filter((entry) => (entry.completed_keys || []).length > 0).map((entry) => entry.progress_date),
+    ...dailyCheckInHistory.map((entry) => entry.check_date),
+    ...reflectionDates,
+  ]).size;
   const mascotRequirementProgress = (outfit) => {
     switch (outfit.unlock.type) {
-      case "daily_core": return todayDailyCoreIsComplete || savedBestStreak >= 1 ? 1 : 0;
-      case "care_streak": return savedBestStreak;
-      case "visit_streak": return mascotCollection.bestVisitStreak;
-      case "build_streak": return bestBuildHabitStreak;
-      case "reduce_streak": return bestReduceHabitStreak;
+      case "daily_core": return careDaysTotal >= 1 || todayDailyCoreIsComplete ? 1 : 0;
+      case "care_days": return careDaysTotal;
+      case "activity_days": return activityDaysTotal;
+      case "build_checkins": return maxBuildHabitCheckIns;
+      case "reduce_checkins": return maxReduceHabitCheckIns;
       case "founding": return (user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z")) ? 1 : 0;
       default: return Number.NEGATIVE_INFINITY;
     }
@@ -4172,25 +4243,25 @@ function GlowUpTracker() {
   const dinoTheme = !!preferences.dino_theme;
 
   const BADGE_DEFS = [
-    { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete a full caring day.", check: () => savedBestStreak >= 1 },
-    { id: "one_week", badge: "🔥", name: "One Week Strong", hint: "Reach a 7-day caring streak.", check: () => savedBestStreak >= 7 },
-    { id: "two_weeks", badge: "🏅", name: "Two Weeks Strong", hint: "Reach a 14-day caring streak.", check: () => savedBestStreak >= 14 },
-    { id: "one_month", badge: "🌟", name: "One Month Strong", hint: "Reach a 30-day caring streak.", check: () => savedBestStreak >= 30 },
-    { id: "two_months", badge: "💎", name: "Two Months Strong", hint: "Reach a 60-day caring streak.", check: () => savedBestStreak >= 60 },
-    { id: "hundred_days", badge: "👑", name: "Hundred Days", hint: "Reach a 100-day caring streak.", check: () => savedBestStreak >= 100 },
-    { id: "two_hundred_days", badge: "🎊", name: "Two Hundred Days", hint: "Reach a 200-day caring streak.", check: () => savedBestStreak >= 200 },
-    { id: "one_year", badge: "🏆", name: "One Year Strong", hint: "Reach a 365-day caring streak.", check: () => savedBestStreak >= 365 },
-    { id: "getting_started", badge: "👣", name: "Getting Started", hint: "Open Plushlist for the first time.", check: () => mascotCollection.bestVisitStreak >= 1 },
-    { id: "regular_visitor", badge: "🧸", name: "Regular Visitor", hint: "Open Plushlist 7 days in a row.", check: () => mascotCollection.bestVisitStreak >= 7 },
-    { id: "devoted_visitor", badge: "🌙", name: "Devoted Visitor", hint: "Open Plushlist 30 days in a row.", check: () => mascotCollection.bestVisitStreak >= 30 },
-    { id: "sixty_visitor", badge: "💫", name: "60-Day Visitor", hint: "Open Plushlist 60 days in a row.", check: () => mascotCollection.bestVisitStreak >= 60 },
-    { id: "hundred_visitor", badge: "💯", name: "100-Day Visitor", hint: "Open Plushlist 100 days in a row.", check: () => mascotCollection.bestVisitStreak >= 100 },
+    { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete your essential care on one day.", check: () => careDaysTotal >= 1 },
+    { id: "one_week", badge: "🔥", name: "Seven Caring Days", hint: "Complete your essential care on any 7 days.", check: () => careDaysTotal >= 7 },
+    { id: "two_weeks", badge: "🏅", name: "Fourteen Caring Days", hint: "Complete your essential care on any 14 days.", check: () => careDaysTotal >= 14 },
+    { id: "one_month", badge: "🌟", name: "Thirty Caring Days", hint: "Complete your essential care on any 30 days.", check: () => careDaysTotal >= 30 },
+    { id: "two_months", badge: "💎", name: "Sixty Caring Days", hint: "Complete your essential care on any 60 days.", check: () => careDaysTotal >= 60 },
+    { id: "hundred_days", badge: "👑", name: "One Hundred Caring Days", hint: "Complete your essential care on any 100 days.", check: () => careDaysTotal >= 100 },
+    { id: "two_hundred_days", badge: "🎊", name: "Two Hundred Caring Days", hint: "Complete your essential care on any 200 days.", check: () => careDaysTotal >= 200 },
+    { id: "one_year", badge: "🏆", name: "A Year of Care", hint: "Complete your essential care on any 365 days.", check: () => careDaysTotal >= 365 },
+    { id: "getting_started", badge: "👣", name: "Getting Started", hint: "Check in or care for yourself once.", check: () => activityDaysTotal >= 1 },
+    { id: "regular_visitor", badge: "🧸", name: "Regular Visitor", hint: "Check in or care for yourself on any 7 days.", check: () => activityDaysTotal >= 7 },
+    { id: "devoted_visitor", badge: "🌙", name: "Devoted Visitor", hint: "Check in or care for yourself on any 30 days.", check: () => activityDaysTotal >= 30 },
+    { id: "sixty_visitor", badge: "💫", name: "60-Day Visitor", hint: "Check in or care for yourself on any 60 days.", check: () => activityDaysTotal >= 60 },
+    { id: "hundred_visitor", badge: "💯", name: "100-Day Visitor", hint: "Check in or care for yourself on any 100 days.", check: () => activityDaysTotal >= 100 },
     { id: "first_reflection", badge: "📝", name: "First Reflection", hint: "Write your first private reflection.", check: () => reflectionDates.length >= 1 },
     { id: "reflection_habit", badge: "✍️", name: "Reflection Habit", hint: "Write 10 private reflections.", check: () => reflectionDates.length >= 10 },
     { id: "reflection_devotee", badge: "📖", name: "Reflection Devotee", hint: "Write 30 private reflections.", check: () => reflectionDates.length >= 30 },
     { id: "reflection_sage", badge: "📚", name: "Reflection Sage", hint: "Write 100 private reflections.", check: () => reflectionDates.length >= 100 },
     { id: "intention_setter", badge: "📮", name: "Intention Setter", hint: "Write a reflection on a Sunday.", check: () => reflectionDates.some((date) => dayIdForDate(date) === "sun") },
-    { id: "honest_checkin", badge: "🫶", name: "Honest Check-In", hint: "Tell PlushLife how today really feels.", check: () => dailyCheckInHistory.length >= 1 },
+    { id: "honest_checkin", badge: "♥", name: "Honest Check-In", hint: "Tell PlushLife how today really feels.", check: () => dailyCheckInHistory.length >= 1 },
     { id: "tiny_counts", badge: "🌼", name: "Tiny Still Counts", hint: "Choose a Tiny Day when that is what you need.", check: () => dailyCheckInHistory.some((item) => item.day_type === "tiny") },
     { id: "recovery_return", badge: "🛋️", name: "Gentle Return", hint: "Choose a Recovery Day and come back softly.", check: () => dailyCheckInHistory.some((item) => item.day_type === "recovery") },
     { id: "care_explorer", badge: "🌿", name: "Care Explorer", hint: "Try a PlushCare tool and record how it felt.", check: () => careSessionHistory.length >= 1 },
@@ -4199,7 +4270,7 @@ function GlowUpTracker() {
     { id: "habit_starter", badge: "🥇", name: "Habit Starter", hint: "Create your first build or reduce habit.", check: () => habitTasks.length >= 1 },
     { id: "habit_gardener", badge: "🌈", name: "Habit Gardener", hint: "Earn your first badge in the Habit Garden.", check: () => habitTasks.some((item) => item.stats.earnedReward) },
     { id: "habit_collector", badge: "🌻", name: "Habit Collector", hint: "Earn badges on 3 different habits.", check: () => habitTasks.filter((item) => item.stats.earnedReward).length >= 3 },
-    { id: "full_grown", badge: "🌳", name: "Full Grown", hint: "Reach a 30-day streak on any single habit.", check: () => habitTasks.some((item) => item.stats.best >= 30) },
+    { id: "full_grown", badge: "🌳", name: "Full Grown", hint: "Complete 30 check-ins on any single habit.", check: () => habitTasks.some((item) => item.stats.total >= 30) },
     { id: "habit_builder", badge: "🎯", name: "Habit Builder", hint: "Earn a badge on a habit you're building.", check: () => habitTasks.some((item) => item.habitType === "build" && item.stats.earnedReward) },
     { id: "habit_reducer", badge: "🛡️", name: "Habit Reducer", hint: "Earn a badge on a habit you're reducing.", check: () => habitTasks.some((item) => item.habitType === "reduce" && item.stats.earnedReward) },
     { id: "organizer", badge: "📋", name: "Organizer", hint: "Have 10 tasks set up.", check: () => trackerTasks.length >= 10 },
@@ -4209,7 +4280,7 @@ function GlowUpTracker() {
     { id: "personalizer", badge: "🎨", name: "Personalizer", hint: "Try Baby Mode or Dino Theme.", check: () => babyMode || dinoTheme },
     { id: "reminder_ready", badge: "🔔", name: "Reminder Ready", hint: "Turn on push notifications.", check: () => !!preferences.notifications_enabled },
     { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
-    { id: "perfect_week", badge: "✨", name: "Perfect Week", hint: "Reach 100% for the whole week.", check: () => weeklyOverallPct === 100 },
+    { id: "perfect_week", badge: "✨", name: "Whole Week Glow", hint: "Reach 100% for one whole week.", check: () => weeklyOverallPct === 100 },
     { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
     { id: "founding_cozy", badge: "🌟", name: "Founding Cozy", hint: "Join Plushlist during its early access period.", check: () => !!user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z") },
   ];
@@ -4418,8 +4489,8 @@ function GlowUpTracker() {
               <div style={{ fontSize: 12.5, color: "#8C6B9E", fontWeight: 700 }}>whole-week progress</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 18 }}>
                 <div style={{ padding: "10px 6px", borderRadius: 12, background: "#FFFFFFB8" }}>
-                  <div style={{ fontSize: 18, fontWeight: 900, color: "#318C79" }}>{savedBestStreak}</div>
-                  <div style={{ marginTop: 2, fontSize: 9.5, color: "#8C6B9E" }}>BEST STREAK</div>
+                  <div style={{ fontSize: 18, fontWeight: 900, color: "#318C79" }}>{careDaysTotal}</div>
+                  <div style={{ marginTop: 2, fontSize: 9.5, color: "#8C6B9E" }}>CARE DAYS</div>
                 </div>
                 <div style={{ padding: "10px 6px", borderRadius: 12, background: "#FFFFFFB8" }}>
                   <div style={{ fontSize: 18, fontWeight: 900, color: "#A65DC1" }}>{earnedBadgeIdSet.size}</div>
@@ -4457,7 +4528,8 @@ function GlowUpTracker() {
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>HOW MUCH CAPACITY DO YOU HAVE?</div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>HOW MUCH CAPACITY DO YOU HAVE? · CHOOSE ONE</div>
+            <div style={{ marginTop: 3, fontSize: 11, color: "#8C6B9E" }}>This is the one answer PlushLife needs to finish today's check-in.</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 7 }}>
               {[
                 ["very_low", "😞", "Very low"],
@@ -4465,7 +4537,7 @@ function GlowUpTracker() {
                 ["usual", "🙂", "Usual"],
                 ["high", "💪", "High"],
               ].map(([value, emoji, label]) => (
-                <button key={value} type="button" onClick={() => saveDailyCheckIn({ capacity: value })} style={{ padding: "10px 5px", borderRadius: 12, border: dailyCheckIn.capacity === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.capacity === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
+                <button key={value} type="button" onClick={() => saveDailyCheckIn({ capacity: value })} aria-pressed={dailyCheckIn.capacity === value} style={{ padding: "10px 5px", borderRadius: 12, border: dailyCheckIn.capacity === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.capacity === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
                   <div style={{ fontSize: 22 }}>{emoji}</div>
                   <div style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
                 </button>
@@ -4490,12 +4562,32 @@ function GlowUpTracker() {
             <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#A56D14", fontWeight: 900 }}>WHAT WOULD HELP? · OPTIONAL</div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}>
               {SUPPORT_PREFERENCES.map(([value, emoji, label]) => (
-                <button key={value} type="button" onClick={() => saveDailyCheckIn({ support_preference: value })} aria-pressed={dailyCheckIn.support_preference === value} style={{ padding: "7px 9px", borderRadius: 999, border: dailyCheckIn.support_preference === value ? "2px solid #D4A017" : "1px solid #F0D99E", background: dailyCheckIn.support_preference === value ? "#FFF4CF" : "white", color: "#7B641E", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{emoji} {label}</button>
+                <button key={value} type="button" onClick={() => saveDailyCheckIn({ support_preference: dailyCheckIn.support_preference === value ? null : value })} aria-pressed={dailyCheckIn.support_preference === value} style={{ padding: "7px 9px", borderRadius: 999, border: dailyCheckIn.support_preference === value ? "2px solid #D4A017" : "1px solid #F0D99E", background: dailyCheckIn.support_preference === value ? "#FFF4CF" : "white", color: "#7B641E", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{emoji} {label}</button>
               ))}
             </div>
+            {dailyCheckIn.support_preference && SUPPORT_GUIDANCE[dailyCheckIn.support_preference] && (
+              <div style={{ marginTop: 9, padding: "9px 11px", borderRadius: 11, background: "#FFF9E9", border: "1px solid #F0D99E", color: "#6B5A3D", fontSize: 11.5, lineHeight: 1.45 }}>
+                {SUPPORT_GUIDANCE[dailyCheckIn.support_preference].text}
+                {SUPPORT_GUIDANCE[dailyCheckIn.support_preference].action && (
+                  <button type="button" onClick={() => {
+                    if (dailyCheckIn.support_preference === "comfort") {
+                      setCheckInPopupOpen(false);
+                      openCareSession("comfort_item");
+                    } else if (dailyCheckIn.support_preference === "practical") {
+                      setEssentialsPickerOpen(true);
+                    } else if (dailyCheckIn.support_preference === "company") {
+                      setCheckInPopupOpen(false);
+                      setDashboard("guardian");
+                    }
+                  }} style={{ display: "block", marginTop: 7, padding: "6px 9px", borderRadius: 8, border: "1px solid #D4A017", background: "white", color: "#8A6A21", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
+                    {SUPPORT_GUIDANCE[dailyCheckIn.support_preference].action}
+                  </button>
+                )}
+              </div>
+            )}
             {dailyCheckIn.capacity === "very_low" && !dailyCheckIn.soft_day && (
               <div style={{ marginTop: 12, padding: "9px 11px", borderRadius: 10, background: "#FFF9E9", fontSize: 12.5, color: "#6B5A3D" }}>
-                That's okay. Today can be smaller. <button type="button" onClick={() => saveDailyCheckIn({ soft_day: true })} style={{ marginLeft: 4, padding: "4px 9px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Start a Soft Day</button>
+                That's okay. Today can be smaller. <button type="button" onClick={() => selectDayType("soft")} style={{ marginLeft: 4, padding: "4px 9px", borderRadius: 7, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Start a Soft Day</button>
               </div>
             )}
             {(dailyCheckIn.capacity === "very_low" || dailyCheckIn.capacity === "low") && (
@@ -4514,11 +4606,11 @@ function GlowUpTracker() {
             <div style={{ marginTop: 13, paddingTop: 13, borderTop: "1px solid #E6D4F2", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
               <div>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: "#5B4B6B" }}>🌴 Resting today</div>
-                <div style={{ marginTop: 2, fontSize: 11, color: "#8C6B9E" }}>Protects today from breaking your streak. Planning ahead? Set a range in Settings.</div>
+                <div style={{ marginTop: 2, fontSize: 11, color: "#8C6B9E" }}>Pauses today's task list and reminders. Planning ahead? Set a range in Settings.</div>
               </div>
               <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
             </div>
-            <button type="button" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Done for now</button>
+            <button type="button" disabled={!dailyCheckIn.capacity} onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: dailyCheckIn.capacity ? "#A65DC1" : "#D8C8E2", color: "white", fontWeight: 900, cursor: dailyCheckIn.capacity ? "pointer" : "not-allowed" }}>{dailyCheckIn.capacity ? "Done for now" : "Choose your capacity to finish"}</button>
           </div>
         </div>
       )}
@@ -4554,7 +4646,7 @@ function GlowUpTracker() {
             <div id="care-outcome-title" style={{ fontSize: 18, fontWeight: 900, color: "#4F625D" }}>Did that help?</div>
             <div style={{ marginTop: 5, color: "#6B7F78", fontSize: 12, lineHeight: 1.5 }}>Your answer stays private and helps PlushLife learn which tools are useful for you. It never becomes a diagnosis.</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginTop: 13 }}>
-              {[["helped","💚 Yes"],["a_little","🌱 A little"],["not_really","🤍 Not really"],["worse","🫶 It made things worse"]].map(([value,label]) => <button key={value} type="button" onClick={() => saveCareOutcome(value)} style={{ padding: "10px 8px", borderRadius: 11, border: "1px solid #BFE5D2", background: "white", color: "#526F67", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{label}</button>)}
+              {[["helped","💚 Yes"],["a_little","🌱 A little"],["not_really","🤍 Not really"],["worse","♥ It made things worse"]].map(([value,label]) => <button key={value} type="button" onClick={() => saveCareOutcome(value)} style={{ padding: "10px 8px", borderRadius: 11, border: "1px solid #BFE5D2", background: "white", color: "#526F67", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{label}</button>)}
             </div>
             <button type="button" onClick={() => saveCareOutcome("skipped")} style={{ marginTop: 9, width: "100%", padding: "8px", borderRadius: 10, border: 0, background: "transparent", color: "#7B8F89", fontWeight: 800, cursor: "pointer" }}>Skip</button>
           </div>
@@ -4629,7 +4721,7 @@ function GlowUpTracker() {
               You cared for every required task today. Bonus items are still optional—this day already counts.
             </div>
             <div style={{ marginTop: 11, padding: "8px 10px", borderRadius: 12, background: "#FFFFFFAA", color: "#318C79", fontWeight: 900 }}>
-              🔥 {currentCompleteStreak}-day complete streak
+              ♥ {careDaysTotal} essential-care {careDaysTotal === 1 ? "day" : "days"} altogether
             </div>
             <button type="button" onClick={() => setCelebrationOpen(false)} style={{ marginTop: 14, padding: "10px 16px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Celebrate my win 💛</button>
           </div>
@@ -4727,17 +4819,22 @@ function GlowUpTracker() {
               <p style={{ color: "#6B5A7D", lineHeight: 1.55 }}>{(TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.tasks.length ?? 0) > 0 ? `Plushlist will begin with your ${TEMPLATE_PACKS.find((pack) => pack.id === selectedTemplateId)?.label.toLowerCase()} tasks.` : "You chose to start from scratch — add your first task once you're in."} Soft Plush is your default theme.</p>
               <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #E9DAF2" }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: "#6B5A7D" }}>One last thing, totally optional 💛</div>
-                <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>What brings you here? Just helps me set a couple of defaults for you.</div>
+                <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>What brings you here? Your choice changes a few starting settings, and you can change them later.</div>
                 <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>
                   {[
                     ["general", "🌿 General self-care"],
                     ["focus", "🎯 ADHD / focus support"],
                     ["burnout", "🕊️ Recovering from burnout"],
-                    ["plain", "📋 Just a normal tracker"],
+                    ["plain", "≡ Just a normal tracker"],
                   ].map(([value, label]) => (
                     <button key={value} type="button" onClick={() => setOnboardingReason((current) => current === value ? null : value)} style={{ padding: "7px 11px", borderRadius: 999, border: onboardingReason === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: onboardingReason === value ? "#F7ECFB" : "white", color: "#5B4B6B", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>{label}</button>
                   ))}
                 </div>
+                {onboardingReason && (
+                  <div aria-live="polite" style={{ marginTop: 8, padding: "8px 10px", borderRadius: 10, background: "#F7ECFB", border: "1px solid #E3C9EC", color: "#6B5A7D", fontSize: 11.5, lineHeight: 1.45 }}>
+                    {ONBOARDING_REASON_PROFILES[onboardingReason]?.description}
+                  </div>
+                )}
               </div>
               <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #E9DAF2" }}>
                 <div style={{ fontSize: 12.5, fontWeight: 800, color: "#6B5A7D" }}>🔔 Want gentle reminders?</div>
@@ -4769,7 +4866,7 @@ function GlowUpTracker() {
         {(preferences.simple_mode ? [] : (babyMode ? [
           { e: "🧸", top: "2%", left: "4%", size: 52 }, { e: "🍼", top: "4%", left: "84%", size: 52 },
           { e: "🌈", top: "24%", left: "6%", size: 42 }, { e: "⭐", top: "30%", left: "88%", size: 34 },
-          { e: "🫧", top: "58%", left: "3%", size: 36 }, { e: "🐥", top: "64%", left: "90%", size: 40 },
+          { e: "✦", top: "58%", left: "3%", size: 36 }, { e: "🐥", top: "64%", left: "90%", size: 40 },
           { e: "🧸", top: "88%", left: "6%", size: 44 }, { e: "🍼", top: "92%", left: "84%", size: 40 },
         ] : dinoTheme ? [
           { e: "🦕", top: "2%", left: "4%", size: 54 }, { e: "🦖", top: "4%", left: "82%", size: 58 },
@@ -4923,19 +5020,26 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, display: "grid", gap: 14 }}>
             <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#F2FFFB,#FFF7FC)", border: "1px solid #BFE5D2", boxShadow: "0 8px 24px rgba(49,140,121,.09)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-                <div><div style={{ fontSize: 11, letterSpacing: ".15em", color: "#318C79", fontWeight: 900 }}>🫶 PLUSHCARE</div><div style={{ marginTop: 4, fontSize: 20, color: "#4F405C", fontWeight: 900 }}>What would help right now?</div></div>
+                <div><div style={{ fontSize: 11, letterSpacing: ".15em", color: "#318C79", fontWeight: 900 }}>♥ PLUSHCARE</div><div style={{ marginTop: 4, fontSize: 20, color: "#4F405C", fontWeight: 900 }}>What would help right now?</div></div>
                 <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "7px 10px", borderRadius: 10, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Update check-in</button>
               </div>
               <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#607A73" }}>Choose what is happening. PlushLife will offer one short tool and one realistic next step.</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 12 }}>
-                {HELP_ME_NOW_OPTIONS.map((option) => (
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 12 }}>
+                {HELP_ME_NOW_OPTIONS.slice(0, careSituationsExpanded ? HELP_ME_NOW_OPTIONS.length : 4).map((option) => (
                   <button key={option.id} type="button" onClick={() => { setCareMessage(option.next); openCareSession(option.tool); }} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #CFE8E1", background: "#FFFFFFD9", color: "#4F625D", textAlign: "left", fontWeight: 800, fontSize: 12, lineHeight: 1.35, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{option.icon}</span>{option.label}</button>
                 ))}
               </div>
+              <button type="button" onClick={() => setCareSituationsExpanded((expanded) => !expanded)} aria-expanded={careSituationsExpanded} style={{ marginTop: 9, padding: "7px 10px", borderRadius: 9, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{careSituationsExpanded ? "Show fewer situations" : "Show all situations"}</button>
               {careMessage && <div aria-live="polite" style={{ marginTop: 10, padding: "9px 11px", borderRadius: 10, background: "#FFFFFFB8", color: "#5E766F", fontSize: 11.5, lineHeight: 1.5 }}>{careMessage}</div>}
             </div>
 
-            <div style={{ padding: 17, borderRadius: 20, background: "#FFFFFFB8", border: "1px solid #E6D4F2" }}>
+            <div role="tablist" aria-label="Care library" style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 7, padding: 6, borderRadius: 15, background: "#FFFFFF99", border: "1px solid #E6D4F2" }}>
+              {[["quick", "🌿", "Quick Care"], ["paths", "🗺️", "Paths"], ["sleep", "🌙", "Sleep"]].map(([value, icon, label]) => (
+                <button key={value} type="button" role="tab" aria-selected={careSection === value} onClick={() => setCareSection(value)} style={{ minWidth: 0, padding: "9px 6px", borderRadius: 11, border: careSection === value ? "2px solid #A65DC1" : "1px solid transparent", background: careSection === value ? "#F7ECFB" : "transparent", color: careSection === value ? "#75428C" : "#7B6888", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{icon} {label}</button>
+              ))}
+            </div>
+
+            {careSection === "quick" && <div style={{ padding: 17, borderRadius: 20, background: "#FFFFFFB8", border: "1px solid #E6D4F2" }}>
               <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#A65DC1" }}>🌿 QUICK CARE SESSIONS</div>
               <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Short, private, and always free. Tell PlushLife afterward whether it helped.</div>
               {(() => {
@@ -4946,9 +5050,9 @@ function GlowUpTracker() {
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8, marginTop: 11 }}>
                 {COMFORT_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => openCareSession(tool.id)} style={{ padding: "12px 8px", borderRadius: 13, border: "1px solid #E3C9EC", background: "#FFF9FD", color: "#6B5A7D", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}><div style={{ fontSize: 23 }}>{tool.icon}</div><div style={{ marginTop: 4 }}>{tool.name}</div></button>)}
               </div>
-            </div>
+            </div>}
 
-            <div style={{ padding: 17, borderRadius: 20, background: "#FFFDF4D9", border: "1px solid #E9C96E" }}>
+            {careSection === "paths" && <div style={{ padding: 17, borderRadius: 20, background: "#FFFDF4D9", border: "1px solid #E9C96E" }}>
               <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#A56D14" }}>🗺️ PLUSHPATHS</div>
               <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Guided programs that move at your pace. Pause, repeat, or leave any time.</div>
               <div style={{ display: "grid", gap: 9, marginTop: 11 }}>
@@ -4961,15 +5065,15 @@ function GlowUpTracker() {
                   </button>;
                 })}
               </div>
-            </div>
+            </div>}
 
-            <div style={{ padding: 17, borderRadius: 20, background: "#F3F6FFD9", border: "1px solid #C7D5F3" }}>
+            {careSection === "sleep" && <div style={{ padding: 17, borderRadius: 20, background: "#F3F6FFD9", border: "1px solid #C7D5F3" }}>
               <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#4C6FA8" }}>🌙 PLUSHSLEEP</div>
               <div style={{ marginTop: 5, fontSize: 12, color: "#6B7690" }}>Practical support for difficult nights—not a score and not a medical sleep assessment.</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 11 }}>
                 {SLEEP_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => setSleepToolOpen(tool.id)} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #D3DCF3", background: "white", color: "#556581", textAlign: "left", fontWeight: 800, fontSize: 12, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{tool.icon}</span>{tool.title}</button>)}
               </div>
-            </div>
+            </div>}
 
             <div style={{ padding: "11px 13px", borderRadius: 13, background: "#FFF7F9", border: "1px solid #F0B8C4", color: "#7F5660", fontSize: 11.5, lineHeight: 1.5 }}><strong>PlushLife is not emergency care.</strong> If you may hurt yourself or someone else, contact local emergency services or a trusted person who can be physically present. Care tools never replace professional support.</div>
           </div>
@@ -5004,11 +5108,13 @@ function GlowUpTracker() {
           const energy = ENERGY_LEVELS.find(([value]) => value === entry.energy);
           const dayType = DAY_TYPES.find(([value]) => value === entry.day_type);
           const support = SUPPORT_PREFERENCES.find(([value]) => value === entry.support_preference);
+          const capacity = { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[entry.capacity];
           return <ToolPanel title="Daily check-in" onClose={() => setCheckInViewerDate(null)}>
             <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#FFF9FD,#F2FFFB)", border: "1px solid #E3C9EC" }}>
               <div style={{ fontSize: 11, letterSpacing: ".13em", fontWeight: 900, color: "#A65DC1" }}>{new Date(`${checkInViewerDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).toUpperCase()}</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 11 }}>
                 <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #E9DDEC" }}><div style={{ fontSize: 10, color: "#8C6B9E", fontWeight: 900 }}>FEELING</div><div style={{ marginTop: 4, fontWeight: 900, color: "#5B4B6B" }}>{mood ? `${mood[1]} ${mood[2]}` : "Not recorded"}</div></div>
+                <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #E9DDEC" }}><div style={{ fontSize: 10, color: "#8C6B9E", fontWeight: 900 }}>CAPACITY</div><div style={{ marginTop: 4, fontWeight: 900, color: "#5B4B6B" }}>{capacity || "Not recorded"}</div></div>
                 <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #CFE8E1" }}><div style={{ fontSize: 10, color: "#6B8A82", fontWeight: 900 }}>ENERGY</div><div style={{ marginTop: 4, fontWeight: 900, color: "#526F67" }}>{energy ? `${energy[1]} ${energy[2]}` : "Not recorded"}</div></div>
                 <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #CFE4F5" }}><div style={{ fontSize: 10, color: "#6B7C99", fontWeight: 900 }}>DAY TYPE</div><div style={{ marginTop: 4, fontWeight: 900, color: "#4C6F98" }}>{dayType ? `${dayType[1]} ${dayType[2]}` : "Full"}</div></div>
                 <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #F0D99E" }}><div style={{ fontSize: 10, color: "#A56D14", fontWeight: 900 }}>WANTED</div><div style={{ marginTop: 4, fontWeight: 900, color: "#7B641E" }}>{support ? `${support[1]} ${support[2]}` : "Not recorded"}</div></div>
@@ -5076,14 +5182,14 @@ function GlowUpTracker() {
               {[
                 ["What can a Guardian actually see?", "Only what you turn on for them, one setting at a time — your progress percentage, specific sections, or nothing at all. They can never see your private reflections, and you can pause or fully remove their access at any moment."],
                 ["Can a Guardian edit or complete my tasks?", "No. A Guardian can only view what you've allowed, send an encouraging note, or suggest a task for you to approve. They cannot check anything off or change your tasks."],
-                ["What happens if I miss a day?", "Nothing is lost. Your current streak resets, but your best streak, every badge, and every outfit you've earned stay yours forever."],
+                ["What happens if I miss a day?", "Nothing is lost. Care days and activity days are lifetime totals, so they never reset. Every badge and outfit you've earned stays yours forever."],
                 ["What's the difference between Required and Bonus tasks?", "Required tasks count toward your daily percentage. Bonus tasks are extras — completing them never lowers your score, and skipping them never counts against you."],
                 ["What are Full, Soft, Tiny, and Recovery Days?", "They are four ways to size today around your real capacity. Full shows your usual versions, Soft uses gentler versions and hides bonuses, Tiny keeps the smallest essentials, and Recovery helps you restart without a backlog."],
                 ["How do mood and energy patterns work?", "Your check-ins stay private and appear in your Progress calendar. With pattern suggestions on, PlushLife may notice a repeated day-of-week pattern and offer a small routine change. It never diagnoses you, assumes a cause, or changes anything without your approval."],
                 ["Is PlushCare free?", "Yes. PlushCare, PlushPaths, PlushSleep, mood and energy tracking, adaptive habits, accessibility tools, and Guardian support are all free right now."],
                 ["What is Focus Mode?", "Instead of your full checklist, Focus Mode shows just your next task, one at a time — good for when a long list feels like too many decisions."],
                 ["Who can see my private reflections?", "Only you, always. They're never shown to a Guardian, never included in any shared summary, and stored separately from anything else."],
-                ["Can I get my data, or delete my account?", "Yes to both, anytime — Settings → Your Data has a full export, and Settings → Account Actions has account deletion. Deletion is permanent and requires confirmation."],
+                ["Can I get my data, or delete my account?", "Yes to both, anytime — Settings → Your Data has a full export, and Settings → Account has the Delete account button. Deletion is permanent and requires confirmation."],
                 ["How do badges and the Mascot Closet work?", "Badges and outfits unlock from all kinds of care — showing up, reflecting, building or reducing a habit, connecting a Guardian. Once unlocked, nothing is ever taken away."],
               ].map(([q, a]) => (
                 <details key={q} style={{ padding: "9px 11px", borderRadius: 12, background: "white", border: "1px solid #F0E4C2" }}>
@@ -5110,11 +5216,11 @@ function GlowUpTracker() {
                   Your collection follows your signed-in account. Rewards can come from showing up, completing care, building a helpful habit, or gently reducing a habit. Once unlocked, each reward stays yours.
                 </div>
                 <div style={{ display: "flex", gap: 7, flexWrap: "wrap", marginTop: 9 }}>
-                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#FFF4CF", color: "#94600D", fontWeight: 900, fontSize: 11.5 }}>👋 Showing up: {mascotCollection.visitStreak} now · {mascotCollection.bestVisitStreak} best</span>
-                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#F3E8FA", color: "#8E4EAA", fontWeight: 900, fontSize: 11.5 }}>🫶 Care: {currentCompleteStreak} now · {savedBestStreak} best</span>
+                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#FFF4CF", color: "#94600D", fontWeight: 900, fontSize: 11.5 }}>👋 Active days: {activityDaysTotal}</span>
+                  <span style={{ padding: "5px 9px", borderRadius: 999, background: "#F3E8FA", color: "#8E4EAA", fontWeight: 900, fontSize: 11.5 }}>♥ Essential-care days: {careDaysTotal}</span>
                   <span style={{ padding: "5px 9px", borderRadius: 999, background: "#EAF8F4", color: "#318C79", fontWeight: 900, fontSize: 11.5 }}>✨ {unlockedOutfits.length}/{MASCOT_OUTFITS.length} outfits · {earnedBadgeIdSet.size}/{BADGE_DEFS.length} badges</span>
                 </div>
-                <div style={{ marginTop: 7, fontSize: 10.5, color: "#8C6B9E" }}>Opening Plushlist once in a Chicago calendar day counts as showing up. Missing a day restarts the current number, but your best and unlocked rewards are kept.</div>
+                <div style={{ marginTop: 7, fontSize: 10.5, color: "#8C6B9E" }}>These are lifetime totals. Taking time away never lowers them, and every unlocked reward remains yours.</div>
               </div>
             </div>
 
@@ -5216,7 +5322,7 @@ function GlowUpTracker() {
               🍼 Baby Mode
             </label>
             <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Bigger words, round pill buttons, candy-soft colors, teddy-and-bottle decorations. Changes only the look — not your tasks, privacy, or progress.</div>
-            {preferences.nickname_style === "baby" && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#FFFFFFB8", color: "#A65DC1", fontWeight: 900, textAlign: "center" }}>🧸 Baby Mode preview is on! 🫧</div>}
+            {preferences.nickname_style === "baby" && <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 999, background: "#FFFFFFB8", color: "#A65DC1", fontWeight: 900, textAlign: "center" }}>🧸 Baby Mode preview is on! ✦</div>}
             {preferences.nickname_style === "baby" && (
               <div style={{ marginTop: 10 }}>
                 <div style={{ fontSize: 10.5, fontWeight: 900, color: "#8E4EAA" }}>VOICE</div>
@@ -5274,7 +5380,7 @@ function GlowUpTracker() {
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🌴 REST DAYS / VACATION MODE</div>
-            <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days are protected from ever breaking your streak.</div>
+            <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days pause the list and reminders without erasing progress.</div>
             <div style={{ display: "flex", gap: 7, marginTop: 9, flexWrap: "wrap", alignItems: "flex-end" }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>From<input type="date" value={restRangeDraft.start} onChange={(event) => setRestRangeDraft((current) => ({ ...current, start: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
               <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>To<input type="date" value={restRangeDraft.end} onChange={(event) => setRestRangeDraft((current) => ({ ...current, end: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
@@ -5571,7 +5677,7 @@ function GlowUpTracker() {
             <div style={{ fontSize: 13, fontWeight: 900, color: "#A65DC1" }}>STEP 2 · ADD A TASK</div>
             <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
               TASK NAME
-              <input value={newTaskName} onChange={(event) => setNewTaskName(event.target.value)} maxLength={240} placeholder="Example: Brush my teeth" aria-label="New task name" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+              <input ref={newTaskNameInputRef} value={newTaskName} onChange={(event) => { setNewTaskName(event.target.value); if (taskMessage === "Give the task a name first.") setTaskMessage(""); }} maxLength={240} placeholder="Example: Brush my teeth" aria-label="New task name" aria-invalid={taskMessage === "Give the task a name first."} aria-describedby={taskMessage ? "task-form-message" : undefined} style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: taskMessage === "Give the task a name first." ? "2px solid #C45D74" : "1px solid #E3C9EC" }} />
             </label>
             <label style={{ display: "grid", gap: 4, marginTop: 7, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
               GROUP
@@ -5615,7 +5721,7 @@ function GlowUpTracker() {
                 </label>
                 {newTaskKind !== "regular" && (
                   <div style={{ padding: "8px 10px", borderRadius: 9, background: "#FFF9E9", border: "1px solid #F0D99E", color: "#8A6A21", fontSize: 11.5, lineHeight: 1.45 }}>
-                    Each successful check-in grows a gentle streak and unlocks habit badges at 1, 3, 7, 14, and 30 in a row. A missed check-in never removes a badge you already earned.
+                    Each successful check-in adds to your lifetime progress and unlocks habit badges at 1, 3, 7, 14, and 30 total check-ins. Missing a day never sets that progress back.
                   </div>
                 )}
                 <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
@@ -5643,7 +5749,7 @@ function GlowUpTracker() {
                 {trackerTasks.filter((item) => item.day_id === "daily" || item.day_id === newTaskDay).length}/{FREE_TASK_LIMIT_PER_DAY} tasks used for this day on the free plan · 🌟 Supporters get unlimited
               </div>
             )}
-            {taskMessage && <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>{taskMessage}</div>}
+            {taskMessage && <div id="task-form-message" role={taskMessage.includes("first") || taskMessage.includes("Couldn't") ? "alert" : "status"} aria-live="polite" style={{ marginTop: 8, fontSize: 12, color: taskMessage.includes("first") || taskMessage.includes("Couldn't") ? "#B24D65" : "#8C6B9E", fontWeight: taskMessage.includes("first") ? 800 : 600 }}>{taskMessage}</div>}
           </div>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
             <div style={{ fontSize: 13, fontWeight: 900, color: "#318C79" }}>STEP 3 · EDIT OR DELETE {(newTaskDay === "daily" ? "EVERY DAY" : DAYS.find((day) => day.id === newTaskDay)?.label || newTaskDay.toUpperCase())} TASKS</div>
@@ -5745,7 +5851,7 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
             {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (
               <div style={{ marginBottom: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
-                <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>🫶 SUPPORT REQUESTS</div>
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>♥ SUPPORT REQUESTS</div>
                 {guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").map((request) => (
                   <div key={request.id} style={{ marginTop: 8, padding: 10, borderRadius: 11, background: "white", border: "1px solid #E3C9EC" }}>
                     <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B" }}>{request.request_type.replace(/_/g, " ")}</div>
@@ -5967,7 +6073,7 @@ function GlowUpTracker() {
                 </div>
                 {ownedSupportLinks.some((link) => link.active && link.accepted_at) && (
                   <div style={{ marginTop: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
-                    <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>🫶 HELP ME SAY IT</div>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>♥ HELP ME SAY IT</div>
                     <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Send a clear, consent-based request. This is not an emergency alert and never contacts anyone automatically.</div>
                     <select value={supportRequestGuardian || ownedSupportLinks.find((link) => link.active && link.accepted_at)?.caregiver_email || ""} onChange={(event) => setSupportRequestGuardian(event.target.value)} aria-label="Choose Guardian for support request" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC", background: "white" }}>
                       {ownedSupportLinks.filter((link) => link.active && link.accepted_at).map((link) => <option key={link.id} value={link.caregiver_email}>{link.caregiver_email}</option>)}
@@ -6061,7 +6167,7 @@ function GlowUpTracker() {
             <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
               <button type="button" onClick={() => setReturnBannerDismissed(true)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start fresh</button>
               <button type="button" onClick={() => { setEssentialsPickerOpen(true); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Choose 3 essentials</button>
-              <button type="button" onClick={() => { saveDailyCheckIn({ soft_day: true }); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start a Soft Day</button>
+              <button type="button" onClick={() => { selectDayType("soft"); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start a Soft Day</button>
             </div>
           </div>
         )}
@@ -6070,23 +6176,30 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "#EAF6F1", border: "1px solid #A9DFC4", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div>
               <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#268A50" }}>🌴 RESTING TODAY</div>
-              <div style={{ marginTop: 4, fontSize: 12.5, color: "#2F6E48" }}>This day is protected — nothing you do or don't do today can break your streak. Reminders are paused too.</div>
+              <div style={{ marginTop: 4, fontSize: 12.5, color: "#2F6E48" }}>Your task list and reminders are paused. Nothing is required today, and none of your progress is erased.</div>
             </div>
             <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #A9DFC4", background: "white", color: "#268A50", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>End rest day</button>
           </div>
         )}
 
-        {dailyCheckIn.soft_day && (
+        {["soft", "tiny", "recovery"].includes(dailyCheckIn.day_type) && (() => {
+          const modeCopy = dailyCheckIn.day_type === "tiny"
+            ? { icon: "🌱", title: "TINY DAY", text: "Only the smallest meaningful essentials are shown. Tiny care fully counts." }
+            : dailyCheckIn.day_type === "recovery"
+              ? { icon: "↺", title: "RECOVERY DAY", text: "A few gentle rebuilding steps are shown, without bringing back a backlog." }
+              : { icon: "🌙", title: "SOFT DAY", text: "Today can be smaller. Soft task versions are shown and bonus items are tucked away." };
+          return (
           <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "#FFF9E9", border: "1px solid #F0D99E", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>🌙 SOFT DAY</div>
-              <div style={{ marginTop: 4, fontSize: 12.5, color: "#6B5A3D" }}>Today can be smaller. Small care still counts. Bonus items are tucked away for now.</div>
-            </div>
-            <button type="button" onClick={() => saveDailyCheckIn({ soft_day: false })} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>Back to a regular day</button>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>{modeCopy.icon} {modeCopy.title}</div>
+              <div style={{ marginTop: 4, fontSize: 12.5, color: "#6B5A3D" }}>{modeCopy.text}</div>
+            </div>}
+            <button type="button" onClick={() => selectDayType("full")} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>Back to a Full Day</button>
           </div>
-        )}
+          );
+        })()}
 
-        {!nextStepDismissedToday && (() => {
+        {dailyCheckIn.day_type !== "rest" && !nextStepDismissedToday && (() => {
           const essentialPool = dailyCheckIn.custom_essentials?.length
             ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
             : requiredRows;
@@ -6209,18 +6322,24 @@ function GlowUpTracker() {
         {todayCardIndex === 1 && rows.length > 0 && (
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
-              <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{pct}% · {requiredDoneCount}/{requiredRows.length}</span>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{dailyCheckIn.day_type === "rest" ? "REST DAY" : isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
+              <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{dailyCheckIn.day_type === "rest" ? "NO TASKS REQUIRED" : `${pct}% · ${requiredDoneCount}/${requiredRows.length}`}</span>
             </div>
-            <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
+            {dailyCheckIn.day_type !== "rest" && <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
-            </div>
-            {preferences.nurturing_checkins && (
+            </div>}
+            {dailyCheckIn.day_type !== "rest" && preferences.nurturing_checkins && (
               <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
                 {doneCount > 0 ? voice.nurturingSome(doneCount) : voice.nurturingNone}
               </div>
             )}
-            {preferences.focus_mode && !focusModeShowAll ? (() => {
+            {dailyCheckIn.day_type === "rest" ? (
+              <div style={{ padding: "22px 14px", borderRadius: 16, background: "#EAF6F1", border: "1px solid #A9DFC4", textAlign: "center", color: "#2F6E48" }}>
+                <div style={{ fontSize: 26 }}>🌴</div>
+                <div style={{ marginTop: 6, fontWeight: 900, fontSize: 15 }}>Your list is resting too.</div>
+                <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.5 }}>Nothing is overdue, no backlog is created, and anything you choose to do is simply a bonus.</div>
+              </div>
+            ) : preferences.focus_mode && !focusModeShowAll ? (() => {
               const focusNextTask = rows.find((r) => !r.isBonus && !viewDone[r.key]) || rows.find((r) => !viewDone[r.key]);
               if (!focusNextTask) {
                 return (
@@ -6264,10 +6383,14 @@ function GlowUpTracker() {
                 {(() => {
               let lastSection = "";
               const lowCapacityRows = rows.filter((r) => !r.isBonus && r.sourceTask?.essential_on_low_capacity);
-              const visibleRows = dailyCheckIn.custom_essentials?.length
-                ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
-                : dailyCheckIn.day_type === "tiny" || dailyCheckIn.day_type === "recovery"
+              const visibleRows = dailyCheckIn.day_type === "rest"
+                ? []
+                : dailyCheckIn.custom_essentials?.length
+                  ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
+                : dailyCheckIn.day_type === "tiny"
                   ? (lowCapacityRows.length ? lowCapacityRows : rows.filter((r) => !r.isBonus).slice(0, 3))
+                : dailyCheckIn.day_type === "recovery"
+                  ? (lowCapacityRows.length ? lowCapacityRows : rows.filter((r) => !r.isBonus).slice(0, 5))
                   : dailyCheckIn.soft_day || dailyCheckIn.day_type === "soft"
                     ? rows.filter((r) => !r.isBonus)
                     : rows;
@@ -6303,7 +6426,7 @@ function GlowUpTracker() {
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
                           {r.label}
-                          {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" || r.dayType === "recovery" ? "Tiny" : "Soft"} version of {r.originalLabel}</span>}
+                          {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" ? "Tiny" : r.dayType === "recovery" ? "Recovery" : "Soft"} version of {r.originalLabel}</span>}
                         </span>
                         {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
                         {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
@@ -6338,13 +6461,13 @@ function GlowUpTracker() {
                 })()}
               </>
             )}
-            {dailyCheckIn.custom_essentials?.length ? (
+            {dailyCheckIn.day_type !== "rest" && (dailyCheckIn.custom_essentials?.length ? (
               dailyCheckIn.custom_essentials.every((key) => viewDone[key]) && (
                 <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>✨ Today's essentials are done — that's enough. 💛</div>
               )
             ) : pct === 100 && (
               <div style={{ textAlign: "center", padding: "10px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>{voice.dayComplete}</div>
-            )}
+            ))}
           </div>
         )}
         {todayCardIndex === 1 && rows.length === 0 && (
@@ -6465,7 +6588,7 @@ function GlowUpTracker() {
           )}
           {wellbeingPatternInsight && (
             <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#EAF8F4", border: "1px solid #BFE5D2", fontSize: 11.5, lineHeight: 1.5, color: "#526F67" }}>
-              <strong>🫶 A possible care pattern:</strong> {wellbeingPatternInsight.text}
+              <strong>♥ A possible care pattern:</strong> {wellbeingPatternInsight.text}
               <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
                 <button type="button" onClick={() => { setDashboard("routines"); setActive(wellbeingPatternInsight.dayId); setSelectedProgressDate(dateForDayId(wellbeingPatternInsight.dayId, period)); }} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Review that routine</button>
                 <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
@@ -6564,8 +6687,8 @@ function GlowUpTracker() {
             <div style={{ display: "grid", gap: 8, marginTop: 11 }}>
               {habitTasks.map((habit) => {
                 const nextCount = habit.stats.nextReward?.count;
-                const progressPct = nextCount ? Math.min(100, Math.round((habit.stats.current / nextCount) * 100)) : 100;
-                const remaining = nextCount ? Math.max(0, nextCount - habit.stats.current) : 0;
+                const progressPct = nextCount ? Math.min(100, Math.round((habit.stats.total / nextCount) * 100)) : 100;
+                const remaining = nextCount ? Math.max(0, nextCount - habit.stats.total) : 0;
                 return (
                 <div key={habit.task_key} style={{ padding: "10px 11px", borderRadius: 12, background: "#FFFFFFB8", border: "1px solid #D7EEE2" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
@@ -6577,13 +6700,13 @@ function GlowUpTracker() {
                         {habit.habitType === "build" ? "Building" : "Reducing"}
                       </span>
                       <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
-                        {habit.stats.current} in a row
+                        {habit.stats.total} total
                       </div>
                     </div>
                   </div>
                   {habit.stats.earnedReward && (
                     <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
-                      Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Best streak: {habit.stats.best} {habit.stats.best === 1 ? "day" : "days"}
+                      Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Every check-in keeps your progress
                     </div>
                   )}
                   {habit.stats.nextReward && (

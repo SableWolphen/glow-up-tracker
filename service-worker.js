@@ -1,4 +1,4 @@
-const CACHE_NAME = "plushlife-v15";
+const CACHE_NAME = "plushlife-v16";
 const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
