@@ -5441,7 +5441,7 @@ function GlowUpTracker() {
           </div>
           {user && <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
-              <PlushMascot outfit={selectedOutfit} size={46} mood="happy" />
+              <PlushMascot outfit={selectedOutfit} size={46} mood="happy" activityDays={activityDaysTotal} />
             </button>
           </div>}
         </div>
