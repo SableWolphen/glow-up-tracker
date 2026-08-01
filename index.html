@@ -364,6 +364,8 @@ const CHECKIN_MOODS = [
   ["overwhelmed", "😵‍💫", "Overwhelmed"], ["numb", "😶", "Numb"], ["sick", "🤒", "Sick"],
 ];
 
+const PRIMARY_CHECKIN_MOODS = ["happy", "okay", "tired", "anxious", "sad", "overwhelmed"];
+
 const ENERGY_LEVELS = [
   ["empty", "○", "Empty"], ["low", "🌙", "Low"], ["steady", "🌤️", "Steady"], ["high", "⚡", "High"],
 ];
@@ -1134,6 +1136,8 @@ function GlowUpTracker() {
   const [restRangeDraft, setRestRangeDraft] = useState({ start: "", end: "" });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
   const [checkInPopupOpen, setCheckInPopupOpen] = useState(false);
+  const [checkInMoreMoodsOpen, setCheckInMoreMoodsOpen] = useState(false);
+  const [checkInCustomizeOpen, setCheckInCustomizeOpen] = useState(false);
   const [completedTodayExpanded, setCompletedTodayExpanded] = useState(false);
   const [comfortToolOpen, setComfortToolOpen] = useState(null);
   const [checkInPopupDismissedToday, setCheckInPopupDismissedToday] = useState(false);
@@ -2232,6 +2236,15 @@ function GlowUpTracker() {
     setActive(dayIdForDate(period.date));
     setSelectedProgressDate(period.date);
     setWeeklyIntentionEditing(true);
+  };
+
+  const selectCapacity = async (value) => {
+    const dayType = value === "very_low" ? "tiny" : value === "low" ? "soft" : "full";
+    await saveDailyCheckIn({
+      capacity: value,
+      day_type: dayType,
+      soft_day: dayType === "soft" || dayType === "tiny",
+    });
   };
 
   const saveWeeklyKickoffFeeling = async (feeling) => {
@@ -4535,16 +4548,18 @@ function GlowUpTracker() {
               </div>
               <button type="button" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} aria-label="Close" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
             </div>
-            <div style={{ marginTop: 14, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>FEELING · OPTIONAL</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 7 }}>
-              {CHECKIN_MOODS.map(([value, emoji, label]) => (
+            <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>1 · HOW DO YOU FEEL? <span style={{ opacity: 0.7 }}>OPTIONAL</span></div>
+              <button type="button" onClick={() => setCheckInMoreMoodsOpen((open) => !open)} style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{checkInMoreMoodsOpen ? "Fewer" : "More feelings"}</button>
+            </div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 7 }}>
+              {CHECKIN_MOODS.filter(([value]) => checkInMoreMoodsOpen || PRIMARY_CHECKIN_MOODS.includes(value)).map(([value, emoji, label]) => (
                 <button key={value} type="button" onClick={() => saveDailyCheckIn({ mood: value })} aria-pressed={dailyCheckIn.mood === value} style={{ padding: "7px 4px", borderRadius: 11, border: dailyCheckIn.mood === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.mood === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
                   <div style={{ fontSize: 18 }}>{emoji}</div><div style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>HOW MUCH CAPACITY DO YOU HAVE? · CHOOSE ONE</div>
-            <div style={{ marginTop: 3, fontSize: 11, color: "#8C6B9E" }}>This is the one answer PlushLife needs to finish today's check-in.</div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>2 · WHAT CAN YOU HANDLE TODAY?</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 7 }}>
               {[
                 ["very_low", "😞", "Very low"],
@@ -4552,12 +4567,21 @@ function GlowUpTracker() {
                 ["usual", "🙂", "Usual"],
                 ["high", "💪", "High"],
               ].map(([value, emoji, label]) => (
-                <button key={value} type="button" onClick={() => saveDailyCheckIn({ capacity: value })} aria-pressed={dailyCheckIn.capacity === value} style={{ padding: "10px 5px", borderRadius: 12, border: dailyCheckIn.capacity === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.capacity === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
+                <button key={value} type="button" onClick={() => selectCapacity(value)} aria-pressed={dailyCheckIn.capacity === value} style={{ padding: "10px 5px", borderRadius: 12, border: dailyCheckIn.capacity === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.capacity === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
                   <div style={{ fontSize: 22 }}>{emoji}</div>
                   <div style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
                 </button>
               ))}
             </div>
+            {dailyCheckIn.capacity && (
+              <div style={{ marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#F7ECFB", color: "#6B5A7D", fontSize: 11.5, lineHeight: 1.4 }}>
+                {dailyCheckIn.capacity === "very_low" ? "We'll show Tiny versions today." : dailyCheckIn.capacity === "low" ? "We'll make today a Soft Day." : "We'll keep your full list today."}
+              </div>
+            )}
+            <button type="button" onClick={() => setCheckInCustomizeOpen((open) => !open)} aria-expanded={checkInCustomizeOpen} style={{ marginTop: 12, width: "100%", padding: "8px 11px", borderRadius: 11, border: "1px solid #D9B8E8", background: "rgba(255,255,255,.72)", color: "#75428C", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>
+              {checkInCustomizeOpen ? "Hide extra options" : "Customize today · optional"} {checkInCustomizeOpen ? "⌃" : "⌄"}
+            </button>
+            {checkInCustomizeOpen && <>
             <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#318C79", fontWeight: 900 }}>ENERGY · OPTIONAL</div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 7, marginTop: 7 }}>
               {ENERGY_LEVELS.map(([value, emoji, label]) => (
@@ -4625,6 +4649,7 @@ function GlowUpTracker() {
               </div>
               <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
             </div>
+            </>}
             <button type="button" disabled={!dailyCheckIn.capacity} onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: dailyCheckIn.capacity ? "#A65DC1" : "#D8C8E2", color: "white", fontWeight: 900, cursor: dailyCheckIn.capacity ? "pointer" : "not-allowed" }}>{dailyCheckIn.capacity ? "Done for now" : "Choose your capacity to finish"}</button>
           </div>
         </div>
