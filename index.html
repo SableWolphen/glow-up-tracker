@@ -668,8 +668,8 @@ const PLUSH_PATHS = [
 ];
 
 const SLEEP_TOOLS = [
-  { id: "racing_thoughts", icon: "💭", title: "My thoughts will not stop", steps: ["Write one sentence about what your mind is holding.", "Tell yourself: I do not have to solve this tonight.", "Take three longer exhales.", "Return attention to the weight of your body on the bed."] },
-  { id: "night_anxiety", icon: "🌌", title: "I woke up anxious", steps: ["Name where you are and what time it is.", "Notice five neutral things around you.", "Unclench your jaw and hands.", "Take one sip of water if it is nearby."] },
+  { id: "racing_thoughts", icon: "💭", title: "My thoughts will not stop", steps: ["Write one sentence about what your mind is holding.", "Tell yourself: I do not have to solve this tonight.", "Take three longer exhales.", "Return attention to the weight of your body on the bed."], breathingPacer: true },
+  { id: "night_anxiety", icon: "🌌", title: "I woke up anxious", steps: ["Name where you are and what time it is.", "Notice five neutral things around you.", "Unclench your jaw and hands.", "Take one sip of water if it is nearby."], breathingPacer: true },
   { id: "nightmare", icon: "🕯️", title: "I had a nightmare", steps: ["Remind yourself that the dream has ended.", "Look for three signs that you are in the present.", "Change one sensory detail: light, blanket, temperature, or sound.", "Choose comfort before trying to sleep again."] },
   { id: "phone_pause", icon: "📵", title: "Help me leave my phone", steps: ["Set a two-minute timer.", "Place the phone beyond arm's reach when it ends.", "Choose one quiet replacement: stretch, breathe, or listen.", "You can return tomorrow. Nothing needs your attention tonight."] },
 ];
@@ -890,7 +890,7 @@ const CHANGELOG_ITEMS = [
 const COMFORT_TOOLS = [
   { id: "grounding", icon: "🖐️", name: "Five Senses", steps: ["Name 5 things you can see around you.", "Name 4 things you can touch or feel.", "Name 3 things you can hear right now.", "Name 2 things you can smell.", "Name 1 thing you can taste.", "You're here. You're safe right now."] },
   { id: "water", icon: "💧", name: "Water Reset", steps: ["Get a glass or bottle of water.", "Take a slow sip.", "Notice the temperature and the feeling of swallowing.", "Take another sip if you'd like.", "That's one real thing your body needed."] },
-  { id: "breathing", icon: "🫁", name: "One-Minute Breath", steps: ["Breathe in slowly for 4 counts.", "Hold gently for 4 counts.", "Breathe out slowly for 6 counts.", "Repeat this 4 or 5 times, at your own pace.", "No rush. Just breathe."] },
+  { id: "breathing", icon: "🫁", name: "One-Minute Breath", steps: ["Breathe in slowly for 4 counts.", "Hold gently for 4 counts.", "Breathe out slowly for 6 counts.", "Repeat this 4 or 5 times, at your own pace.", "No rush. Just breathe."], breathingPacer: true },
   { id: "bedtime", icon: "🌙", name: "Bedtime Wind-Down", steps: ["Put your phone somewhere out of reach.", "Dim the lights, if you can.", "Change into something comfortable to sleep in.", "Do one calm thing — reading, stretching, or just lying still.", "Rest is care too."] },
   { id: "comfort_item", icon: "🧸", name: "Comfort Moment", steps: ["Find your comfort item, or something soft nearby.", "Hold it for a moment.", "Let your shoulders drop.", "Take one slow breath.", "You don't have to do anything else right now."] },
   { id: "change_rooms", icon: "🚶", name: "Change the Scene", steps: ["Stand up, if you're able to.", "Walk to another room, or step outside for a moment.", "Notice one new thing about this space.", "Take a breath here before you go back.", "A change of scenery can be enough of a reset."] },
@@ -1433,6 +1433,7 @@ function GlowUpTracker() {
   const [dailyCheckInHistory, setDailyCheckInHistory] = useState([]);
   const [careSessionHistory, setCareSessionHistory] = useState([]);
   const [careOutcomeTool, setCareOutcomeTool] = useState(null);
+  const [careOutcomeKind, setCareOutcomeKind] = useState("care");
   const [pathProgress, setPathProgress] = useState([]);
   const [selectedCarePath, setSelectedCarePath] = useState(null);
   const [expandedPathDay, setExpandedPathDay] = useState(null);
@@ -2434,11 +2435,18 @@ function GlowUpTracker() {
   const finishCareSession = () => {
     const toolId = comfortToolOpen;
     setComfortToolOpen(null);
-    if (toolId) setCareOutcomeTool(toolId);
+    if (toolId) { setCareOutcomeTool(toolId); setCareOutcomeKind("care"); }
   };
 
+  const finishSleepSession = () => {
+    const toolId = sleepToolOpen;
+    setSleepToolOpen(null);
+    if (toolId) { setCareOutcomeTool(toolId); setCareOutcomeKind("sleep"); }
+  };
+
+  const activePacerTool = COMFORT_TOOLS.find((t) => t.id === comfortToolOpen && t.breathingPacer) || SLEEP_TOOLS.find((t) => t.id === sleepToolOpen && t.breathingPacer);
   useEffect(() => {
-    if (comfortToolOpen !== "breathing" || preferences.reduced_motion) return;
+    if (!activePacerTool || preferences.reduced_motion) return;
     const phases = [["in", 4000], ["hold", 4000], ["out", 6000]];
     let phaseIndex = 0;
     setBreathPhase(phases[0][0]);
@@ -2448,16 +2456,18 @@ function GlowUpTracker() {
       timeoutId = setTimeout(advance, phases[phaseIndex][1]);
     }, phases[phaseIndex][1]);
     return () => clearTimeout(timeoutId);
-  }, [comfortToolOpen, preferences.reduced_motion]);
+  }, [activePacerTool?.id, preferences.reduced_motion]);
 
   const saveCareOutcome = async (outcome) => {
     const sessionId = careOutcomeTool;
+    const sessionKind = careOutcomeKind;
     setCareOutcomeTool(null);
+    setCareOutcomeKind("care");
     if (!user || !sessionId) return;
     const { error } = await supabase.from("care_session_logs").insert({
       user_id: user.id,
       session_id: sessionId,
-      session_kind: "care",
+      session_kind: sessionKind,
       completed_at: new Date().toISOString(),
       outcome,
       check_date: period.date,
@@ -2465,7 +2475,7 @@ function GlowUpTracker() {
     if (!error) setCareSessionHistory((rows) => [{
       id: `local-${Date.now()}`,
       session_id: sessionId,
-      session_kind: "care",
+      session_kind: sessionKind,
       completed_at: new Date().toISOString(),
       outcome,
       check_date: period.date,
@@ -5177,7 +5187,7 @@ function GlowUpTracker() {
       {comfortToolOpen && (() => {
         const tool = COMFORT_TOOLS.find((t) => t.id === comfortToolOpen);
         if (!tool) return null;
-        const showBreathingPacer = tool.id === "breathing" && !preferences.reduced_motion;
+        const showBreathingPacer = !!tool.breathingPacer && !preferences.reduced_motion;
         return (
           <div role="dialog" aria-modal="true" aria-labelledby="comfort-tool-title" onClick={() => setComfortToolOpen(null)} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
             <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
@@ -5654,13 +5664,22 @@ function GlowUpTracker() {
               </div>
             </div>}
 
-            {careSection === "sleep" && <div style={{ padding: 17, borderRadius: 20, background: "#F3F6FFD9", border: "1px solid #C7D5F3" }}>
-              <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#4C6FA8" }}>🌙 PLUSHSLEEP</div>
-              <div style={{ marginTop: 5, fontSize: 12, color: "#6B7690" }}>Practical support for difficult nights—not a score and not a medical sleep assessment.</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 11 }}>
-                {SLEEP_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => setSleepToolOpen(tool.id)} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #D3DCF3", background: "white", color: "#556581", textAlign: "left", fontWeight: 800, fontSize: 12, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{tool.icon}</span>{tool.title}</button>)}
-              </div>
-            </div>}
+            {careSection === "sleep" && (() => {
+              const helpfulSleepEntry = careSessionHistory.find((entry) => entry.session_kind === "sleep" && ["helped", "a_little"].includes(entry.outcome));
+              const helpfulSleepTool = helpfulSleepEntry && SLEEP_TOOLS.find((entry) => entry.id === helpfulSleepEntry.session_id);
+              return <div style={{ position: "relative", padding: 17, borderRadius: 20, overflow: "hidden", background: "linear-gradient(160deg,#1B2245,#2E3A6B 55%,#1B2245)", border: "1px solid #3B4A85" }}>
+                {["6%,10%", "18%,32%", "72%,14%", "88%,36%", "45%,6%", "60%,28%", "30%,20%"].map((position, index) => {
+                  const [left, top] = position.split(",");
+                  return <span key={index} aria-hidden="true" style={{ position: "absolute", left, top, fontSize: 10, color: "#C7D5F3", opacity: 0.8 }}>✦</span>;
+                })}
+                <div style={{ position: "relative", fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#93A9F5" }}>🌙 PLUSHSLEEP</div>
+                <div style={{ position: "relative", marginTop: 5, fontSize: 12, color: "#C7D5F3" }}>Practical support for difficult nights—not a score and not a medical sleep assessment.</div>
+                {helpfulSleepTool && <div style={{ position: "relative", marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#2E3A6B99", color: "#DCE3FA", fontSize: 11.5 }}>You previously said <strong>{helpfulSleepTool.title}</strong> helped. Want to use it again?</div>}
+                <div style={{ position: "relative", display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 11 }}>
+                  {SLEEP_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => setSleepToolOpen(tool.id)} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #3B4A85", background: "#2E3A6B99", color: "#DCE3FA", textAlign: "left", fontWeight: 800, fontSize: 12, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{tool.icon}</span>{tool.title}</button>)}
+                </div>
+              </div>;
+            })()}
 
           </div>
         )}
@@ -5761,11 +5780,36 @@ function GlowUpTracker() {
         {sleepToolOpen && (() => {
           const tool = SLEEP_TOOLS.find((item) => item.id === sleepToolOpen);
           if (!tool) return null;
-          return <ToolPanel title={tool.title} onClose={() => setSleepToolOpen(null)}>
-            <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#F4F6FF,#FFF9FD)", border: "1px solid #C7D5F3" }}>
-              <div style={{ fontSize: 34 }}>{tool.icon}</div>
-              <div style={{ marginTop: 7, display: "grid", gap: 9 }}>{tool.steps.map((step, index) => <div key={index} style={{ display: "flex", gap: 9, color: "#556581", fontSize: 13, lineHeight: 1.5 }}><strong style={{ color: "#4C6FA8" }}>{index + 1}.</strong><span>{step}</span></div>)}</div>
-              <button type="button" onClick={() => setSleepToolOpen(null)} style={{ marginTop: 15, width: "100%", padding: "10px", borderRadius: 11, border: 0, background: "#4C6FA8", color: "white", fontWeight: 900, cursor: "pointer" }}>Done for tonight</button>
+          const showBreathingPacer = !!tool.breathingPacer && !preferences.reduced_motion;
+          return <ToolPanel title={tool.title} onClose={finishSleepSession}>
+            <div style={{ position: "relative", padding: 18, borderRadius: 20, overflow: "hidden", background: "linear-gradient(160deg,#1B2245,#2E3A6B 55%,#1B2245)", border: "1px solid #3B4A85" }}>
+              {["8%,12%", "22%,28%", "68%,18%", "82%,40%", "40%,8%", "58%,32%"].map((position, index) => {
+                const [left, top] = position.split(",");
+                return <span key={index} aria-hidden="true" style={{ position: "absolute", left, top, fontSize: 10, color: "#C7D5F3", opacity: 0.8 }}>✦</span>;
+              })}
+              <div style={{ position: "relative", fontSize: 34 }}>{tool.icon}</div>
+              {showBreathingPacer ? (
+                <div style={{ position: "relative", display: "grid", justifyItems: "center", marginTop: 14 }}>
+                  <div aria-live="polite" style={{
+                    width: breathPhase === "out" ? 90 : 150,
+                    height: breathPhase === "out" ? 90 : 150,
+                    borderRadius: "50%",
+                    display: "grid",
+                    placeItems: "center",
+                    background: "radial-gradient(circle at 35% 30%, #7C93E0, #3B4A85)",
+                    color: "white",
+                    fontWeight: 900,
+                    fontSize: 14,
+                    transition: `width ${breathPhase === "in" ? 4 : breathPhase === "out" ? 6 : 0.3}s ease-in-out, height ${breathPhase === "in" ? 4 : breathPhase === "out" ? 6 : 0.3}s ease-in-out`,
+                  }}>
+                    {breathPhase === "in" ? "Breathe in…" : breathPhase === "hold" ? "Hold…" : "Breathe out…"}
+                  </div>
+                  <div style={{ marginTop: 14, fontSize: 12, color: "#C7D5F3", textAlign: "center", lineHeight: 1.5 }}>{tool.steps[0]}</div>
+                </div>
+              ) : (
+                <div style={{ position: "relative", marginTop: 10, display: "grid", gap: 9 }}>{tool.steps.map((step, index) => <div key={index} style={{ display: "flex", gap: 9, color: "#DCE3FA", fontSize: 13, lineHeight: 1.5 }}><strong style={{ color: "#93A9F5" }}>{index + 1}.</strong><span>{step}</span></div>)}</div>
+              )}
+              <button type="button" onClick={finishSleepSession} style={{ position: "relative", marginTop: 15, width: "100%", padding: "10px", borderRadius: 11, border: 0, background: "#7C93E0", color: "#1B2245", fontWeight: 900, cursor: "pointer" }}>Done for tonight</button>
             </div>
           </ToolPanel>;
         })()}
