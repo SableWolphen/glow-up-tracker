@@ -19,13 +19,24 @@
 <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>PlushLife</title>
+<style>
+  :focus-visible { outline: 3px solid #4C8FE8 !important; outline-offset: 3px; }
+  .skip-link { position: fixed; left: 12px; top: -60px; z-index: 99999; padding: 10px 14px; border-radius: 10px; background: #5B4B6B; color: white; font: 800 14px system-ui, sans-serif; }
+  .skip-link:focus { top: 12px; }
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after { scroll-behavior: auto !important; animation-duration: .01ms !important; animation-iteration-count: 1 !important; transition-duration: .01ms !important; }
+  }
+  @media (pointer: coarse) { button, input, select { min-height: 44px; } }
+</style>
 </head>
 <body>
+<a class="skip-link" href="#main-content">Skip to main content</a>
 <div id="root"></div>
 <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
 <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
+<script src="./assets/care-upgrades.js"></script>
 <script>
 // Native-shell integration for the Capacitor Android build. window.Capacitor
 // only exists inside the packaged native app, so this is a complete no-op on
@@ -87,6 +98,135 @@
       var target = event && event.notification && event.notification.data && event.notification.data.url;
       if (typeof target === "string" && /^https:\/\/sablewolphen\.github\.io\/plushlist\/?/.test(target)) {
         window.location.href = target;
+      }
+    });
+  }
+
+  // Personal reminders are scheduled on the device, so they keep working
+  // without a network connection. Guardian messages still use FCM. Local
+  // reminders carry gentle snooze actions instead of forcing an immediate
+  // choice when someone has low capacity.
+  if (Plugins.LocalNotifications) {
+    var LocalNotifications = Plugins.LocalNotifications;
+    var reminderChannelId = "plushlife-reminders";
+    LocalNotifications.createChannel({
+      id: reminderChannelId,
+      name: "PlushLife reminders",
+      description: "Private routine reminders scheduled on this device",
+      importance: 3,
+      visibility: 1,
+      vibration: true,
+    }).catch(function () {});
+    LocalNotifications.registerActionTypes({
+      types: [{
+        id: "PLUSHLIFE_REMINDER",
+        actions: [
+          { id: "SNOOZE_10", title: "10 min" },
+          { id: "SNOOZE_30", title: "30 min" },
+          { id: "SNOOZE_60", title: "1 hour" },
+        ],
+      }],
+    }).catch(function () {});
+
+    var scheduleLocalReminder = function (details) {
+      var at = details.at instanceof Date ? details.at : new Date(details.at);
+      if (!Number.isFinite(at.getTime()) || at.getTime() <= Date.now()) return Promise.resolve();
+      return LocalNotifications.schedule({ notifications: [{
+        id: details.id,
+        title: details.title || "A gentle PlushLife reminder",
+        body: details.body || "Open PlushLife when you're ready.",
+        schedule: { at: at, allowWhileIdle: true },
+        channelId: reminderChannelId,
+        actionTypeId: "PLUSHLIFE_REMINDER",
+        autoCancel: true,
+        extra: details.extra || {},
+      }] });
+    };
+
+    window.PlushLifeNativeNotifications = {
+      syncDailyReminders: async function (options) {
+        var pending = await LocalNotifications.getPending();
+        var old = (pending.notifications || []).filter(function (item) {
+          return item.extra && item.extra.plushlifeKind === "daily-reminder";
+        });
+        if (old.length) await LocalNotifications.cancel({ notifications: old.map(function (item) { return { id: item.id }; }) });
+        if (!options || !options.enabled) return;
+        var times = Array.isArray(options.times) ? options.times.slice(0, 8) : [];
+        var restDates = new Set(Array.isArray(options.restDates) ? options.restDates : []);
+        var notifications = [];
+        for (var dayOffset = 0; dayOffset < 7; dayOffset += 1) {
+          for (var timeIndex = 0; timeIndex < times.length; timeIndex += 1) {
+            var parts = String(times[timeIndex]).split(":").map(Number);
+            if (parts.length !== 2 || parts.some(function (part) { return !Number.isFinite(part); })) continue;
+            var at = new Date();
+            at.setDate(at.getDate() + dayOffset);
+            at.setHours(parts[0], parts[1], 0, 0);
+            if (at.getTime() <= Date.now()) continue;
+            var dateKey = window.PlushLifeCare.localDateString(at);
+            if (restDates.has(dateKey)) continue;
+            notifications.push({
+              id: window.PlushLifeCare.notificationId("daily-" + dateKey + "-" + timeIndex),
+              title: "A gentle PlushLife reminder",
+              body: options.discreet ? "You have something waiting in PlushLife." : "One caring step is enough. Open your PlushList when you're ready.",
+              schedule: { at: at, allowWhileIdle: true },
+              channelId: reminderChannelId,
+              actionTypeId: "PLUSHLIFE_REMINDER",
+              autoCancel: true,
+              extra: { plushlifeKind: "daily-reminder", reminderTime: times[timeIndex] },
+            });
+          }
+          (Array.isArray(options.taskReminders) ? options.taskReminders : []).forEach(function (task) {
+            if (!task || !task.time) return;
+            var date = new Date();
+            date.setDate(date.getDate() + dayOffset);
+            var dateKey = window.PlushLifeCare.localDateString(date);
+            if (restDates.has(dateKey)) return;
+            var dayId = window.PlushLifeCare.DAY_IDS[date.getDay()];
+            if (Array.isArray(task.scheduleDays) && task.scheduleDays.length && !task.scheduleDays.includes(dayId)) return;
+            var taskParts = String(task.time).slice(0, 5).split(":").map(Number);
+            if (taskParts.length !== 2 || taskParts.some(function (part) { return !Number.isFinite(part); })) return;
+            date.setHours(taskParts[0], taskParts[1], 0, 0);
+            if (date.getTime() <= Date.now()) return;
+            notifications.push({
+              id: window.PlushLifeCare.notificationId("task-" + task.taskKey + "-" + dateKey),
+              title: "Ready for one caring step?",
+              body: options.discreet ? "You have something waiting in PlushLife." : task.label,
+              schedule: { at: date, allowWhileIdle: true },
+              channelId: reminderChannelId,
+              actionTypeId: "PLUSHLIFE_REMINDER",
+              autoCancel: true,
+              extra: { plushlifeKind: "daily-reminder", taskKey: task.taskKey, taskLabel: task.label },
+            });
+          });
+        }
+        if (notifications.length) await LocalNotifications.schedule({ notifications: notifications });
+      },
+      snoozeTask: function (options) {
+        var minutes = Math.max(1, Math.min(1440, Number(options && options.minutes) || 10));
+        var at = new Date(Date.now() + minutes * 60000);
+        return scheduleLocalReminder({
+          id: window.PlushLifeCare.notificationId((options && options.taskKey) || "task", at.getTime() % 2147483647),
+          title: "Ready for one caring step?",
+          body: options && options.label ? options.label : "Your PlushLife task is waiting when you're ready.",
+          at: at,
+          extra: { plushlifeKind: "task-snooze", taskKey: options && options.taskKey, taskLabel: options && options.label },
+        });
+      },
+    };
+
+    LocalNotifications.addListener("localNotificationActionPerformed", function (event) {
+      var minutesByAction = { SNOOZE_10: 10, SNOOZE_30: 30, SNOOZE_60: 60 };
+      var minutes = minutesByAction[event && event.actionId];
+      var notification = event && event.notification;
+      if (minutes && notification) {
+        scheduleLocalReminder({
+          id: window.PlushLifeCare.notificationId("action-snooze", Date.now() % 2147483647),
+          title: notification.title,
+          body: notification.body,
+          at: new Date(Date.now() + minutes * 60000),
+          extra: notification.extra || {},
+        }).catch(function () {});
+        document.dispatchEvent(new CustomEvent("plushlife-notification-snoozed", { detail: { minutes: minutes } }));
       }
     });
   }
@@ -752,6 +892,10 @@ function taskOccursOn(task, date) {
   return true;
 }
 
+function taskIsScheduledForDate(task, date) {
+  return window.PlushLifeCare.taskTargetsDate(task, date, dayIdForDate) && taskOccursOn(task, date);
+}
+
 function datesThroughToday(period) {
   const dates = [];
   const cursor = new Date(`${period.weekStart}T12:00:00Z`);
@@ -1020,7 +1164,7 @@ function GlowUpTracker() {
   const weekSwipeStartX = React.useRef(null);
   const weekSwipeStartY = React.useRef(null);
   const newTaskNameInputRef = React.useRef(null);
-  const [todayCardIndex, setTodayCardIndex] = useState(0);
+  const [todayCardIndex, setTodayCardIndex] = useState(1);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
@@ -1089,6 +1233,9 @@ function GlowUpTracker() {
   const [supportProgressView, setSupportProgressView] = useState("daily");
   const [supportMessage, setSupportMessage] = useState("");
   const [trackerTasks, setTrackerTasks] = useState([]);
+  const [taskSnoozes, setTaskSnoozes] = useState([]);
+  const [snoozeMenuTaskKey, setSnoozeMenuTaskKey] = useState(null);
+  const [showArchivedTasks, setShowArchivedTasks] = useState(false);
   const [trackerProfile, setTrackerProfile] = useState(null);
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [comfortItemDraft, setComfortItemDraft] = useState("");
@@ -1130,6 +1277,10 @@ function GlowUpTracker() {
   const [newTaskStartDate, setNewTaskStartDate] = useState("");
   const [newTaskEndDate, setNewTaskEndDate] = useState("");
   const [newTaskOneTimeDate, setNewTaskOneTimeDate] = useState("");
+  const [newTaskScheduleDays, setNewTaskScheduleDays] = useState([]);
+  const [newTaskReminderTime, setNewTaskReminderTime] = useState("");
+  const [naturalScheduleText, setNaturalScheduleText] = useState("");
+  const [naturalSchedulePreview, setNaturalSchedulePreview] = useState(null);
   const [taskAdvancedOpen, setTaskAdvancedOpen] = useState(false);
   const [taskMessage, setTaskMessage] = useState("");
   const [editingTaskKey, setEditingTaskKey] = useState(null);
@@ -1137,6 +1288,7 @@ function GlowUpTracker() {
   const [dragOverTaskKey, setDragOverTaskKey] = useState(null);
   const [editTaskDraft, setEditTaskDraft] = useState(null);
   const [pendingTaskDelete, setPendingTaskDelete] = useState(null);
+  const [taskHelpDraft, setTaskHelpDraft] = useState(null);
   const [personalSchedules, setPersonalSchedules] = useState([]);
   const [manageSchedule, setManageSchedule] = useState(false);
   const [scheduleEditDayId, setScheduleEditDayId] = useState(null);
@@ -1239,6 +1391,7 @@ function GlowUpTracker() {
   const [notificationNudgeOpen, setNotificationNudgeOpen] = useState(false);
   const [notificationNudgeReason, setNotificationNudgeReason] = useState("");
   const [nextStepSkipped, setNextStepSkipped] = useState([]);
+  const [nextStepMoreOpen, setNextStepMoreOpen] = useState(false);
   const [nextStepDismissedToday, setNextStepDismissedToday] = useState(false);
   const [nextStepHint, setNextStepHint] = useState(null);
   const pickEasierSuggestion = (taskKey) => setNextStepHint({ key: taskKey, text: MAKE_IT_EASIER_SUGGESTIONS[Math.floor(Math.random() * MAKE_IT_EASIER_SUGGESTIONS.length)] });
@@ -1459,6 +1612,7 @@ function GlowUpTracker() {
     if (!user) {
       setDone({});
       setTrackerTasks([]);
+      setTaskSnoozes([]);
       setTrackerProfile(null);
       setDisplayNameDraft("");
       setPersonalSchedules([]);
@@ -1481,9 +1635,10 @@ function GlowUpTracker() {
         .select("task_key, completed, updated_at")
         .eq("user_id", user.id),
       supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, soft_label, tiny_label, estimated_minutes, essential_on_low_capacity").eq("user_id", user.id).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, soft_label, tiny_label, estimated_minutes, essential_on_low_capacity, archived_at, archive_reason, schedule_days, reminder_time").eq("user_id", user.id).order("sort_order"),
       supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
-    ]).then(async ([dailyResult, legacyResult, profileResult, tasksResult, schedulesResult]) => {
+      supabase.from("task_snoozes").select("task_key, snoozed_until").eq("user_id", user.id).gt("snoozed_until", new Date().toISOString()),
+    ]).then(async ([dailyResult, legacyResult, profileResult, tasksResult, schedulesResult, snoozesResult]) => {
         if (!active) return;
 
         // Tasks/profile/schedule are loaded in the same round trip as today's
@@ -1496,8 +1651,9 @@ function GlowUpTracker() {
         setDisplayNameDraft(profileResult.data?.display_name || "");
         setComfortItemDraft(profileResult.data?.comfort_item_name || "");
         setTrackerTasks(tasksResult.data || []);
+        setTaskSnoozes(snoozesResult.data || []);
         setPersonalSchedules(schedulesResult.data || []);
-        if (profileResult.error || tasksResult.error || schedulesResult.error) setTaskMessage("Couldn't load your private tracker.");
+        if (profileResult.error || tasksResult.error || schedulesResult.error || snoozesResult.error) setTaskMessage("Couldn't load your private tracker.");
 
         if (dailyResult.error || legacyResult.error) {
           setSyncStatus("error");
@@ -1617,7 +1773,7 @@ function GlowUpTracker() {
       supabase.from("support_rewards").select("id, title, details, target_percent, active, week_start, earned_at, claimed_at, approval_required, approved_at, caregiver_user_id, created_at").eq("owner_user_id", targetOwnerId).eq("active", true).order("created_at", { ascending: false }),
       supabase.from("daily_progress").select("completed_keys").eq("user_id", targetOwnerId).eq("progress_date", period.date).maybeSingle(),
       supabase.from("daily_progress").select("progress_date, completed_keys").eq("user_id", targetOwnerId).gte("progress_date", period.weekStart).lte("progress_date", period.date),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", targetOwnerId).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, archived_at, schedule_days").eq("user_id", targetOwnerId).is("archived_at", null).order("sort_order"),
       supabase.from("task_suggestions").select("id, owner_user_id, caregiver_user_id, caregiver_name, task, suggested_day_id, status, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
       supabase.from("user_achievements").select("visit_streak, best_visit_streak, best_care_streak, last_celebrated_date").eq("user_id", targetOwnerId).maybeSingle(),
       supabase.from("rest_days").select("rest_date").eq("user_id", targetOwnerId).eq("rest_date", period.date).maybeSingle(),
@@ -1643,7 +1799,7 @@ function GlowUpTracker() {
     setSupportMessage("");
     const { data: links, error: linksError } = await supabase
       .from("caregiver_links")
-      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, created_at, last_viewed_at, accepted_at")
+      .select("id, owner_user_id, caregiver_email, label, active, can_view_progress, can_send_notes, can_add_rewards, can_suggest_tasks, care_agreement, created_at, last_viewed_at, accepted_at")
       .order("created_at", { ascending: false });
     if (linksError) {
       setSupportMessage("Couldn't load guardian access right now.");
@@ -1744,6 +1900,15 @@ function GlowUpTracker() {
     }
     setSupportLinks((items) => items.map((item) => item.id === link.id ? { ...item, [permission]: enabled } : item));
     setSupportMessage("Guardian permissions updated.");
+  };
+
+  const updateCareAgreement = async (link, agreement) => {
+    const cleaned = agreement.trim().slice(0, 1000);
+    setSupportMessage("Saving your care agreement…");
+    const { error } = await supabase.from("caregiver_links").update({ care_agreement: cleaned || null }).eq("id", link.id).eq("owner_user_id", user.id);
+    if (error) { setSupportMessage("That care agreement couldn't be saved."); return; }
+    setSupportLinks((items) => items.map((item) => item.id === link.id ? { ...item, care_agreement: cleaned || null } : item));
+    setSupportMessage("Care agreement saved. You can change it whenever you need.");
   };
 
   const submitTaskSuggestion = async () => {
@@ -2306,6 +2471,103 @@ function GlowUpTracker() {
     }
   };
 
+  const snoozeTaskReminder = async (task, minutes) => {
+    if (!user || !task) return;
+    const snoozedUntil = new Date(Date.now() + minutes * 60000).toISOString();
+    const row = { user_id: user.id, task_key: task.task_key, snoozed_until: snoozedUntil, updated_at: new Date().toISOString() };
+    const { error } = await supabase.from("task_snoozes").upsert(row, { onConflict: "user_id,task_key" });
+    if (error) { setTaskMessage("Couldn't snooze that reminder."); return; }
+    setTaskSnoozes((items) => [...items.filter((item) => item.task_key !== task.task_key), row]);
+    if (window.PlushLifeNativeNotifications?.snoozeTask) {
+      window.PlushLifeNativeNotifications.snoozeTask({ taskKey: task.task_key, label: task.task, minutes }).catch(() => {});
+    }
+    setTaskMessage(`We'll gently remind you about “${task.task}” in ${minutes < 60 ? `${minutes} minutes` : `${Math.round(minutes / 60)} hour`}.`);
+  };
+
+  const clearTaskSnooze = async (taskKey) => {
+    if (!user || !taskKey) return;
+    setTaskSnoozes((items) => items.filter((item) => item.task_key !== taskKey));
+    await supabase.from("task_snoozes").delete().eq("user_id", user.id).eq("task_key", taskKey);
+  };
+
+  const archiveTrackerTask = async (taskKey, reason = "no_longer_needed") => {
+    if (!user || !taskKey) return;
+    const archivedAt = new Date().toISOString();
+    const { error } = await supabase.from("tracker_tasks").update({ archived_at: archivedAt, archive_reason: reason }).eq("user_id", user.id).eq("task_key", taskKey);
+    if (error) { setTaskMessage("Couldn't archive that task."); return; }
+    setTrackerTasks((items) => items.map((item) => item.task_key === taskKey ? { ...item, archived_at: archivedAt, archive_reason: reason } : item));
+    clearTaskSnooze(taskKey);
+    setTaskMessage("Task archived. Its history is still safe.");
+  };
+
+  const restoreArchivedTask = async (taskKey) => {
+    if (!user || !taskKey) return;
+    const { error } = await supabase.from("tracker_tasks").update({ archived_at: null, archive_reason: null }).eq("user_id", user.id).eq("task_key", taskKey);
+    if (error) { setTaskMessage("Couldn't restore that task."); return; }
+    setTrackerTasks((items) => items.map((item) => item.task_key === taskKey ? { ...item, archived_at: null, archive_reason: null } : item));
+    setTaskMessage("Task returned to your list.");
+  };
+
+  const duplicateTrackerTask = async (task) => {
+    if (!user || !task) return;
+    const copy = {
+      user_id: user.id,
+      task_key: `copy-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
+      day_id: task.day_id,
+      section: task.section,
+      task: `${task.task} (copy)`.slice(0, 180),
+      detail: task.detail || null,
+      sort_order: Math.max(0, ...trackerTasks.filter((item) => item.day_id === task.day_id).map((item) => Number(item.sort_order) || 0)) + 1,
+      is_bonus: !!task.is_bonus,
+      schedule_type: task.schedule_type || "weekly",
+      start_date: task.start_date || null,
+      end_date: task.end_date || null,
+      one_time_date: task.one_time_date || null,
+      why_note: task.why_note || null,
+      soft_label: task.soft_label || null,
+      tiny_label: task.tiny_label || null,
+      estimated_minutes: task.estimated_minutes || null,
+      essential_on_low_capacity: !!task.essential_on_low_capacity,
+      schedule_days: Array.isArray(task.schedule_days) ? task.schedule_days : [],
+      reminder_time: task.reminder_time || null,
+    };
+    const { error } = await supabase.from("tracker_tasks").insert(copy);
+    if (error) { setTaskMessage("Couldn't duplicate that task."); return; }
+    setTrackerTasks((items) => [...items, copy]);
+    setTaskMessage("Task duplicated. Edit the copy whenever you're ready.");
+  };
+
+  const openTaskHelp = (task) => {
+    const defaultGuardian = ownedSupportLinks.find((link) => link.active && link.accepted_at)?.caregiver_email || "";
+    setTaskHelpDraft({ task, caregiver_email: defaultGuardian, request_type: "encouragement", note: "" });
+  };
+
+  const sendTaskHelpRequest = async () => {
+    if (!user || !taskHelpDraft?.task) return;
+    if (!taskHelpDraft.caregiver_email) { setTaskMessage("Connect with an active Guardian before asking for help."); return; }
+    const message = [`Task: ${taskHelpDraft.task.task}`, taskHelpDraft.note.trim()].filter(Boolean).join("\n").slice(0, 500);
+    const { error } = await supabase.from("guardian_support_requests").insert({
+      owner_user_id: user.id,
+      caregiver_email: taskHelpDraft.caregiver_email,
+      request_type: taskHelpDraft.request_type,
+      message,
+    });
+    if (error) { setTaskMessage("Couldn't send that support request."); return; }
+    setTaskHelpDraft(null);
+    setTaskMessage("Your Guardian received the support request 💛");
+  };
+
+  const moveAllOneTimeTasksToTomorrow = async () => {
+    const movable = rows.filter((row) => row.sourceTask?.schedule_type === "once" && !viewDone[row.key]);
+    if (!movable.length) { setTaskMessage("There are no unfinished one-time tasks to move."); return; }
+    const tomorrow = offsetDate(selectedProgressDate, 1);
+    const results = await Promise.all(movable.map((row) => supabase.from("tracker_tasks").update({ one_time_date: tomorrow }).eq("user_id", user.id).eq("task_key", row.key)));
+    if (results.some(({ error }) => error)) { setTaskMessage("Some tasks couldn't be moved. Your list was left unchanged."); return; }
+    const keys = new Set(movable.map((row) => row.key));
+    setTrackerTasks((items) => items.map((item) => keys.has(item.task_key) ? { ...item, one_time_date: tomorrow } : item));
+    setTaskMessage(`Moved ${movable.length} unfinished ${movable.length === 1 ? "task" : "tasks"} to tomorrow.`);
+  };
+
   const goToFeedback = () => {
     setSettingsOpen(true);
     window.setTimeout(() => {
@@ -2439,6 +2701,23 @@ function GlowUpTracker() {
     }
   }, [newTaskDay, trackerTasks, newTaskSection]);
 
+  const previewNaturalSchedule = () => {
+    const parsed = window.PlushLifeCare.parseNaturalSchedule(naturalScheduleText, new Date());
+    setNaturalSchedulePreview(parsed);
+    return parsed;
+  };
+
+  const applyNaturalSchedule = () => {
+    const parsed = previewNaturalSchedule();
+    if (!parsed.recognized) return;
+    setNewTaskDay(parsed.day_id || "daily");
+    setNewTaskScheduleDays(parsed.schedule_days || []);
+    setNewTaskScheduleType(parsed.schedule_type || "weekly");
+    setNewTaskOneTimeDate(parsed.one_time_date || "");
+    setNewTaskReminderTime(parsed.reminder_time || "");
+    setTaskMessage(`Schedule ready: ${parsed.summary}. Review it, then add your task.`);
+  };
+
   const importTasksFromText = async () => {
     const lines = importText.split("\n").map((line) => line.trim()).filter(Boolean).slice(0, 50);
     if (lines.length === 0) {
@@ -2524,6 +2803,8 @@ function GlowUpTracker() {
       start_date: newTaskScheduleType === "range" ? (newTaskStartDate || null) : null,
       end_date: newTaskScheduleType === "range" ? (newTaskEndDate || null) : null,
       one_time_date: newTaskScheduleType === "once" ? (newTaskOneTimeDate || selectedProgressDate) : null,
+      schedule_days: newTaskScheduleType === "weekly" ? newTaskScheduleDays : [],
+      reminder_time: newTaskReminderTime || null,
       why_note: newTaskWhy.trim(),
       soft_label: newTaskSoftLabel.trim() || null,
       tiny_label: newTaskTinyLabel.trim() || null,
@@ -2575,6 +2856,10 @@ function GlowUpTracker() {
     setNewTaskTinyLabel("");
     setNewTaskEstimatedMinutes("");
     setNewTaskEssentialOnLow(false);
+    setNewTaskScheduleDays([]);
+    setNewTaskReminderTime("");
+    setNaturalScheduleText("");
+    setNaturalSchedulePreview(null);
     setNewTaskSection(section);
     setNewTaskCustomSection("");
     setActive(newTaskDay);
@@ -2739,6 +3024,8 @@ function GlowUpTracker() {
       start_date: editTaskDraft.schedule_type === "range" ? (editTaskDraft.start_date || null) : null,
       end_date: editTaskDraft.schedule_type === "range" ? (editTaskDraft.end_date || null) : null,
       one_time_date: editTaskDraft.schedule_type === "once" ? (editTaskDraft.one_time_date || selectedProgressDate) : null,
+      schedule_days: editTaskDraft.schedule_type === "weekly" && Array.isArray(editTaskDraft.schedule_days) ? editTaskDraft.schedule_days : [],
+      reminder_time: editTaskDraft.reminder_time || null,
       why_note: (editTaskDraft.why_note || "").trim(),
       soft_label: (editTaskDraft.soft_label || "").trim() || null,
       tiny_label: (editTaskDraft.tiny_label || "").trim() || null,
@@ -3254,6 +3541,11 @@ function GlowUpTracker() {
   const enableNativeNotifications = async () => {
     const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
     try {
+      const localPermission = await window.Capacitor?.Plugins?.LocalNotifications?.requestPermissions?.();
+      if (localPermission && localPermission.display !== "granted") {
+        setSettingsMessage("Notifications are still off. You can allow them in this device's app settings.");
+        return;
+      }
       const permission = await PushNotifications.requestPermissions();
       if (permission?.receive !== "granted") {
         setSettingsMessage("Notifications are still off. You can allow them in this device's app settings.");
@@ -3742,6 +4034,7 @@ function GlowUpTracker() {
 
     const next = !done[key];
     if (next) triggerCelebrate(key);
+    if (next && taskSnoozes.some((item) => item.task_key === key)) clearTaskSnooze(key);
     const previousDone = { ...done };
     const nextDone = { ...done, [key]: next };
     if (!next) delete nextDone[key];
@@ -3822,25 +4115,52 @@ function GlowUpTracker() {
 
   // Build this signed-in user's private rows for the selected day.
   const rows = trackerTasks
-    .filter((task) => (isHistoricalView
-      ? task.day_id === "daily" || task.day_id === selectedProgressDayId
-      : task.day_id === "daily" || task.day_id === day.id) && taskOccursOn(task, selectedProgressDate))
+    .filter((task) => taskIsScheduledForDate(task, selectedProgressDate))
     .sort((a, b) => {
       if (a.day_id !== b.day_id) return a.day_id === "daily" ? -1 : b.day_id === "daily" ? 1 : 0;
       return a.sort_order - b.sort_order;
     })
     .map(rowForTask);
+  useEffect(() => {
+    if (!user || !window.PlushLifeNativeNotifications) return;
+    const taskReminders = trackerTasks
+      .filter((task) => !task.archived_at && task.reminder_time)
+      .map((task) => ({
+        taskKey: task.task_key,
+        label: task.task,
+        time: String(task.reminder_time).slice(0, 5),
+        scheduleDays: Array.isArray(task.schedule_days) && task.schedule_days.length
+          ? task.schedule_days
+          : (task.day_id === "daily" ? [] : [task.day_id]),
+      }));
+    window.PlushLifeNativeNotifications.syncDailyReminders({
+      enabled: !!preferences.notifications_enabled,
+      times: preferences.reminder_times || [],
+      discreet: !!preferences.discreet_notifications,
+      restDates,
+      taskReminders,
+    }).catch(() => {});
+  }, [user?.id, preferences.notifications_enabled, preferences.discreet_notifications, JSON.stringify(preferences.reminder_times || []), JSON.stringify(restDates), JSON.stringify(trackerTasks.map((task) => [task.task_key, task.archived_at, task.reminder_time, task.schedule_days, task.day_id]))]);
   const doneCount = rows.filter((r) => viewDone[r.key]).length;
   const requiredRows = rows.filter((row) => !row.isBonus);
   const optionalRows = rows.filter((row) => row.isBonus);
   const requiredDoneCount = requiredRows.filter((row) => viewDone[row.key]).length;
   const optionalDoneCount = optionalRows.filter((row) => viewDone[row.key]).length;
   const pct = requiredRows.length ? Math.round((requiredDoneCount / requiredRows.length) * 100) : 0;
+  useEffect(() => {
+    const WidgetBridge = window.Capacitor?.Plugins?.WidgetBridge;
+    if (!WidgetBridge || !user || selectedProgressDate !== period.date) return;
+    const nextTask = rows.find((row) => !row.isBonus && !viewDone[row.key]) || rows.find((row) => !viewDone[row.key]);
+    WidgetBridge.updateWidget({
+      nextTask: dailyCheckIn.day_type === "rest" ? "Resting counts today" : (nextTask?.label || "Today's caring steps are complete"),
+      dayType: `${(dailyCheckIn.day_type || "full").replace(/^./, (letter) => letter.toUpperCase())} Day · ${pct}%`,
+      progress: pct,
+    }).catch(() => {});
+  }, [user?.id, selectedProgressDate, period.date, dailyCheckIn.day_type, pct, JSON.stringify(rows.map((row) => [row.key, row.label, !!viewDone[row.key]]))]);
   // The helper always offers an unfinished required task from the date you're currently viewing.
   const focusChoices = trackerTasks
     .filter((task) =>
-      (task.day_id === "daily" || task.day_id === selectedProgressDayId) &&
-      taskOccursOn(task, selectedProgressDate) &&
+      taskIsScheduledForDate(task, selectedProgressDate) &&
       !taskIsOptional(task) &&
       !viewDone[task.task_key]
     )
@@ -3872,8 +4192,7 @@ function GlowUpTracker() {
     habitHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])])
   );
   habitHistoryByDate.set(period.date, new Set(Object.keys(done).filter((key) => done[key])));
-  const taskIsExpectedOnDate = (task, date) =>
-    (task.day_id === "daily" || task.day_id === dayIdForDate(date)) && taskOccursOn(task, date);
+  const taskIsExpectedOnDate = (task, date) => taskIsScheduledForDate(task, date);
   const habitStatsForTask = (task) => {
     const firstHistoryDate = habitHistory.length
       ? habitHistory.reduce((earliest, entry) => entry.progress_date < earliest ? entry.progress_date : earliest, period.date)
@@ -3954,19 +4273,16 @@ function GlowUpTracker() {
     const completed = date === period.date
       ? new Set(Object.keys(done).filter((key) => done[key]))
       : (historyByDate.get(date) || new Set());
-    const scheduledDayId = dayIdForDate(date);
-    const scheduled = trackerTasks.filter((task) => task.day_id === scheduledDayId && !taskIsOptional(task) && taskOccursOn(task, date)).map((task) => task.task_key);
-    const scheduledBonusKeys = trackerTasks.filter((task) => task.day_id === scheduledDayId && taskIsOptional(task) && taskOccursOn(task, date)).map((task) => task.task_key);
-    const datedDailyTasks = trackerTasks.filter((task) => task.day_id === "daily" && taskOccursOn(task, date));
-    const datedEssentialKeys = datedDailyTasks.filter((task) => !taskIsOptional(task)).map((task) => task.task_key);
-    const datedBonusKeys = datedDailyTasks.filter(taskIsOptional).map((task) => task.task_key);
-    const overallKeys = [...datedEssentialKeys, ...scheduled];
+    const datedTasks = trackerTasks.filter((task) => taskIsScheduledForDate(task, date));
+    const datedEssentialKeys = datedTasks.filter((task) => !taskIsOptional(task)).map((task) => task.task_key);
+    const datedBonusKeys = datedTasks.filter(taskIsOptional).map((task) => task.task_key);
+    const overallKeys = datedEssentialKeys;
     if (overallKeys.some((key) => completed.has(key)) || datedBonusKeys.some((key) => completed.has(key))) caringDays += 1;
     weeklyEssentialDone += datedEssentialKeys.filter((key) => completed.has(key)).length;
     weeklyEssentialPossible += datedEssentialKeys.length;
     weeklyOverallDone += overallKeys.filter((key) => completed.has(key)).length;
     weeklyOverallPossible += overallKeys.length;
-    weeklyBonusDone += [...datedBonusKeys, ...scheduledBonusKeys].filter((key) => completed.has(key)).length;
+    weeklyBonusDone += datedBonusKeys.filter((key) => completed.has(key)).length;
   });
 
   const weeklyEssentialPct = weeklyEssentialPossible
@@ -3981,11 +4297,7 @@ function GlowUpTracker() {
   let previousWeekPossible = 0;
   Array.from({ length: 7 }, (_, index) => offsetDate(period.weekStart, index - 7)).forEach((date) => {
     const completed = previousWeekHistoryByDate.get(date) || new Set();
-    const scheduledDayId = dayIdForDate(date);
-    const scheduled = trackerTasks.filter((task) => task.day_id === scheduledDayId && !taskIsOptional(task) && taskOccursOn(task, date)).map((task) => task.task_key);
-    const datedDailyTasks = trackerTasks.filter((task) => task.day_id === "daily" && taskOccursOn(task, date));
-    const datedEssentialKeys = datedDailyTasks.filter((task) => !taskIsOptional(task)).map((task) => task.task_key);
-    const overallKeys = [...datedEssentialKeys, ...scheduled];
+    const overallKeys = trackerTasks.filter((task) => taskIsScheduledForDate(task, date) && !taskIsOptional(task)).map((task) => task.task_key);
     previousWeekDone += overallKeys.filter((key) => completed.has(key)).length;
     previousWeekPossible += overallKeys.length;
   });
@@ -3995,12 +4307,11 @@ function GlowUpTracker() {
   const completedKeysForToday = new Set(Object.keys(done).filter((key) => done[key]));
   const todayDayId = dayIdForDate(period.date);
   const requiredKeysForDate = (date) => {
-    const dateDayId = dayIdForDate(date);
     return trackerTasks
       .filter((task) =>
-        (task.day_id === "daily" || task.day_id === dateDayId) &&
+        taskIsScheduledForDate(task, date) &&
         !taskIsOptional(task) &&
-        taskOccursOn(task, date)
+        !task.archived_at
       )
       .map((task) => task.task_key);
   };
@@ -4065,8 +4376,7 @@ function GlowUpTracker() {
       .map((task) => ({
         task,
         count: weekDates.filter((date) =>
-          (task.day_id === "daily" || task.day_id === dayIdForDate(date)) &&
-          taskOccursOn(task, date) &&
+          taskIsScheduledForDate(task, date) &&
           completedOn(date).has(task.task_key)
         ).length,
       }))
@@ -4092,13 +4402,7 @@ function GlowUpTracker() {
     return { mostConsistent, topTool, topMood };
   })();
 
-  const todayDailyCoreKeys = trackerTasks
-    .filter((task) =>
-      task.day_id === "daily" &&
-      !taskIsOptional(task) &&
-      taskOccursOn(task, period.date)
-    )
-    .map((task) => task.task_key);
+  const todayDailyCoreKeys = requiredKeysForDate(period.date);
   const todayDailyCoreIsComplete =
     todayDailyCoreKeys.length > 0 &&
     todayDailyCoreKeys.every((key) => completedKeysForToday.has(key));
@@ -4331,13 +4635,20 @@ function GlowUpTracker() {
   const supportTodayDayLabel = DAYS.find((item) => item.id === supportTodayDayId)?.label || supportTodayDayId.toUpperCase();
   const supportDailyEssentialKeys = supportTaskSource
     .filter((task) =>
+      taskIsScheduledForDate(task, period.date) &&
       task.day_id === "daily" &&
+      !(Array.isArray(task.schedule_days) && task.schedule_days.length) &&
       !taskIsOptional(task) &&
-      taskOccursOn(task, period.date)
+      !task.archived_at
     )
     .map((task) => task.task_key);
   const supportScheduledTodayKeys = supportTaskSource
-    .filter((task) => task.day_id === supportTodayDayId && !taskIsOptional(task) && taskOccursOn(task, period.date))
+    .filter((task) =>
+      taskIsScheduledForDate(task, period.date) &&
+      !(task.day_id === "daily" && !(Array.isArray(task.schedule_days) && task.schedule_days.length)) &&
+      !taskIsOptional(task) &&
+      !task.archived_at
+    )
     .map((task) => task.task_key);
   const supportTodayKeys = [...new Set([...supportDailyEssentialKeys, ...supportScheduledTodayKeys])];
   const supportDoneKeys = new Set(supportProgress.filter((row) => row.completed).map((row) => row.task_key));
@@ -4352,18 +4663,14 @@ function GlowUpTracker() {
   let supportWeeklyPossibleCount = 0;
   datesThroughToday(period).forEach((date) => {
     const completed = date === period.date ? supportDoneKeys : (supportHistoryByDate.get(date) || new Set());
-    const dayId = dayIdForDate(date);
     const dailyEssentialKeys = supportTaskSource
       .filter((task) =>
-        task.day_id === "daily" &&
+        taskIsScheduledForDate(task, date) &&
         !taskIsOptional(task) &&
-        taskOccursOn(task, date)
+        !task.archived_at
       )
       .map((task) => task.task_key);
-    const scheduledKeys = supportTaskSource
-      .filter((task) => task.day_id === dayId && !taskIsOptional(task) && taskOccursOn(task, date))
-      .map((task) => task.task_key);
-    const applicableKeys = [...dailyEssentialKeys, ...scheduledKeys];
+    const applicableKeys = dailyEssentialKeys;
     supportWeeklyCompletedCount += applicableKeys.filter((key) => completed.has(key)).length;
     supportWeeklyPossibleCount += applicableKeys.length;
   });
@@ -4501,7 +4808,7 @@ function GlowUpTracker() {
   })();
 
   return (
-    <div className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
+    <div id="main-content" tabIndex="-1" className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
       minHeight: "100vh",
       background: babyMode ? "#FFF0FA" : "#FFF6FB",
       backgroundImage: preferences.simple_mode ? "none" : babyMode ? `
@@ -4883,6 +5190,28 @@ function GlowUpTracker() {
           </div>
         </div>
       )}
+      {taskHelpDraft && (
+        <div role="dialog" aria-modal="true" aria-labelledby="task-help-title" style={{ position: "fixed", inset: 0, zIndex: 66, display: "grid", placeItems: "center", padding: 18, background: "rgba(45,32,56,.45)", backdropFilter: "blur(4px)" }}>
+          <div style={{ width: "min(100%, 410px)", padding: 20, borderRadius: 22, background: "#FFFDFE", border: "1px solid #F0C5D8", boxShadow: "0 24px 70px rgba(45,32,56,.25)" }}>
+            <div id="task-help-title" style={{ fontSize: 19, fontWeight: 900, color: "#8E4E75" }}>Ask for help with this task</div>
+            <div style={{ marginTop: 6, padding: "8px 10px", borderRadius: 10, background: "#FFF8FC", color: "#5B4B6B", fontWeight: 900 }}>{taskHelpDraft.task.task}</div>
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>GUARDIAN
+              <select value={taskHelpDraft.caregiver_email} onChange={(event) => setTaskHelpDraft((draft) => ({ ...draft, caregiver_email: event.target.value }))} style={{ padding: 9, borderRadius: 9, border: "1px solid #E3C9EC", background: "white" }}>
+                {ownedSupportLinks.filter((link) => link.active && link.accepted_at).map((link) => <option key={link.id} value={link.caregiver_email}>{link.label || link.caregiver_email}</option>)}
+              </select>
+            </label>
+            <div style={{ marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>WHAT WOULD HELP?</div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 6 }}>
+              {[["encouragement","Encourage me"],["practical_help","Practical help"],["company","Quiet company"],["body_double","Body-double"]].map(([value,label]) => <button key={value} type="button" aria-pressed={taskHelpDraft.request_type === value} onClick={() => setTaskHelpDraft((draft) => ({ ...draft, request_type: value }))} style={{ padding: "6px 8px", borderRadius: 999, border: taskHelpDraft.request_type === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: taskHelpDraft.request_type === value ? "#F7ECFB" : "white", color: "#76558A", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{label}</button>)}
+            </div>
+            <textarea value={taskHelpDraft.note} onChange={(event) => setTaskHelpDraft((draft) => ({ ...draft, note: event.target.value }))} maxLength={380} placeholder="Optional note — say what would feel useful." aria-label="Optional Guardian help note" style={{ width: "100%", boxSizing: "border-box", minHeight: 72, marginTop: 10, padding: 9, borderRadius: 9, border: "1px solid #E3C9EC", resize: "vertical" }} />
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 13 }}>
+              <button type="button" onClick={() => setTaskHelpDraft(null)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "white", color: "#76558A", fontWeight: 900 }}>Never mind</button>
+              <button type="button" onClick={sendTaskHelpRequest} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#A65DC1", color: "white", fontWeight: 900 }}>Send request 💛</button>
+            </div>
+          </div>
+        </div>
+      )}
       {pendingTaskDelete && (
         <div role="dialog" aria-modal="true" aria-labelledby="delete-task-title" style={{ position: "fixed", inset: 0, zIndex: 65, display: "grid", placeItems: "center", padding: 18, background: "rgba(45,32,56,.45)", backdropFilter: "blur(4px)" }}>
           <div style={{ width: "min(100%, 390px)", padding: 20, borderRadius: 22, background: "#FFFDFE", border: "1px solid #F0B8C4", boxShadow: "0 24px 70px rgba(45,32,56,.25)" }}>
@@ -5120,8 +5449,7 @@ function GlowUpTracker() {
           <>
 
         {/* Dashboards */}
-        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 10 }}>
-          <button type="button" className="dash-arrow" aria-label="Previous section" disabled={dashboardIndex === 0} onClick={() => stepDashboard(-1)} style={{ minWidth: 32, minHeight: 44, borderRadius: 11, border: "1px solid #F3D9EC", background: "#FFFFFF", color: "#8C6B9E", fontWeight: 900, cursor: dashboardIndex === 0 ? "not-allowed" : "pointer", opacity: dashboardIndex === 0 ? 0.4 : 1 }}>‹</button>
+        <div style={{ display: "flex", alignItems: "center", gap: 6, marginBottom: 14 }}>
           <div role="tablist" aria-label="Plushlist dashboards" onKeyDown={(event) => {
             if (event.key === "ArrowRight") { event.preventDefault(); stepDashboard(1); }
             else if (event.key === "ArrowLeft") { event.preventDefault(); stepDashboard(-1); }
@@ -5136,17 +5464,18 @@ function GlowUpTracker() {
               </button>;
             })}
           </div>
-          <button type="button" className="dash-arrow" aria-label="Next section" disabled={dashboardIndex === dashboardItems.length - 1} onClick={() => stepDashboard(1)} style={{ minWidth: 32, minHeight: 44, borderRadius: 11, border: "1px solid #F3D9EC", background: "#FFFFFF", color: "#8C6B9E", fontWeight: 900, cursor: dashboardIndex === dashboardItems.length - 1 ? "not-allowed" : "pointer", opacity: dashboardIndex === dashboardItems.length - 1 ? 0.4 : 1 }}>›</button>
         </div>
-        <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>Swipe or tap to change sections</div>
 
         {dashboard === "today" && (
-          <div style={{ display: "flex", justifyContent: "flex-end", margin: "-10px 0 14px" }}>
-            <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
+          <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "-2px 0 14px", flexWrap: "wrap" }}>
+            <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ flex: "1 1 220px", display: "flex", alignItems: "center", gap: 7, padding: "9px 11px", borderRadius: 11, border: "1px solid #E6D4F2", background: "#FFFFFFC7", color: "#76558A", fontWeight: 800, fontSize: 12, cursor: "pointer", textAlign: "left" }}>
               🎯 {dailyCheckIn.mood ? `${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[1] || ""} ${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[2] || ""}` : dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
-              {dailyCheckIn.day_type && dailyCheckIn.day_type !== "full" ? ` · ${DAY_TYPES.find(([value]) => value === dailyCheckIn.day_type)?.[2] || dailyCheckIn.day_type}` : ""}
+              {dailyCheckIn.day_type ? ` · ${DAY_TYPES.find(([value]) => value === dailyCheckIn.day_type)?.[2] || dailyCheckIn.day_type}` : ""}
               {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
+              <span style={{ marginLeft: "auto", color: "#A65DC1", fontSize: 11 }}>Change</span>
             </button>
+            {dailyCheckIn.day_type && dailyCheckIn.day_type !== "full" && <button type="button" onClick={() => selectDayType("full")} style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#76558A", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Full Day</button>}
+            {rows.some((row) => row.sourceTask?.schedule_type === "once" && !viewDone[row.key]) && ["soft", "tiny", "recovery"].includes(dailyCheckIn.day_type) && <button type="button" onClick={moveAllOneTimeTasksToTomorrow} style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Move extras</button>}
           </div>
         )}
 
@@ -5821,6 +6150,21 @@ function GlowUpTracker() {
               TASK NAME
               <input ref={newTaskNameInputRef} value={newTaskName} onChange={(event) => { setNewTaskName(event.target.value); if (taskMessage === "Give the task a name first.") setTaskMessage(""); }} maxLength={240} placeholder="Example: Brush my teeth" aria-label="New task name" aria-invalid={taskMessage === "Give the task a name first."} aria-describedby={taskMessage ? "task-form-message" : undefined} style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: taskMessage === "Give the task a name first." ? "2px solid #C45D74" : "1px solid #E3C9EC" }} />
             </label>
+            <div style={{ marginTop: 8, padding: 10, borderRadius: 12, background: "#F4FAFF", border: "1px solid #B9DCF6" }}>
+              <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#4C78A8" }}>
+                SAY WHEN IT SHOULD HAPPEN · OPTIONAL
+                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                  <input value={naturalScheduleText} onChange={(event) => { setNaturalScheduleText(event.target.value); setNaturalSchedulePreview(null); }} onKeyDown={(event) => { if (event.key === "Enter") { event.preventDefault(); applyNaturalSchedule(); } }} placeholder="Weekdays at 8 PM" aria-label="Schedule in everyday language" style={{ flex: "1 1 190px", minWidth: 0, padding: 9, borderRadius: 9, border: "1px solid #B9DCF6" }} />
+                  <button type="button" onClick={applyNaturalSchedule} style={{ padding: "8px 11px", borderRadius: 9, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, cursor: "pointer" }}>Read it</button>
+                </div>
+              </label>
+              {naturalSchedulePreview && (
+                <div role="status" aria-live="polite" style={{ marginTop: 7, fontSize: 11.5, lineHeight: 1.45, color: naturalSchedulePreview.recognized ? "#2D6BB5" : "#9A6673" }}>
+                  {naturalSchedulePreview.recognized ? `✓ I understood: ${naturalSchedulePreview.summary}` : naturalSchedulePreview.summary}
+                </div>
+              )}
+              <div style={{ marginTop: 5, fontSize: 10.5, color: "#6B7C99" }}>Try “every day at 8 AM,” “Tuesday and Friday,” “weekdays,” or “tomorrow at 6 PM.” You always review it before saving.</div>
+            </div>
             <label style={{ display: "grid", gap: 4, marginTop: 7, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
               GROUP
               <select value={newTaskSection} onChange={(event) => setNewTaskSection(event.target.value)} aria-label="Choose section" style={{ width: "100%", minWidth: 0, boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
@@ -5874,6 +6218,22 @@ function GlowUpTracker() {
                     <option value="once">Only one time</option>
                   </select>
                 </label>
+                {newTaskScheduleType === "weekly" && (
+                  <div style={{ padding: 9, borderRadius: 10, background: "#FAF7FC", border: "1px solid #E3C9EC" }}>
+                    <div style={{ fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>SPECIFIC DAYS · OPTIONAL</div>
+                    <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 5, marginTop: 7 }}>
+                      {DAYS.map((item) => {
+                        const selected = newTaskScheduleDays.includes(item.id);
+                        return <button key={item.id} type="button" aria-pressed={selected} onClick={() => setNewTaskScheduleDays((days) => selected ? days.filter((id) => id !== item.id) : [...days, item.id])} style={{ minWidth: 0, padding: "7px 2px", borderRadius: 8, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F2DEFA" : "white", color: selected ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: 10, cursor: "pointer" }}>{item.label.slice(0, 3)}</button>;
+                      })}
+                    </div>
+                    <div style={{ marginTop: 5, fontSize: 10.5, color: "#8C6B9E" }}>{newTaskScheduleDays.length ? "Only appears on the selected days." : "No days selected: uses the list chosen in Step 1."}</div>
+                  </div>
+                )}
+                <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+                  TASK REMINDER TIME · OPTIONAL
+                  <input type="time" value={newTaskReminderTime} onChange={(event) => setNewTaskReminderTime(event.target.value)} aria-label="Task reminder time" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+                </label>
                 {newTaskScheduleType === "range" && (
                   <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}>
                     <label style={{ fontSize: 11.5, fontWeight: 800 }}>Starts<input type="date" value={newTaskStartDate} onChange={(event) => setNewTaskStartDate(event.target.value)} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC" }} /></label>
@@ -5900,8 +6260,8 @@ function GlowUpTracker() {
               const query = taskSearchQuery.trim().toLowerCase();
               const isSearching = query.length > 0;
               const visibleTasks = isSearching
-                ? trackerTasks.filter((task) => task.task.toLowerCase().includes(query))
-                : trackerTasks.filter((task) => task.day_id === newTaskDay);
+                ? trackerTasks.filter((task) => !task.archived_at && task.task.toLowerCase().includes(query))
+                : trackerTasks.filter((task) => !task.archived_at && task.day_id === newTaskDay);
               if (visibleTasks.length === 0) {
                 return <div style={{ marginTop: 10, padding: 10, borderRadius: 10, background: "#F4FAF8", color: "#6B7F78", fontSize: 12 }}>{isSearching ? "No tasks match that search." : "No tasks are saved for this list yet. Add one above, or pick a different list in Step 1."}</div>;
               }
@@ -5916,12 +6276,26 @@ function GlowUpTracker() {
                             <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{isSearching ? `${task.day_id === "daily" ? "Every day" : DAYS.find((d) => d.id === task.day_id)?.label || task.day_id} · ` : ""}{task.section || "My tasks"}</div>
                           </div>
                           <button type="button" onClick={() => openTaskEditor(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
+                          <button type="button" onClick={() => archiveTrackerTask(task.task_key)} aria-label={`Archive ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 900, cursor: "pointer" }}>📦 Archive</button>
                           <button type="button" onClick={() => setPendingTaskDelete({ key: task.task_key, label: task.task, section: task.section })} aria-label={`Delete ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, cursor: "pointer" }}>🗑️ Delete</button>
                         </div>
                     ))}
                 </div>
               );
             })()}
+            {trackerTasks.some((task) => task.archived_at) && (
+              <div style={{ marginTop: 12, paddingTop: 10, borderTop: "1px solid #DDEBE7" }}>
+                <button type="button" onClick={() => setShowArchivedTasks((shown) => !shown)} aria-expanded={showArchivedTasks} style={{ padding: "6px 9px", borderRadius: 9, border: "1px solid #D6C3E6", background: "white", color: "#76558A", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>📦 {showArchivedTasks ? "Hide" : "Show"} archived tasks ({trackerTasks.filter((task) => task.archived_at).length})</button>
+                {showArchivedTasks && <div style={{ display: "grid", gap: 7, marginTop: 8 }}>
+                  {trackerTasks.filter((task) => task.archived_at).sort((a, b) => String(b.archived_at).localeCompare(String(a.archived_at))).map((task) => (
+                    <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, padding: "8px 10px", borderRadius: 10, background: "#FAF7FC", border: "1px solid #E6D4F2" }}>
+                      <div style={{ flex: 1, minWidth: 0 }}><div style={{ fontSize: 12, fontWeight: 900, color: "#6B5A7D" }}>{task.task}</div><div style={{ marginTop: 2, fontSize: 10.5, color: "#9A86A7" }}>History preserved · no longer scheduled</div></div>
+                      <button type="button" onClick={() => restoreArchivedTask(task.task_key)} aria-label={`Restore ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #BFE5D2", background: "#F4FBF8", color: "#318C79", fontWeight: 900, cursor: "pointer" }}>Restore</button>
+                    </div>
+                  ))}
+                </div>}
+              </div>
+            )}
           </div>
           </ToolPanel>
         )}
@@ -6064,6 +6438,7 @@ function GlowUpTracker() {
 
             <div style={{ marginTop: 14, padding: 12, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
               <div style={{ fontSize: 11, fontWeight: 900, color: "#8D5CA5", letterSpacing: "0.08em" }}>{isSupportAdult ? "INVITED GUARDIAN ACCESS" : "YOUR PRIVATE TRACKER"}</div>
+              {isSupportAdult && activeSupportLink?.care_agreement && <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", border: "1px solid #E9D7F0", fontSize: 12, lineHeight: 1.5, color: "#6B5A7D" }}><strong>Care agreement:</strong> {activeSupportLink.care_agreement}</div>}
               <div style={{ marginTop: 7, fontSize: 11.5, lineHeight: 1.5, color: "#8C6B9E" }}>
                 {isSupportAdult
                   ? `${selectedSupportName} invited this email. You may only see and do what they allowed. If they pause access, this page stops working right away.`
@@ -6209,6 +6584,11 @@ function GlowUpTracker() {
                           </label>
                         ))}
                       </div>
+                      <label style={{ display: "grid", gap: 5, marginTop: 10, paddingTop: 9, borderTop: "1px solid #D9ECFA", fontSize: 10.5, fontWeight: 900, color: "#4C8FE8" }}>
+                        CARE AGREEMENT · WHAT HELPS AND WHAT TO AVOID
+                        <textarea defaultValue={link.care_agreement || ""} disabled={!link.active} onBlur={(event) => updateCareAgreement(link, event.target.value)} maxLength={1000} placeholder="Example: If I say overwhelmed, send one supportive message and wait. Please offer practical help before advice." style={{ minHeight: 70, padding: 9, borderRadius: 9, border: "1px solid #CFE4F5", background: link.active ? "white" : "#F2EFF4", color: "#5B4B6B", resize: "vertical" }} />
+                        <span style={{ color: "#8C6B9E", fontWeight: 600 }}>Saved when you leave this field. Only this Guardian relationship uses it.</span>
+                      </label>
                     </div>
                     );
                   })}
@@ -6324,23 +6704,6 @@ function GlowUpTracker() {
           </div>
         )}
 
-        {["soft", "tiny", "recovery"].includes(dailyCheckIn.day_type) && (() => {
-          const modeCopy = dailyCheckIn.day_type === "tiny"
-            ? { icon: "🌱", title: "TINY DAY", text: "Only the smallest meaningful essentials are shown. Tiny care fully counts." }
-            : dailyCheckIn.day_type === "recovery"
-              ? { icon: "↺", title: "RECOVERY DAY", text: "A few gentle rebuilding steps are shown, without bringing back a backlog." }
-              : { icon: "🌙", title: "SOFT DAY", text: "Today can be smaller. Soft task versions are shown and bonus items are tucked away." };
-          return (
-          <div style={{ marginBottom: 18, padding: "13px 16px", borderRadius: 16, background: "#FFF9E9", border: "1px solid #F0D99E", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A56D14" }}>{modeCopy.icon} {modeCopy.title}</div>
-              <div style={{ marginTop: 4, fontSize: 12.5, color: "#6B5A3D" }}>{modeCopy.text}</div>
-            </div>}
-            <button type="button" onClick={() => selectDayType("full")} style={{ padding: "6px 10px", borderRadius: 9, border: "1px solid #F0D99E", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>Back to a Full Day</button>
-          </div>
-          );
-        })()}
-
         {dailyCheckIn.day_type !== "rest" && !nextStepDismissedToday && (() => {
           const essentialPool = dailyCheckIn.custom_essentials?.length
             ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
@@ -6350,30 +6713,32 @@ function GlowUpTracker() {
           return (
             <>
             <FeatureTip id="one_next_step" text="This is your One Next Step — just the single most useful thing to do right now, so you don't have to look at everything at once." />
-            <div style={{ marginBottom: 18, padding: "17px 18px", borderRadius: 18, background: `${day.accent}14`, border: `2px solid ${day.accent}` }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: day.accent }}>🎯 ONE NEXT STEP</div>
-              <div style={{ marginTop: 6, fontSize: 19, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.label}</div>
-              <div style={{ marginTop: 3, fontSize: 12, color: "#8C6B9E" }}>This looks like the gentlest useful next step.</div>
+            <div style={{ marginBottom: 14, padding: "13px 14px", borderRadius: 15, background: `${day.accent}10`, border: `1px solid ${day.accent}88` }}>
+              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", fontWeight: 900, color: day.accent }}>🎯 NEXT STEP</div>
+              <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.label}</div>
               {nextStepHint?.key === nextStepTask.key && (
                 <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", fontSize: 12.5, color: "#6B5A7D" }}>
                   🌱 {nextStepHint.text}
                   <button type="button" onClick={() => toggle(nextStepTask.key)} style={{ display: "block", marginTop: 7, padding: "6px 10px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: `${day.accent}14`, color: day.accent, fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>✓ Did the smaller version — that counts</button>
                 </div>
               )}
-              <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => toggle(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: day.accent, color: "white", fontWeight: 900, fontSize: 12.5, cursor: "pointer" }}>✓ I already did this</button>
+              <div style={{ display: "flex", gap: 6, marginTop: 9, flexWrap: "wrap" }}>
+                <button type="button" onClick={() => toggle(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: day.accent, color: "white", fontWeight: 900, fontSize: 12.5, cursor: "pointer" }}>✓ Done</button>
                 <button type="button" onClick={() => pickEasierSuggestion(nextStepTask.key)} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>🌱 Make it easier</button>
-                <button type="button" onClick={() => setNextStepSkipped((keys) => [...keys, nextStepTask.key])} style={{ padding: "8px 12px", borderRadius: 10, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>🔀 Pick another</button>
-                <button type="button" onClick={() => setNextStepDismissedToday(true)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "transparent", color: "#8C6B9E", fontWeight: 700, fontSize: 12.5, cursor: "pointer" }}>Not right now</button>
+                <button type="button" onClick={() => setNextStepMoreOpen((open) => !open)} aria-expanded={nextStepMoreOpen} aria-label="More next-step choices" style={{ padding: "8px 11px", borderRadius: 10, border: "1px solid #D8C8E2", background: "white", color: "#8C6B9E", fontWeight: 900, fontSize: 12.5, cursor: "pointer" }}>•••</button>
               </div>
+              {nextStepMoreOpen && <div style={{ display: "flex", gap: 6, marginTop: 7, flexWrap: "wrap" }}>
+                <button type="button" onClick={() => { setNextStepSkipped((keys) => [...keys, nextStepTask.key]); setNextStepMoreOpen(false); }} style={{ padding: "7px 10px", borderRadius: 9, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Pick another</button>
+                <button type="button" onClick={() => { setNextStepDismissedToday(true); setNextStepMoreOpen(false); }} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #D8C8E2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 11.5, cursor: "pointer" }}>Hide for today</button>
+              </div>}
             </div>
             </>
           );
         })()}
 
-        <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "#F7ECFB", border: "1px solid #E0C3EC" }}>
+        {weeklyIntentionText && <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK</div>
             {!weeklyIntentionEditing && (
               <button type="button" onClick={() => { setWeeklyIntentionDraft(weeklyIntentionText); setWeeklyIntentionEditing(true); }} style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer", flexShrink: 0 }}>{weeklyIntentionText ? "✏️ Edit" : "＋ Add one"}</button>
             )}
@@ -6392,13 +6757,11 @@ function GlowUpTracker() {
           ) : (
             <div style={{ marginTop: 6, fontSize: 12.5, lineHeight: 1.5, color: "#8C6B9E" }}>You haven't set one for this week yet.</div>
           )}
-        </div>
+        </div>}
 
-        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
-          <button type="button" aria-label="Previous card" onClick={() => setTodayCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
-          <button type="button" onClick={() => setTodayCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 0 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 0 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Schedule</button>
-          <button type="button" onClick={() => setTodayCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 1 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 1 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✅ Today’s Tasks</button>
-          <button type="button" aria-label="Next card" onClick={() => setTodayCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
+        <div role="tablist" aria-label="Today view" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 5, marginBottom: 9, padding: 4, borderRadius: 12, background: "#FFFFFF99", border: "1px solid #EADCEC" }}>
+          <button role="tab" aria-selected={todayCardIndex === 1} type="button" onClick={() => setTodayCardIndex(1)} style={{ padding: "8px 10px", borderRadius: 9, border: 0, background: todayCardIndex === 1 ? `${day.accent}22` : "transparent", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>✓ Tasks</button>
+          <button role="tab" aria-selected={todayCardIndex === 0} type="button" onClick={() => setTodayCardIndex(0)} style={{ padding: "8px 10px", borderRadius: 9, border: 0, background: todayCardIndex === 0 ? `${day.accent}22` : "transparent", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🗓 Schedule</button>
         </div>
         <div
           onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; todaySwipeStartY.current = event.touches[0]?.clientY ?? null; }}
@@ -6420,7 +6783,7 @@ function GlowUpTracker() {
         {todayCardIndex === 0 && <>
         {/* Personal schedule */}
         {selectedSchedule ? (
-        <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: `1px solid ${day.accent}55`, boxShadow: `0 8px 24px ${day.accent}16` }}>
+        <div style={{ marginBottom: 14, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.58)", border: `1px solid ${day.accent}44` }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>🗓️ {selectedSchedule.label.toUpperCase()} SCHEDULE</div>
             <button type="button" onClick={() => setManageSchedule((open) => !open)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #4C8FE855", background: manageSchedule ? "#EAF4FF" : "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
@@ -6432,9 +6795,9 @@ function GlowUpTracker() {
               ? selectedSchedule.entries
               : legacyScheduleToEntries(selectedSchedule);
             return displayEntries.length > 0 ? (
-              <div style={{ display: "grid", gap: 7, marginTop: 12 }}>
+          <div style={{ display: "grid", gap: 5, marginTop: 10 }}>
                 {displayEntries.map((entry, index) => (
-                  <div key={index} style={{ display: "grid", gridTemplateColumns: entry.time ? "70px 1fr" : "1fr", alignItems: "center", gap: 7, padding: "9px 10px", borderRadius: 11, background: "#FFFFFF99", border: "1px solid #EFE3F3" }}>
+                  <div key={index} style={{ display: "grid", gridTemplateColumns: entry.time ? "70px 1fr" : "1fr", alignItems: "center", gap: 7, padding: "8px 9px", borderRadius: 9, background: "#FFFFFF99", border: "1px solid #EFE3F3" }}>
                     {entry.time && <span style={{ fontSize: 13, color: day.accent, fontWeight: 900 }}>{formatTime12(entry.time)}</span>}
                     <span style={{ fontSize: 12.5, lineHeight: 1.35, color: "#5B4B6B", fontWeight: 600 }}>{entry.text}</span>
                   </div>
@@ -6462,7 +6825,7 @@ function GlowUpTracker() {
         </>}
 
         {todayCardIndex === 1 && rows.length > 0 && (
-          <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+          <div style={{ marginBottom: 14, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.58)", border: "1px solid #E6D4F2" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{dailyCheckIn.day_type === "rest" ? "REST DAY" : isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, flexWrap: "wrap" }}>
@@ -6470,7 +6833,7 @@ function GlowUpTracker() {
                 {!isHistoricalView && <button type="button" onClick={() => openTaskManager(dayIdForDate(period.date))} style={{ padding: "6px 9px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>✏️ Edit tasks</button>}
               </div>
             </div>
-            {dailyCheckIn.day_type !== "rest" && <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
+            {dailyCheckIn.day_type !== "rest" && <div style={{ height: 8, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "8px 0 11px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
             </div>}
             {dailyCheckIn.day_type !== "rest" && preferences.nurturing_checkins && (
@@ -6500,14 +6863,15 @@ function GlowUpTracker() {
                   <div style={{ borderRadius: 18, border: `2px solid ${day.accent}`, background: day.accent + "14", overflow: "hidden" }}>
                     <div onClick={() => { if (isFutureView) return; expandable ? setOpenRow(expanded ? null : focusNextTask.key) : toggle(focusNextTask.key); }}
                       style={{ display: "flex", alignItems: "center", gap: 16, padding: "22px 18px", cursor: isFutureView ? "not-allowed" : "pointer" }}>
-                      <span onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(focusNextTask.key); }}
+                      <button type="button" onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(focusNextTask.key); }}
+                        disabled={isFutureView} aria-pressed={checked} aria-label={`${checked ? "Mark incomplete" : "Mark complete"}: ${focusNextTask.label}`}
                         style={{ width: 40, height: 40, minWidth: 40, borderRadius: 12,
                           border: `3px solid ${day.accent}`,
                           background: checked ? day.accent : "white",
-                          display: "flex", alignItems: "center", justifyContent: "center",
+                          display: "flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: isFutureView ? "not-allowed" : "pointer",
                           color: "white", fontWeight: 900, fontSize: 22, animation: celebrateKey === focusNextTask.key ? "checkPop 0.5s ease" : "none" }}>
                         {checked ? "✓" : ""}
-                      </span>
+                      </button>
                       <span style={{ flex: 1, fontSize: 19, fontWeight: 700, color: "#5B4B6B" }}>{focusNextTask.label}</span>
                     </div>
                     {expandable && expanded && (
@@ -6662,6 +7026,16 @@ function GlowUpTracker() {
         </>}
 
         {dashboard === "week" && <>
+        <div style={{ marginBottom: 12, padding: "11px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
+            {!weeklyIntentionEditing && <button type="button" onClick={() => { setWeeklyIntentionDraft(weeklyIntentionText); setWeeklyIntentionEditing(true); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{weeklyIntentionText ? "Edit" : "Add one"}</button>}
+          </div>
+          {weeklyIntentionEditing ? <>
+            <textarea value={weeklyIntentionDraft} onChange={(event) => setWeeklyIntentionDraft(event.target.value)} maxLength={2000} placeholder="Example: Be a little gentler with myself this week." style={{ width: "100%", boxSizing: "border-box", minHeight: 70, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
+            <div style={{ display: "flex", gap: 7, marginTop: 7 }}><button type="button" onClick={saveWeeklyIntentionEdit} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button><button type="button" onClick={() => setWeeklyIntentionEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button></div>
+          </> : <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.45, color: weeklyIntentionText ? "#6B5A7D" : "#9A86A7" }}>{weeklyIntentionText || "Optional—a simple direction for the week, not another task."}</div>}
+        </div>
         <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
           <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setWeekCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 0 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 0 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 0 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✨ Whole-week progress</button>
@@ -6980,6 +7354,8 @@ function GlowUpTracker() {
             const expandable = !!(r.how || r.why);
             const expanded = openRow === r.key;
             const rowHabitStats = r.habitType === "regular" ? null : habitStatsForTask(r.sourceTask);
+            const rowSnooze = taskSnoozes.find((item) => item.task_key === r.key);
+            const rowIsSnoozed = window.PlushLifeCare.isSnoozed(rowSnooze);
             return (
               <div key={r.key}>
                 {header && (
@@ -7022,15 +7398,15 @@ function GlowUpTracker() {
                     {manageTasks && (
                       <span aria-hidden="true" title="Drag to reorder" style={{ cursor: "grab", color: "#C9A8DC", fontSize: 15, lineHeight: 1, userSelect: "none" }}>⠿</span>
                     )}
-                    <span onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(r.key); }}
-                      aria-label={isFutureView ? "Future task unavailable" : undefined}
+                    <button type="button" onClick={(e) => { e.stopPropagation(); if (!isFutureView) toggle(r.key); }}
+                      disabled={isFutureView} aria-pressed={checked} aria-label={isFutureView ? `Future task unavailable: ${r.label}` : `${checked ? "Mark incomplete" : "Mark complete"}: ${r.label}`}
                       style={{ width: 22, height: 22, minWidth: 22, borderRadius: 7,
                         border: `2px solid ${checked ? day.accent : "#E3B8D8"}`,
                         background: checked ? day.accent : "transparent",
-                        display: "flex", alignItems: "center", justifyContent: "center",
+                        display: "flex", alignItems: "center", justifyContent: "center", padding: 0, cursor: isFutureView ? "not-allowed" : "pointer",
                         color: "#FFF6FB", fontWeight: 900, fontSize: 12, animation: celebrateKey === r.key ? "checkPop 0.5s ease" : "none" }}>
                       {checked ? "✓" : ""}
-                    </span>
+                    </button>
                     <span style={{ flex: 1, fontSize: 14, fontWeight: 500,
                       color: checked ? "#B08AC7" : "#5B4B6B",
                       textDecoration: checked ? "line-through" : "none" }}>
@@ -7042,10 +7418,22 @@ function GlowUpTracker() {
                       </span>
                     )}
                     {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
+                    {!checked && !isHistoricalView && (
+                      <button type="button" onClick={(event) => { event.stopPropagation(); setSnoozeMenuTaskKey((key) => key === r.key ? null : r.key); }} aria-expanded={snoozeMenuTaskKey === r.key} aria-label={`Remind me later about ${r.label}`} style={{ padding: "4px 7px", borderRadius: 8, border: "1px solid #E7C98D", background: rowIsSnoozed ? "#FFF2D9" : "#FFFBF2", color: "#9A6918", fontWeight: 900, fontSize: 10.5, cursor: "pointer", whiteSpace: "nowrap" }}>
+                        {rowIsSnoozed ? "⏰ Snoozed" : "🌙 Later"}
+                      </button>
+                    )}
                     {expandable && (
                       <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>
                     )}
                   </div>
+                  {snoozeMenuTaskKey === r.key && !checked && !isHistoricalView && (
+                    <div style={{ display: "flex", alignItems: "center", gap: 6, flexWrap: "wrap", padding: "0 12px 10px 46px" }}>
+                      <span style={{ fontSize: 10.5, color: "#8A6A21", fontWeight: 900 }}>REMIND ME IN</span>
+                      {[10, 30, 60].map((minutes) => <button key={minutes} type="button" onClick={() => { snoozeTaskReminder(r.sourceTask, minutes); setSnoozeMenuTaskKey(null); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #E7C98D", background: "white", color: "#9A6918", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>{minutes < 60 ? `${minutes} min` : "1 hour"}</button>)}
+                      {rowIsSnoozed && <button type="button" onClick={() => { clearTaskSnooze(r.key); setSnoozeMenuTaskKey(null); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D6C3E6", background: "white", color: "#76558A", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>Cancel snooze</button>}
+                    </div>
+                  )}
                   {expandable && expanded && (
                     <div style={{ padding: "0 14px 12px 46px", fontSize: 13, lineHeight: 1.6, color: "#6B5A7D" }}>
                       {r.how && <div>{r.how}</div>}
@@ -7113,6 +7501,21 @@ function GlowUpTracker() {
                             HOW OFTEN?
                             <select aria-label="Change repeating schedule" value={editTaskDraft.schedule_type || "weekly"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, schedule_type: event.target.value }))} style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #E3C9EC", background: "white" }}><option value="weekly">Every week</option><option value="range">Only between two dates</option><option value="once">Only one time</option></select>
                           </label>
+                          {editTaskDraft.schedule_type === "weekly" && (
+                            <div>
+                              <div style={{ fontSize: 10.5, fontWeight: 900, color: "#7D668C", marginBottom: 5 }}>DAYS OF THE WEEK · OPTIONAL</div>
+                              <div style={{ display: "grid", gridTemplateColumns: "repeat(7,1fr)", gap: 4 }}>
+                                {DAYS.map((item) => {
+                                  const selected = (editTaskDraft.schedule_days || []).includes(item.id);
+                                  return <button key={item.id} type="button" aria-pressed={selected} onClick={() => setEditTaskDraft((draft) => ({ ...draft, schedule_days: selected ? (draft.schedule_days || []).filter((id) => id !== item.id) : [...(draft.schedule_days || []), item.id] }))} style={{ minWidth: 0, padding: "7px 2px", borderRadius: 8, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F2DEFA" : "white", color: selected ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: 10, cursor: "pointer" }}>{item.label.slice(0, 3)}</button>;
+                                })}
+                              </div>
+                            </div>
+                          )}
+                          <label style={{ display: "grid", gap: 3, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+                            GENTLE REMINDER · OPTIONAL
+                            <input type="time" value={editTaskDraft.reminder_time ? String(editTaskDraft.reminder_time).slice(0, 5) : ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, reminder_time: event.target.value || null }))} aria-label="Task reminder time" style={{ padding: 8, borderRadius: 8, border: "1px solid #E3C9EC" }} />
+                          </label>
                           {editTaskDraft.schedule_type === "range" && <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7 }}><input type="date" value={editTaskDraft.start_date || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, start_date: event.target.value }))} /><input type="date" value={editTaskDraft.end_date || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, end_date: event.target.value }))} /></div>}
                           {editTaskDraft.schedule_type === "once" && <input type="date" value={editTaskDraft.one_time_date || selectedProgressDate} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, one_time_date: event.target.value }))} />}
                           <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 12 }}><input type="checkbox" checked={!!editTaskDraft.is_bonus} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, is_bonus: event.target.checked }))} /> This is optional and will not lower my score</label>
@@ -7121,8 +7524,11 @@ function GlowUpTracker() {
                       )}
                       <div style={{ display: "flex", justifyContent: "flex-end", gap: 6, flexWrap: "wrap" }}>
                       <button onClick={() => startEditingTask(r.sourceTask)} aria-label={`Edit ${r.label}`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", cursor: "pointer" }}>✏️ Edit</button>
+                      <button onClick={() => duplicateTrackerTask(r.sourceTask)} aria-label={`Duplicate ${r.label}`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #D6C3E6", background: "#FCF9FF", color: "#76558A", cursor: "pointer", fontWeight: 800 }}>⧉ Duplicate</button>
                       <button disabled={sectionPosition === 0} onClick={() => moveTrackerTask(r.key, -1)} aria-label={`Move ${r.label} up`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #D6C3E6", background: "#FCF9FF", color: "#8A63A8", cursor: sectionPosition === 0 ? "not-allowed" : "pointer", opacity: sectionPosition === 0 ? 0.35 : 1 }}>↑ Up</button>
                       <button disabled={sectionPosition === sectionRows.length - 1} onClick={() => moveTrackerTask(r.key, 1)} aria-label={`Move ${r.label} down`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #D6C3E6", background: "#FCF9FF", color: "#8A63A8", cursor: sectionPosition === sectionRows.length - 1 ? "not-allowed" : "pointer", opacity: sectionPosition === sectionRows.length - 1 ? 0.35 : 1 }}>↓ Down</button>
+                      {ownedSupportLinks.some((link) => link.active && link.accepted_at) && <button onClick={() => openTaskHelp(r.sourceTask)} aria-label={`Ask a Guardian for help with ${r.label}`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #F0C5D8", background: "#FFF8FC", color: "#A65D83", cursor: "pointer", fontWeight: 800 }}>💛 Ask Guardian</button>}
+                      <button onClick={() => archiveTrackerTask(r.key)} aria-label={`Archive ${r.label}`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", cursor: "pointer", fontWeight: 800 }}>📦 Archive</button>
                       <button onClick={() => setPendingTaskDelete({ key: r.key, label: r.label, section: r.section })} aria-label={`Delete ${r.label}`} style={{ padding: "5px 8px", borderRadius: 7, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", cursor: "pointer" }}>🗑️ Delete</button>
                       </div>
                     </div>
