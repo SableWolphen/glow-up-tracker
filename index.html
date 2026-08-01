@@ -296,7 +296,19 @@ function urlBase64ToUint8Array(value) {
   return Uint8Array.from([...raw].map((character) => character.charCodeAt(0)));
 }
 
-function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = false, mood = "neutral" }) {
+const MASCOT_GROWTH_STAGES = [
+  { minDays: 100, label: "radiant", glow: "0 0 0 14px rgba(255,209,102,0.16), 0 0 0 28px rgba(199,125,214,0.10)", sparkles: ["✨", "💫", "✨", "💫"] },
+  { minDays: 60, label: "glowing", glow: "0 0 0 10px rgba(255,209,102,0.15), 0 0 0 20px rgba(199,125,214,0.09)", sparkles: ["✨", "✨"] },
+  { minDays: 30, label: "blooming", glow: "0 0 0 8px rgba(199,125,214,0.13)", sparkles: ["✨"] },
+  { minDays: 7, label: "growing", glow: "0 0 0 5px rgba(199,125,214,0.10)", sparkles: [] },
+  { minDays: 0, label: "new", glow: "none", sparkles: [] },
+];
+
+function mascotGrowthStageForDays(activityDays) {
+  return MASCOT_GROWTH_STAGES.find((stage) => activityDays >= stage.minDays) || MASCOT_GROWTH_STAGES[MASCOT_GROWTH_STAGES.length - 1];
+}
+
+function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = false, mood = "neutral", activityDays = 0 }) {
   const accessorySize = Math.round(size * 0.23);
   const ACCESSORY_POSITIONS = {
     bow: { left: "24%", top: "9%" },
@@ -305,8 +317,12 @@ function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = fal
     party: { left: "68%", top: "1%" },
   };
   const accessoryPos = ACCESSORY_POSITIONS[outfit.id] || { left: "50%", top: "1%", transform: "translateX(-50%)" };
+  const growth = mascotGrowthStageForDays(activityDays);
   return (
-    <div className={celebrating ? "plush-mascot mascot-celebrating" : "plush-mascot"} style={{ width: size, height: size }}>
+    <div className={celebrating ? "plush-mascot mascot-celebrating" : "plush-mascot"} style={{ width: size, height: size, position: "relative", borderRadius: "50%", boxShadow: growth.glow }}>
+      {growth.sparkles.map((sparkle, index) => (
+        <span key={index} aria-hidden="true" style={{ position: "absolute", fontSize: Math.round(size * 0.16), left: `${[6, 88, 12, 82][index % 4]}%`, top: `${[4, 8, 78, 74][index % 4]}%`, pointerEvents: "none" }}>{sparkle}</span>
+      ))}
       <svg viewBox="0 0 240 220" role="img" aria-label={`Plushlist mascot wearing ${outfit.name}, looking ${mood}`} style={{ width: "100%", height: "100%", display: "block" }}>
         <path d="M184 72 C222 43 233 63 222 91 C214 112 202 127 187 139" fill="none" stroke="#FFA510" strokeWidth="17" strokeLinecap="round" />
         <circle cx="120" cy="117" r="80" fill="#FFEAF7" stroke="#B64CCB" strokeWidth="7" />
@@ -1463,6 +1479,7 @@ function GlowUpTracker() {
   };
   const [returnGapDays, setReturnGapDays] = useState(0);
   const [returnBannerDismissed, setReturnBannerDismissed] = useState(false);
+  const [hardDayBannerDismissed, setHardDayBannerDismissed] = useState(false);
 
   useEffect(() => {
     const setConnectionState = () => setOnline(navigator.onLine);
@@ -4483,6 +4500,7 @@ function GlowUpTracker() {
     ...dailyCheckInHistory.map((entry) => entry.check_date),
     ...reflectionDates,
   ]).size;
+  const mascotGrowth = mascotGrowthStageForDays(activityDaysTotal);
   const mascotRequirementProgress = (outfit) => {
     switch (outfit.unlock.type) {
       case "daily_core": return careDaysTotal >= 1 || todayDailyCoreIsComplete ? 1 : 0;
@@ -4948,7 +4966,7 @@ function GlowUpTracker() {
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)" }}>
             <div style={{ padding: "26px 22px", borderRadius: 28, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 55%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", fontWeight: 900, color: "#A65DC1" }}>PLUSHLIST · MY WEEK</div>
-              <PlushMascot outfit={selectedOutfit} size={110} mood={mascotMood} />
+              <PlushMascot outfit={selectedOutfit} size={110} mood={mascotMood} activityDays={activityDaysTotal} />
               <div id="share-card-title" style={{ marginTop: 4, fontSize: 34, fontWeight: 900, color: "#75428C" }}>{weeklyOverallPct}%</div>
               <div style={{ fontSize: 12.5, color: "#8C6B9E", fontWeight: 700 }}>whole-week progress</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 18 }}>
@@ -5177,7 +5195,7 @@ function GlowUpTracker() {
             <span key={index} className="celebration-confetti" style={{ left: `${5 + index * 8}%`, animationDelay: `${(index % 5) * 0.12}s`, fontSize: `${18 + index % 3 * 6}px` }}>{piece}</span>
           ))}
           <div onClick={(event) => event.stopPropagation()} style={{ position: "relative", zIndex: 62, width: "min(100%, 390px)", padding: "22px 20px", borderRadius: 26, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
-            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} mood="excited" />
+            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} mood="excited" activityDays={activityDaysTotal} />
             <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{voice.celebrationTitle}</div>
             <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.55, color: "#6B5A7D" }}>
               You cared for every required task today. Bonus items are still optional—this day already counts.
@@ -5667,10 +5685,11 @@ function GlowUpTracker() {
           <FeatureTip id="rewards_panel" text="Everything here is earned from all kinds of care, not just streaks — and once unlocked, nothing is ever taken away." />
           <div style={{ marginBottom: 18, padding: 17, borderRadius: 20, background: "linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,245,218,.8))", border: "1px solid #E9C96E", boxShadow: "0 10px 28px rgba(166,109,20,.11)" }}>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-              <PlushMascot outfit={selectedOutfit} size={132} mood={mascotMood} />
+              <PlushMascot outfit={selectedOutfit} size={132} mood={mascotMood} activityDays={activityDaysTotal} />
               <div style={{ flex: "1 1 190px" }}>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".16em", color: "#A56D14" }}>MASCOT CLOSET + BADGES</div>
                 <div style={{ marginTop: 4, fontSize: 20, fontWeight: 900, color: "#5B4B6B" }}>{selectedOutfit.name}</div>
+                {mascotGrowth.label !== "new" && <div style={{ marginTop: 2, fontSize: 12, fontWeight: 800, color: "#A65DC1" }}>Your companion is {mascotGrowth.label} ✨</div>}
                 <div style={{ marginTop: 7, fontSize: 12.5, lineHeight: 1.5, color: "#7B6888" }}>
                   Your collection follows your signed-in account. Rewards can come from showing up, completing care, building a helpful habit, or gently reducing a habit. Once unlocked, each reward stays yours.
                 </div>
@@ -6686,6 +6705,22 @@ function GlowUpTracker() {
               <button type="button" onClick={() => setReturnBannerDismissed(true)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start fresh</button>
               <button type="button" onClick={() => { setEssentialsPickerOpen(true); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Choose 3 essentials</button>
               <button type="button" onClick={() => { selectDayType("soft"); setReturnBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E4D7B4", background: "white", color: "#A56D14", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start a Soft Day</button>
+            </div>
+          </div>
+        )}
+
+        {!(returnGapDays >= 2 && !returnBannerDismissed) && wellbeingPatternInsight && wellbeingPatternInsight.dayId === todayDayId && !hardDayBannerDismissed && (!dailyCheckIn.day_type || dailyCheckIn.day_type === "full") && (
+          <div aria-live="polite" style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "#F3E8FA", border: "1px solid #E6D4F2" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
+              <div>
+                <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>♥ A GENTLE HEADS-UP</div>
+                <div style={{ marginTop: 6, fontSize: 13.5, lineHeight: 1.5, color: "#6B5A7D" }}>{wellbeingPatternInsight.text}</div>
+              </div>
+              <button type="button" onClick={() => setHardDayBannerDismissed(true)} aria-label="Dismiss gentle heads-up" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
+            </div>
+            <div style={{ display: "flex", gap: 6, marginTop: 10, flexWrap: "wrap" }}>
+              <button type="button" onClick={() => { selectDayType("soft"); setHardDayBannerDismissed(true); }} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Start a Soft Day</button>
+              <button type="button" onClick={() => setHardDayBannerDismissed(true)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>I've got today, thanks</button>
             </div>
           </div>
         )}
