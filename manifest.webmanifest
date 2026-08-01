@@ -1,8 +1,8 @@
 {
   "id": "/",
-  "name": "Plushlist — Gentle Daily Tracker",
-  "short_name": "Plushlist",
-  "description": "A private, gentle routine and progress tracker.",
+  "name": "PlushLife — Gentle Care Companion",
+  "short_name": "PlushLife",
+  "description": "A private, adaptive routine and care companion for every kind of day.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",
@@ -62,6 +62,13 @@
       "short_name": "Week",
       "description": "See this week's progress",
       "url": "./?view=week",
+      "icons": [{ "src": "./icon.svg?v=2", "sizes": "any", "type": "image/svg+xml" }]
+    },
+    {
+      "name": "Open care tools",
+      "short_name": "Care",
+      "description": "Open grounding, guided care, and sleep support",
+      "url": "./?view=care",
       "icons": [{ "src": "./icon.svg?v=2", "sizes": "any", "type": "image/svg+xml" }]
     }
   ]

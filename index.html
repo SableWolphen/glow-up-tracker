@@ -4,21 +4,21 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <meta name="theme-color" content="#b75acb">
-<meta name="description" content="Plushlist is a gentle, private daily routine, habit, self-care, and workout tracker with optional guardian support.">
-<meta property="og:title" content="Plushlist — Little tasks. Big comfort.">
-<meta property="og:description" content="A gentle, private daily routine, habit, self-care, and workout tracker with optional guardian support.">
+<meta name="description" content="PlushLife is a gentle, private care and routine companion that adapts to the day you are actually having.">
+<meta property="og:title" content="PlushLife — Care that fits today.">
+<meta property="og:description" content="Adaptive routines, private progress, grounding tools, guided paths, sleep support, and optional Guardian care.">
 <meta property="og:type" content="website">
 <meta property="og:image" content="./social-preview.png">
 <meta property="og:image:width" content="1200">
 <meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
-<meta name="twitter:title" content="Plushlist — Little tasks. Big comfort.">
-<meta name="twitter:description" content="A gentle, private daily routine, habit, self-care, and workout tracker with optional guardian support.">
+<meta name="twitter:title" content="PlushLife — Care that fits today.">
+<meta name="twitter:description" content="Adaptive routines, private progress, grounding tools, guided paths, sleep support, and optional Guardian care.">
 <meta name="twitter:image" content="./social-preview.png">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="icon" href="./icon.svg?v=2" type="image/svg+xml">
 <link rel="apple-touch-icon" href="./icon-192.png">
-<title>Plushlist</title>
+<title>PlushLife</title>
 </head>
 <body>
 <div id="root"></div>
@@ -353,8 +353,58 @@ const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
   { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
   { id: "routines", label: "Routines", icon: "✨", accent: "#FF7A94" },
+  { id: "care", label: "Care", icon: "🫶", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
   { id: "more", label: "More", icon: "⋯", accent: "#318C79" },
+];
+
+const CHECKIN_MOODS = [
+  ["happy", "😊", "Happy"], ["calm", "😌", "Calm"], ["okay", "🙂", "Okay"],
+  ["tired", "😴", "Tired"], ["stressed", "😣", "Stressed"], ["anxious", "😟", "Anxious"],
+  ["sad", "😢", "Sad"], ["angry", "😠", "Angry"], ["lonely", "🥺", "Lonely"],
+  ["overwhelmed", "😵‍💫", "Overwhelmed"], ["numb", "😶", "Numb"], ["sick", "🤒", "Sick"],
+];
+
+const ENERGY_LEVELS = [
+  ["empty", "🪫", "Empty"], ["low", "🌙", "Low"], ["steady", "🌤️", "Steady"], ["high", "⚡", "High"],
+];
+
+const DAY_TYPES = [
+  ["full", "☀️", "Full", "Your complete routine"],
+  ["soft", "🌤️", "Soft", "Gentler task versions"],
+  ["tiny", "🌱", "Tiny", "Smallest meaningful steps"],
+  ["recovery", "🫶", "Recovery", "Essentials and rebuilding"],
+  ["rest", "🌴", "Rest", "Protected rest without guilt"],
+];
+
+const SUPPORT_PREFERENCES = [
+  ["comfort", "🧸", "Comfort"], ["encouragement", "💛", "Encouragement"],
+  ["structure", "📋", "Structure"], ["practical", "🧰", "Practical help"],
+  ["company", "🫂", "Quiet company"], ["space", "🌙", "Space"],
+];
+
+const HELP_ME_NOW_OPTIONS = [
+  { id: "anxious", icon: "🌬️", label: "I feel anxious", tool: "breathing", next: "Afterward, choose one thing your body needs." },
+  { id: "overwhelmed", icon: "🫧", label: "Everything feels like too much", tool: "grounding", next: "Then switch today to Tiny if that would feel kinder." },
+  { id: "cannot_start", icon: "🌱", label: "I cannot start", tool: "change_rooms", next: "When you return, do only the first two-minute piece." },
+  { id: "need_food", icon: "🍞", label: "I need to eat", tool: "water", next: "Pick the easiest available food. It does not need to be a proper meal." },
+  { id: "need_hygiene", icon: "🫧", label: "Hygiene feels hard", tool: "comfort_item", next: "Choose the Tiny version. Partial care is still care." },
+  { id: "cannot_sleep", icon: "🌙", label: "I cannot sleep", tool: "bedtime", next: "Resting quietly still helps, even if sleep does not arrive immediately." },
+  { id: "lonely", icon: "🫂", label: "I feel lonely", tool: "comfort_item", next: "You can also send a prepared support request to a Guardian." },
+  { id: "not_sure", icon: "🧭", label: "I do not know what I need", tool: "grounding", next: "Notice what feels most urgent: body, environment, task, or connection." },
+];
+
+const PLUSH_PATHS = [
+  { id: "back_on_track", icon: "🌱", title: "Getting Back on Track", description: "Seven forgiving days for returning after routines slipped away.", days: ["Open PlushLife and check in", "Choose three essentials", "Use one Tiny task", "Make one task easier", "Take a planned rest", "Notice what helped", "Build next week's gentle version"] },
+  { id: "morning_reset", icon: "🌤️", title: "Gentle Morning Reset", description: "A seven-day path toward mornings with less friction.", days: ["Drink something", "Open the curtains", "Choose tomorrow's first step", "Try a Tiny hygiene task", "Add one pleasant cue", "Remove one morning obstacle", "Save your new morning routine"] },
+  { id: "sleep_foundations", icon: "🌙", title: "Better Sleep Foundations", description: "Seven practical wind-down experiments without perfection pressure.", days: ["Pick a wind-down time", "Dim one source of light", "Move the phone farther away", "Prepare one thing for morning", "Try a quiet body reset", "Notice what helped", "Save your preferred bedtime routine"] },
+];
+
+const SLEEP_TOOLS = [
+  { id: "racing_thoughts", icon: "💭", title: "My thoughts will not stop", steps: ["Write one sentence about what your mind is holding.", "Tell yourself: I do not have to solve this tonight.", "Take three longer exhales.", "Return attention to the weight of your body on the bed."] },
+  { id: "night_anxiety", icon: "🌌", title: "I woke up anxious", steps: ["Name where you are and what time it is.", "Notice five neutral things around you.", "Unclench your jaw and hands.", "Take one sip of water if it is nearby."] },
+  { id: "nightmare", icon: "🕯️", title: "I had a nightmare", steps: ["Remind yourself that the dream has ended.", "Look for three signs that you are in the present.", "Change one sensory detail: light, blanket, temperature, or sound.", "Choose comfort before trying to sleep again."] },
+  { id: "phone_pause", icon: "📵", title: "Help me leave my phone", steps: ["Set a two-minute timer.", "Place the phone beyond arm's reach when it ends.", "Choose one quiet replacement: stretch, breathe, or listen.", "You can return tomorrow. Nothing needs your attention tonight."] },
 ];
 const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 
@@ -494,8 +544,13 @@ const ALL_FEATURES_UNLOCKED = true;
 const BILLING_ENABLED = false;
 const PAYWALLS_ENABLED = false;
 
-const CURRENT_CHANGELOG_VERSION = "2026-07-30-7";
+const CURRENT_CHANGELOG_VERSION = "2026-08-01-plushlife";
 const CHANGELOG_ITEMS = [
+  "🌤️ New Full, Soft, Tiny, and Recovery Days adapt your PlushList to your real capacity",
+  "💗 Mood and energy check-ins now appear in the Progress calendar with gentle pattern suggestions",
+  "🫶 New free Care screen with Help Me Now, PlushCare, PlushPaths, and PlushSleep",
+  "💬 New Help Me Say It cards let you ask a chosen Guardian for the kind of support you want",
+  "🌼 New rewards celebrate honest check-ins, Tiny Days, Recovery Days, and trying care tools",
   "🎉 Fixed the 100% celebration not firing again after an accidental completion was undone",
   "🔤 Fixed Large Text and High Contrast — they barely worked before, now they actually affect the whole app",
   "👁️ New Colorblind-friendly colors option in Settings",
@@ -636,15 +691,15 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
       `}</style>
       <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "26px 28px", maxWidth: 1080, margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 10, fontFamily: "'Baloo 2',sans-serif", fontSize: 22, fontWeight: 800 }}>
-          <span style={{ width: 34, height: 34, borderRadius: "50%", background: colors.orchid, boxShadow: "inset 0 0 0 8px #F2D8F5" }} /> Plushlist
+          <span style={{ width: 34, height: 34, borderRadius: "50%", background: colors.orchid, boxShadow: "inset 0 0 0 8px #F2D8F5" }} /> PlushLife
         </div>
         <button onClick={() => setShowSignIn(true)} style={{ background: colors.plum, color: "white", border: 0, padding: "10px 20px", borderRadius: 999, fontWeight: 800, cursor: "pointer" }}>Start free</button>
       </nav>
 
       <section style={{ padding: "40px 28px 20px", textAlign: "center" }}>
         <span style={{ display: "inline-block", fontFamily: "'IBM Plex Mono',monospace", fontSize: 12, fontWeight: 700, letterSpacing: "0.06em", color: colors.orchid, background: "#F9E4F7", padding: "6px 16px", borderRadius: 999, marginBottom: 22 }}>FOR SOFT DAYS AND STRUCTURED ONES</span>
-        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: "clamp(38px,6vw,64px)", fontWeight: 800, lineHeight: 1.05, margin: "0 0 18px" }}>Little tasks.<br/><span style={{ color: colors.orchid }}>Big comfort.</span></h1>
-        <p style={{ fontSize: 18, color: colors.soft, maxWidth: 510, margin: "0 auto 30px", lineHeight: 1.6 }}>Plushlist turns your routines, workouts, and self-care into one gentle private checklist — with a soft place to land, and a trusted person to invite in, whenever you want one.</p>
+        <h1 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: "clamp(38px,6vw,64px)", fontWeight: 800, lineHeight: 1.05, margin: "0 0 18px" }}>Care that fits<br/><span style={{ color: colors.orchid }}>the day you’re having.</span></h1>
+        <p style={{ fontSize: 18, color: colors.soft, maxWidth: 570, margin: "0 auto 30px", lineHeight: 1.6 }}>PlushLife is a private habit and self-care companion. Your PlushList can stay full, become softer, or shrink to the tiny essentials—and every care feature is free.</p>
         <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
           <button onClick={() => setShowSignIn(true)} style={{ background: colors.orchid, color: "white", border: 0, padding: "15px 30px", borderRadius: 999, fontWeight: 800, fontSize: 16, cursor: "pointer", boxShadow: "0 12px 24px -10px rgba(185,95,206,.6)" }}>Start your list</button>
           <button onClick={() => document.getElementById("landing-features")?.scrollIntoView({ behavior: "smooth" })} style={{ background: "transparent", color: colors.plum, border: `2px solid ${colors.line}`, padding: "13px 26px", borderRadius: 999, fontWeight: 800, fontSize: 16, cursor: "pointer" }}>See how it works</button>
@@ -737,14 +792,16 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
       <section id="landing-features" style={{ padding: "20px 28px 80px", maxWidth: 1080, margin: "0 auto" }}>
         <div style={{ textAlign: "center", marginBottom: 44 }}>
           <h2 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: "clamp(28px,4vw,38px)", margin: "0 0 10px" }}>Everything soft, in one place</h2>
-          <p style={{ color: colors.soft, fontSize: 16 }}>Not another rigid habit tracker. A gentle one.</p>
+          <p style={{ color: colors.soft, fontSize: 16 }}>Your routines, feelings, care tools, and trusted support—without guilt or paywalls.</p>
         </div>
         <div className="plush-feature-grid">
           {[
+            ["🌤️","A list that changes with your capacity","Choose a Full, Soft, Tiny, or Recovery Day. Each habit can have a smaller version, so caring for yourself still counts when energy is low."],
+            ["🫶","Help for the moment you’re in","Use short grounding tools, sleep support, and guided PlushPaths—then privately note what helped so suggestions improve over time."],
+            ["📅","Patterns you can actually use","Mood and energy check-ins appear in your calendar. PlushLife can gently notice patterns and offer changes, but never diagnoses you or edits your list without permission."],
             ["💛","A trusted person, if you want one","Invite a Guardian to gently check in — they see only what you allow, can send an encouraging note, and never anything more."],
-            ["🌱","Progress that never gets taken away","Badges and streaks for showing up, reflecting, and building habits. A missed day never erases what you've already earned."],
+            ["🌱","Progress that never gets taken away","Celebrate showing up, reflecting, choosing a Tiny Day, or returning after a break. A missed day never erases what you've already earned."],
             ["🎯","One thing at a time","When a full list feels like too much, Focus Mode shows just your next step — bigger, calmer, one decision instead of ten."],
-            ["🌙","Rituals that repeat","Build the routines that help you feel steady, then change them whenever your needs change."],
           ].map(([icon,title,text]) => (
             <div key={title} style={{ background: "white", border: `1px solid ${colors.line}`, borderRadius: 24, padding: "30px 26px", boxShadow: "0 12px 30px -18px rgba(90,50,110,.2)" }}>
               <span style={{ fontSize: 34 }}>{icon}</span><h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 20, margin: "14px 0 10px" }}>{title}</h3><p style={{ color: colors.soft, fontSize: 14.5, lineHeight: 1.6, margin: 0 }}>{text}</p>
@@ -762,14 +819,14 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
         <div style={{ marginTop: 30, textAlign: "center" }}>
           <h3 style={{ fontFamily: "'Baloo 2',sans-serif", fontSize: 22, margin: "0 0 10px", color: colors.plum }}>Support that fits real relationships</h3>
           <p style={{ color: colors.soft, fontSize: 15, lineHeight: 1.7, maxWidth: 620, margin: "0 auto" }}>
-            A parent gently checking in on a teen. An adult child keeping an eye on an aging parent. A partner supporting a partner through a hard season. Plushlist's Guardian system was built for the relationships that already exist in your life — not a stranger on a leaderboard.
+            A parent gently checking in on a teen. An adult child keeping an eye on an aging parent. A partner supporting a partner through a hard season. PlushLife’s Guardian system was built for the relationships that already exist in your life — not a stranger on a leaderboard.
           </p>
         </div>
       </section>
       <footer style={{ padding: "42px 28px", textAlign: "center", borderTop: `1px solid ${colors.line}`, color: colors.soft, fontSize: 13.5 }}>
-        <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 900, color: colors.plum }}>Plushlist—little tasks, big comfort.</div>
+          <div style={{ fontFamily: "'Baloo 2',sans-serif", fontWeight: 900, color: colors.plum }}>PlushLife—care that fits today.</div>
         <div style={{ marginTop: 4 }}>Made for days that need structure, and ones that need softness.</div>
-        <div style={{ marginTop: 10 }}>© 2026 Sable Johnston · Plushlist™ · All rights reserved.</div>
+        <div style={{ marginTop: 10 }}>© 2026 Sable Johnston · PlushLife™ · All rights reserved.</div>
         <div style={{ marginTop: 6 }}>
           <a href="./legal.html#privacy" style={{ color: colors.orchid }}>Privacy</a>
           <span aria-hidden="true"> · </span>
@@ -879,6 +936,7 @@ function GlowUpTracker() {
   const [reflectionCalendarMonth, setReflectionCalendarMonth] = useState(() => trackerPeriod().date.slice(0, 7));
   const [routineDateOverride, setRoutineDateOverride] = useState(null);
   const [reflectionViewerDate, setReflectionViewerDate] = useState(null);
+  const [checkInViewerDate, setCheckInViewerDate] = useState(null);
   const [reflectionViewerNote, setReflectionViewerNote] = useState("");
   const [reflectionViewerLoading, setReflectionViewerLoading] = useState(false);
   const [supportViewMode, setSupportViewMode] = useState("mine");
@@ -899,12 +957,16 @@ function GlowUpTracker() {
   const [supportOwnerId, setSupportOwnerId] = useState(null);
   const [supportPeople, setSupportPeople] = useState([]);
   const [supportRelationships, setSupportRelationships] = useState([]);
+  const [guardianSupportRequests, setGuardianSupportRequests] = useState([]);
   const [taskSuggestions, setTaskSuggestions] = useState([]);
   const [suggestionSectionsById, setSuggestionSectionsById] = useState({});
   const [suggestedTask, setSuggestedTask] = useState("");
   const [suggestedTaskDay, setSuggestedTaskDay] = useState("daily");
   const [inviteEmail, setInviteEmail] = useState("");
   const [guardianRolePreset, setGuardianRolePreset] = useState("view_only");
+  const [supportRequestType, setSupportRequestType] = useState("encouragement");
+  const [supportRequestGuardian, setSupportRequestGuardian] = useState("");
+  const [supportRequestText, setSupportRequestText] = useState("");
   const [newNote, setNewNote] = useState("");
   const [rewardTitle, setRewardTitle] = useState("");
   const [rewardDetails, setRewardDetails] = useState("");
@@ -947,6 +1009,10 @@ function GlowUpTracker() {
   const [newTaskCustomSection, setNewTaskCustomSection] = useState("");
   const [newTaskKind, setNewTaskKind] = useState("regular");
   const [newTaskWhy, setNewTaskWhy] = useState("");
+  const [newTaskSoftLabel, setNewTaskSoftLabel] = useState("");
+  const [newTaskTinyLabel, setNewTaskTinyLabel] = useState("");
+  const [newTaskEstimatedMinutes, setNewTaskEstimatedMinutes] = useState("");
+  const [newTaskEssentialOnLow, setNewTaskEssentialOnLow] = useState(false);
   const [newTaskScheduleType, setNewTaskScheduleType] = useState("weekly");
   const [newTaskStartDate, setNewTaskStartDate] = useState("");
   const [newTaskEndDate, setNewTaskEndDate] = useState("");
@@ -977,6 +1043,7 @@ function GlowUpTracker() {
     reduced_motion: false,
     high_contrast: false,
     simple_mode: false,
+    pattern_insights_enabled: true,
     gentle_streaks: true,
     dino_theme: false,
     weekly_intention_intro_seen: false,
@@ -1007,6 +1074,8 @@ function GlowUpTracker() {
     if (view === "today") setDashboard("today");
     else if (view === "week") setDashboard("week");
     else if (view === "tasks") { setDashboard("routines"); setManageTasks(true); }
+    else if (view === "care") setDashboard("care");
+    else if (view === "progress") setDashboard("progress");
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
@@ -1023,7 +1092,14 @@ function GlowUpTracker() {
 
   const [collectionOpen, setCollectionOpen] = useState(false);
   const [shareCardOpen, setShareCardOpen] = useState(false);
-  const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, soft_day: false, custom_essentials: null });
+  const [dailyCheckIn, setDailyCheckIn] = useState({ capacity: null, mood: null, energy: null, day_type: "full", support_preference: null, soft_day: false, custom_essentials: null });
+  const [dailyCheckInHistory, setDailyCheckInHistory] = useState([]);
+  const [careSessionHistory, setCareSessionHistory] = useState([]);
+  const [careOutcomeTool, setCareOutcomeTool] = useState(null);
+  const [pathProgress, setPathProgress] = useState([]);
+  const [selectedCarePath, setSelectedCarePath] = useState(null);
+  const [sleepToolOpen, setSleepToolOpen] = useState(null);
+  const [careMessage, setCareMessage] = useState("");
   const [restDates, setRestDates] = useState([]);
   const [restRangeDraft, setRestRangeDraft] = useState({ start: "", end: "" });
   const [essentialsPickerOpen, setEssentialsPickerOpen] = useState(false);
@@ -1288,7 +1364,7 @@ function GlowUpTracker() {
         .select("task_key, completed, updated_at")
         .eq("user_id", user.id),
       supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note").eq("user_id", user.id).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, soft_label, tiny_label, estimated_minutes, essential_on_low_capacity").eq("user_id", user.id).order("sort_order"),
       supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
     ]).then(async ([dailyResult, legacyResult, profileResult, tasksResult, schedulesResult]) => {
         if (!active) return;
@@ -1458,6 +1534,8 @@ function GlowUpTracker() {
     }
     const linkRows = links || [];
     setSupportLinks(linkRows);
+    const { data: requestRows } = await supabase.from("guardian_support_requests").select("id, owner_user_id, caregiver_email, request_type, message, status, created_at").ilike("caregiver_email", currentUser.email || "").order("created_at", { ascending: false }).limit(30);
+    setGuardianSupportRequests(requestRows || []);
     const adultLink = linkRows.find((link) =>
       link.owner_user_id !== currentUser.id &&
       link.active &&
@@ -1490,6 +1568,7 @@ function GlowUpTracker() {
       setSupportOwnerId(null);
       setSupportPeople([]);
       setSupportRelationships([]);
+      setGuardianSupportRequests([]);
       setTaskSuggestions([]);
       return;
     }
@@ -1515,6 +1594,28 @@ function GlowUpTracker() {
     setInviteEmail("");
     setSupportMessage("Invitation sent. They'll see it once they sign in with that exact email, and nothing is shared until they accept.");
     await loadSupportData(user);
+  };
+
+  const sendGuardianSupportRequest = async () => {
+    const activeGuardians = supportLinks.filter((link) => link.owner_user_id === user?.id && link.active && link.accepted_at);
+    const address = supportRequestGuardian || activeGuardians[0]?.caregiver_email || "";
+    if (!address) { setSupportMessage("Connect with an active Guardian before sending a support request."); return; }
+    setSupportMessage("Sending your support request…");
+    const { error } = await supabase.from("guardian_support_requests").insert({
+      owner_user_id: user.id,
+      caregiver_email: address,
+      request_type: supportRequestType,
+      message: supportRequestText.trim() || null,
+    });
+    if (error) { setSupportMessage("That request could not be sent yet."); return; }
+    setSupportRequestText("");
+    setSupportMessage("Your Guardian received a clear request. You stay in control of what happens next.");
+  };
+
+  const updateGuardianSupportRequest = async (requestId, status) => {
+    const { error } = await supabase.from("guardian_support_requests").update({ status, resolved_at: status === "resolved" ? new Date().toISOString() : null }).eq("id", requestId);
+    if (error) { setSupportMessage("That request could not be updated."); return; }
+    setGuardianSupportRequests((rows) => rows.map((row) => row.id === requestId ? { ...row, status } : row));
   };
 
   const updateCaretakerPermission = async (link, permission, enabled) => {
@@ -1891,12 +1992,20 @@ function GlowUpTracker() {
   };
 
   useEffect(() => {
-    if (!user) { setDailyCheckIn({ capacity: null, soft_day: false, custom_essentials: null }); setDailyCheckInLoaded(false); return; }
+    if (!user) { setDailyCheckIn({ capacity: null, mood: null, energy: null, day_type: "full", support_preference: null, soft_day: false, custom_essentials: null }); setDailyCheckInHistory([]); setDailyCheckInLoaded(false); return; }
     let alive = true;
     setDailyCheckInLoaded(false);
-    supabase.from("daily_check_ins").select("capacity, soft_day, custom_essentials").eq("user_id", user.id).eq("check_date", period.date).maybeSingle().then(({ data }) => {
+    supabase.from("daily_check_ins").select("*").eq("user_id", user.id).eq("check_date", period.date).maybeSingle().then(({ data }) => {
       if (!alive) return;
-      setDailyCheckIn({ capacity: data?.capacity || null, soft_day: !!data?.soft_day, custom_essentials: data?.custom_essentials || null });
+      setDailyCheckIn({
+        capacity: data?.capacity || null,
+        mood: data?.mood || null,
+        energy: data?.energy || null,
+        day_type: data?.day_type || (data?.soft_day ? "soft" : "full"),
+        support_preference: data?.support_preference || null,
+        soft_day: !!data?.soft_day,
+        custom_essentials: data?.custom_essentials || null,
+      });
       setDailyCheckInLoaded(true);
     });
     setNextStepSkipped([]);
@@ -1904,6 +2013,22 @@ function GlowUpTracker() {
     setCheckInPopupDismissedToday(false);
     return () => { alive = false; };
   }, [user, period.date]);
+
+  useEffect(() => {
+    if (!user) { setCareSessionHistory([]); setPathProgress([]); return; }
+    let alive = true;
+    const historyStart = offsetDate(period.date, -120);
+    supabase.from("daily_check_ins").select("*").eq("user_id", user.id).gte("check_date", historyStart).lte("check_date", period.date).order("check_date").then(({ data }) => {
+      if (alive) setDailyCheckInHistory(data || []);
+    });
+    supabase.from("plush_path_progress").select("path_id, current_day, completed_days, status, updated_at").eq("user_id", user.id).then(({ data }) => {
+      if (alive) setPathProgress(data || []);
+    });
+    supabase.from("care_session_logs").select("id, session_id, session_kind, completed_at, outcome, check_date").eq("user_id", user.id).order("completed_at", { ascending: false }).limit(100).then(({ data }) => {
+      if (alive) setCareSessionHistory(data || []);
+    });
+    return () => { alive = false; };
+  }, [user?.id, period.date]);
 
   useEffect(() => {
     if (preferences.onboarding_complete && dailyCheckInLoaded && !dailyCheckIn.capacity && !checkInPopupDismissedToday) {
@@ -1919,10 +2044,98 @@ function GlowUpTracker() {
       user_id: user.id,
       check_date: period.date,
       capacity: next.capacity,
+      mood: next.mood,
+      energy: next.energy,
+      day_type: next.day_type || "full",
+      support_preference: next.support_preference,
       soft_day: next.soft_day,
       custom_essentials: next.custom_essentials,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,check_date" });
+    setDailyCheckInHistory((rows) => [
+      ...rows.filter((row) => row.check_date !== period.date),
+      { ...next, check_date: period.date },
+    ].sort((a, b) => a.check_date.localeCompare(b.check_date)));
+  };
+
+  const deleteDailyCheckIn = async (date) => {
+    if (!user || !date) return;
+    if (!window.confirm("Delete this mood and energy check-in? Task progress and private reflections will stay.")) return;
+    const { error } = await supabase.from("daily_check_ins").delete().eq("user_id", user.id).eq("check_date", date);
+    if (error) { setCareMessage("That check-in could not be deleted."); return; }
+    setDailyCheckInHistory((rows) => rows.filter((row) => row.check_date !== date));
+    if (date === period.date) setDailyCheckIn({ capacity: null, mood: null, energy: null, day_type: "full", support_preference: null, soft_day: false, custom_essentials: null });
+    setCheckInViewerDate(null);
+  };
+
+  const openCareSession = (toolId) => {
+    setCareMessage("");
+    setComfortToolOpen(toolId);
+  };
+
+  const finishCareSession = () => {
+    const toolId = comfortToolOpen;
+    setComfortToolOpen(null);
+    if (toolId) setCareOutcomeTool(toolId);
+  };
+
+  const saveCareOutcome = async (outcome) => {
+    const sessionId = careOutcomeTool;
+    setCareOutcomeTool(null);
+    if (!user || !sessionId) return;
+    const { error } = await supabase.from("care_session_logs").insert({
+      user_id: user.id,
+      session_id: sessionId,
+      session_kind: "care",
+      completed_at: new Date().toISOString(),
+      outcome,
+      check_date: period.date,
+    });
+    if (!error) setCareSessionHistory((rows) => [{
+      id: `local-${Date.now()}`,
+      session_id: sessionId,
+      session_kind: "care",
+      completed_at: new Date().toISOString(),
+      outcome,
+      check_date: period.date,
+    }, ...rows].slice(0, 100));
+    setCareMessage(error ? "That result could not be saved, but the care you took still counts." : "Saved privately. PlushLife will use this only to make your suggestions more useful.");
+  };
+
+  const updatePathDay = async (pathId, dayNumber) => {
+    const path = PLUSH_PATHS.find((item) => item.id === pathId);
+    if (!user || !path) return;
+    const existing = pathProgress.find((item) => item.path_id === pathId);
+    const completedDays = Array.from(new Set([...(existing?.completed_days || []), dayNumber])).sort((a, b) => a - b);
+    const completed = completedDays.length >= path.days.length;
+    const nextRow = {
+      user_id: user.id,
+      path_id: pathId,
+      current_day: completed ? path.days.length : Math.min(path.days.length, Math.max(dayNumber + 1, existing?.current_day || 1)),
+      completed_days: completedDays,
+      status: completed ? "completed" : "active",
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("plush_path_progress").upsert(nextRow, { onConflict: "user_id,path_id" });
+    if (error) { setCareMessage("That path step could not be saved yet."); return; }
+    setPathProgress((rows) => [...rows.filter((row) => row.path_id !== pathId), nextRow]);
+    setCareMessage(completed ? "Path complete — keep what helped and leave the rest. ✨" : "One gentle path step saved.");
+  };
+
+  const pauseCarePath = async (pathId) => {
+    const existing = pathProgress.find((item) => item.path_id === pathId);
+    if (!user) return;
+    const nextStatus = existing?.status === "paused" ? "active" : "paused";
+    const nextRow = {
+      user_id: user.id,
+      path_id: pathId,
+      current_day: existing?.current_day || 1,
+      completed_days: existing?.completed_days || [],
+      status: nextStatus,
+      updated_at: new Date().toISOString(),
+    };
+    const { error } = await supabase.from("plush_path_progress").upsert(nextRow, { onConflict: "user_id,path_id" });
+    if (!error) setPathProgress((rows) => [...rows.filter((row) => row.path_id !== pathId), nextRow]);
   };
 
   useEffect(() => {
@@ -1943,6 +2156,18 @@ function GlowUpTracker() {
     } else {
       await supabase.from("rest_days").insert({ user_id: user.id, rest_date: period.date });
       setRestDates((dates) => [...dates, period.date]);
+    }
+  };
+
+  const selectDayType = async (value) => {
+    await saveDailyCheckIn({ day_type: value, soft_day: value === "soft" || value === "tiny" || value === "recovery" });
+    const resting = restDates.includes(period.date);
+    if (value === "rest" && !resting) {
+      const { error } = await supabase.from("rest_days").insert({ user_id: user.id, rest_date: period.date });
+      if (!error) setRestDates((dates) => [...dates, period.date]);
+    } else if (value !== "rest" && resting) {
+      const { error } = await supabase.from("rest_days").delete().eq("user_id", user.id).eq("rest_date", period.date);
+      if (!error) setRestDates((dates) => dates.filter((date) => date !== period.date));
     }
   };
 
@@ -2176,6 +2401,10 @@ function GlowUpTracker() {
       end_date: newTaskScheduleType === "range" ? (newTaskEndDate || null) : null,
       one_time_date: newTaskScheduleType === "once" ? (newTaskOneTimeDate || selectedProgressDate) : null,
       why_note: newTaskWhy.trim(),
+      soft_label: newTaskSoftLabel.trim() || null,
+      tiny_label: newTaskTinyLabel.trim() || null,
+      estimated_minutes: newTaskEstimatedMinutes ? Number(newTaskEstimatedMinutes) : null,
+      essential_on_low_capacity: newTaskEssentialOnLow,
     };
     setTaskMessage("Adding task…");
     const { error } = await supabase.from("tracker_tasks").insert(row);
@@ -2218,6 +2447,10 @@ function GlowUpTracker() {
     setNewTaskName("");
     setNewTaskKind("regular");
     setNewTaskWhy("");
+    setNewTaskSoftLabel("");
+    setNewTaskTinyLabel("");
+    setNewTaskEstimatedMinutes("");
+    setNewTaskEssentialOnLow(false);
     setNewTaskSection(section);
     setNewTaskCustomSection("");
     setActive(newTaskDay);
@@ -2383,6 +2616,10 @@ function GlowUpTracker() {
       end_date: editTaskDraft.schedule_type === "range" ? (editTaskDraft.end_date || null) : null,
       one_time_date: editTaskDraft.schedule_type === "once" ? (editTaskDraft.one_time_date || selectedProgressDate) : null,
       why_note: (editTaskDraft.why_note || "").trim(),
+      soft_label: (editTaskDraft.soft_label || "").trim() || null,
+      tiny_label: (editTaskDraft.tiny_label || "").trim() || null,
+      estimated_minutes: editTaskDraft.estimated_minutes ? Number(editTaskDraft.estimated_minutes) : null,
+      essential_on_low_capacity: !!editTaskDraft.essential_on_low_capacity,
       sort_order: placementChanged ? targetInsertionIndex + 1 : (Number(originalTask?.sort_order) || targetInsertionIndex + 1),
     };
     setTaskMessage("Saving task changes…");
@@ -2663,6 +2900,7 @@ function GlowUpTracker() {
       reduced_motion: !!nextPreferences.reduced_motion,
       high_contrast: !!nextPreferences.high_contrast,
       simple_mode: !!nextPreferences.simple_mode,
+      pattern_insights_enabled: nextPreferences.pattern_insights_enabled !== false,
       gentle_streaks: !!nextPreferences.gentle_streaks,
       colorblind_mode: !!nextPreferences.colorblind_mode,
       notification_nudge_dismissed_at: nextPreferences.notification_nudge_dismissed_at || null,
@@ -3086,13 +3324,17 @@ function GlowUpTracker() {
     if (!user) return;
     setSettingsMessage("Preparing your data for download…");
     try {
-      const [profileRes, prefsRes, tasksRes, schedulesRes, notesRes, dailyRes, achievementsRes] = await Promise.all([
+      const [profileRes, prefsRes, tasksRes, schedulesRes, notesRes, dailyRes, checkInsRes, careRes, pathsRes, supportRequestsRes, achievementsRes] = await Promise.all([
         supabase.from("tracker_profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("app_preferences").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("tracker_tasks").select("*").eq("user_id", user.id),
         supabase.from("tracker_schedules").select("*").eq("user_id", user.id),
         supabase.from("private_notes").select("*").eq("user_id", user.id),
         supabase.from("daily_progress").select("*").eq("user_id", user.id),
+        supabase.from("daily_check_ins").select("*").eq("user_id", user.id),
+        supabase.from("care_session_logs").select("*").eq("user_id", user.id),
+        supabase.from("plush_path_progress").select("*").eq("user_id", user.id),
+        supabase.from("guardian_support_requests").select("*").eq("owner_user_id", user.id),
         supabase.from("user_achievements").select("*").eq("user_id", user.id).maybeSingle(),
       ]);
       const payload = {
@@ -3104,6 +3346,10 @@ function GlowUpTracker() {
         schedules: schedulesRes.data || [],
         private_reflections: notesRes.data || [],
         daily_progress: dailyRes.data || [],
+        mood_and_energy_check_ins: checkInsRes.data || [],
+        care_session_history: careRes.data || [],
+        plush_path_progress: pathsRes.data || [],
+        guardian_support_requests: supportRequestsRes.data || [],
         achievements: achievementsRes.data || null,
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
@@ -3382,10 +3628,18 @@ function GlowUpTracker() {
 
   const rowForTask = (task) => {
     const cleanDetail = cleanTaskDetail(task.detail || "");
+    const selectedDayType = dailyCheckIn.day_type || (dailyCheckIn.soft_day ? "soft" : "full");
+    const adaptiveLabel = selectedDayType === "tiny" || selectedDayType === "recovery"
+      ? (task.tiny_label || task.soft_label || task.task)
+      : selectedDayType === "soft"
+        ? (task.soft_label || task.task)
+        : task.task;
     return {
       sourceTask: task,
       key: task.task_key,
-      label: task.task,
+      label: adaptiveLabel,
+      originalLabel: task.task,
+      dayType: selectedDayType,
       how: cleanDetail || null,
       why: task.why_note || null,
       right: task.day_id === "daily" || !cleanDetail || cleanDetail.length > 40 ? null : cleanDetail,
@@ -3592,6 +3846,31 @@ function GlowUpTracker() {
     if (best.avg < 0.6) return null;
     const dayLabel = DAYS.find((d) => d.id === best.dayId)?.label || best.dayId;
     return `${dayLabel}s tend to go well for you — you've completed your essentials there about ${Math.round(best.avg * 100)}% of the time.`;
+  })();
+
+  const wellbeingPatternInsight = (() => {
+    if (preferences.pattern_insights_enabled === false) return null;
+    const difficultMoods = new Set(["tired", "stressed", "anxious", "sad", "angry", "lonely", "overwhelmed", "numb", "sick"]);
+    const lowEnergy = new Set(["empty", "low"]);
+    const buckets = { mon: [], tue: [], wed: [], thu: [], fri: [], sat: [], sun: [] };
+    dailyCheckInHistory.forEach((entry) => {
+      const dayId = dayIdForDate(entry.check_date);
+      buckets[dayId].push({
+        difficult: difficultMoods.has(entry.mood) || lowEnergy.has(entry.energy) || ["tiny", "recovery", "rest"].includes(entry.day_type),
+      });
+    });
+    const candidates = Object.entries(buckets)
+      .filter(([, values]) => values.length >= 3)
+      .map(([dayId, values]) => ({ dayId, count: values.length, difficultCount: values.filter((item) => item.difficult).length }))
+      .filter((item) => item.difficultCount >= 3 && item.difficultCount / item.count >= 0.6)
+      .sort((a, b) => (b.difficultCount / b.count) - (a.difficultCount / a.count));
+    if (!candidates.length) return null;
+    const hardest = candidates[0];
+    const dayLabel = DAYS.find((item) => item.id === hardest.dayId)?.label || hardest.dayId.toUpperCase();
+    return {
+      dayId: hardest.dayId,
+      text: `${dayLabel}s have felt heavier in ${hardest.difficultCount} of your last ${hardest.count} check-ins. Would a smaller default list help?`,
+    };
   })();
 
   const todayDailyCoreKeys = trackerTasks
@@ -3911,6 +4190,10 @@ function GlowUpTracker() {
     { id: "reflection_devotee", badge: "📖", name: "Reflection Devotee", hint: "Write 30 private reflections.", check: () => reflectionDates.length >= 30 },
     { id: "reflection_sage", badge: "📚", name: "Reflection Sage", hint: "Write 100 private reflections.", check: () => reflectionDates.length >= 100 },
     { id: "intention_setter", badge: "📮", name: "Intention Setter", hint: "Write a reflection on a Sunday.", check: () => reflectionDates.some((date) => dayIdForDate(date) === "sun") },
+    { id: "honest_checkin", badge: "🫶", name: "Honest Check-In", hint: "Tell PlushLife how today really feels.", check: () => dailyCheckInHistory.length >= 1 },
+    { id: "tiny_counts", badge: "🌼", name: "Tiny Still Counts", hint: "Choose a Tiny Day when that is what you need.", check: () => dailyCheckInHistory.some((item) => item.day_type === "tiny") },
+    { id: "recovery_return", badge: "🛋️", name: "Gentle Return", hint: "Choose a Recovery Day and come back softly.", check: () => dailyCheckInHistory.some((item) => item.day_type === "recovery") },
+    { id: "care_explorer", badge: "🌿", name: "Care Explorer", hint: "Try a PlushCare tool and record how it felt.", check: () => careSessionHistory.length >= 1 },
     { id: "guardian_connected", badge: "💛", name: "Guardian Connected", hint: "Add a trusted Guardian.", check: () => ownedSupportLinks.length >= 1 },
     { id: "two_guardians", badge: "🧑‍🤝‍🧑", name: "Two Guardians", hint: "Add two trusted Guardians.", check: () => ownedSupportLinks.length >= 2 },
     { id: "habit_starter", badge: "🥇", name: "Habit Starter", hint: "Create your first build or reduce habit.", check: () => habitTasks.length >= 1 },
@@ -4158,15 +4441,24 @@ function GlowUpTracker() {
       )}
       {autoPopupToShow === "check_in" && (
         <div role="dialog" aria-modal="true" aria-labelledby="checkin-popup-title" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
-          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 400px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
+          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 520px)", maxHeight: "min(88vh,760px)", overflowY: "auto", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start" }}>
               <div>
                 <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#A65DC1", fontWeight: 900 }}>🎯 TODAY'S CHECK-IN</div>
-                <div id="checkin-popup-title" style={{ marginTop: 4, fontSize: 19, fontWeight: 900, color: "#75428C" }}>How much do you have today?</div>
+                <div id="checkin-popup-title" style={{ marginTop: 4, fontSize: 19, fontWeight: 900, color: "#75428C" }}>How are you today?</div>
               </div>
               <button type="button" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} aria-label="Close" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
             </div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 14 }}>
+            <div style={{ marginTop: 14, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>FEELING · OPTIONAL</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 6, marginTop: 7 }}>
+              {CHECKIN_MOODS.map(([value, emoji, label]) => (
+                <button key={value} type="button" onClick={() => saveDailyCheckIn({ mood: value })} aria-pressed={dailyCheckIn.mood === value} style={{ padding: "7px 4px", borderRadius: 11, border: dailyCheckIn.mood === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.mood === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
+                  <div style={{ fontSize: 18 }}>{emoji}</div><div style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>HOW MUCH CAPACITY DO YOU HAVE?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 7 }}>
               {[
                 ["very_low", "😞", "Very low"],
                 ["low", "😕", "Low"],
@@ -4177,6 +4469,28 @@ function GlowUpTracker() {
                   <div style={{ fontSize: 22 }}>{emoji}</div>
                   <div style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
                 </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#318C79", fontWeight: 900 }}>ENERGY · OPTIONAL</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 7, marginTop: 7 }}>
+              {ENERGY_LEVELS.map(([value, emoji, label]) => (
+                <button key={value} type="button" onClick={() => saveDailyCheckIn({ energy: value })} aria-pressed={dailyCheckIn.energy === value} style={{ padding: "8px 4px", borderRadius: 11, border: dailyCheckIn.energy === value ? "2px solid #318C79" : "1px solid #CFE8E1", background: dailyCheckIn.energy === value ? "#EAF8F4" : "white", cursor: "pointer" }}>
+                  <div style={{ fontSize: 18 }}>{emoji}</div><div style={{ fontSize: 10, fontWeight: 800, color: "#5E766F" }}>{label}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#4C8FE8", fontWeight: 900 }}>WHAT KIND OF DAY DO YOU NEED?</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(88px,1fr))", gap: 7, marginTop: 7 }}>
+              {DAY_TYPES.map(([value, emoji, label, description]) => (
+                <button key={value} type="button" onClick={() => selectDayType(value)} aria-pressed={dailyCheckIn.day_type === value} title={description} style={{ padding: "8px 5px", borderRadius: 11, border: dailyCheckIn.day_type === value ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: dailyCheckIn.day_type === value ? "#EAF4FF" : "white", cursor: "pointer" }}>
+                  <div style={{ fontSize: 18 }}>{emoji}</div><div style={{ fontSize: 10.5, fontWeight: 900, color: "#4C6F98" }}>{label}</div>
+                </button>
+              ))}
+            </div>
+            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#A56D14", fontWeight: 900 }}>WHAT WOULD HELP? · OPTIONAL</div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 7 }}>
+              {SUPPORT_PREFERENCES.map(([value, emoji, label]) => (
+                <button key={value} type="button" onClick={() => saveDailyCheckIn({ support_preference: value })} aria-pressed={dailyCheckIn.support_preference === value} style={{ padding: "7px 9px", borderRadius: 999, border: dailyCheckIn.support_preference === value ? "2px solid #D4A017" : "1px solid #F0D99E", background: dailyCheckIn.support_preference === value ? "#FFF4CF" : "white", color: "#7B641E", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{emoji} {label}</button>
               ))}
             </div>
             {dailyCheckIn.capacity === "very_low" && !dailyCheckIn.soft_day && (
@@ -4229,11 +4543,23 @@ function GlowUpTracker() {
                   </div>
                 ))}
               </div>
-              <button type="button" onClick={() => setComfortToolOpen(null)} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Done</button>
+              <button type="button" onClick={finishCareSession} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Done</button>
             </div>
           </div>
         );
       })()}
+      {careOutcomeTool && (
+        <div role="dialog" aria-modal="true" aria-labelledby="care-outcome-title" onClick={() => setCareOutcomeTool(null)} style={{ position: "fixed", inset: 0, zIndex: 61, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
+          <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%,390px)", padding: 20, borderRadius: 24, background: "linear-gradient(145deg,#F2FFFB,#FFF7FC)", border: "2px solid #73B7A8", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
+            <div id="care-outcome-title" style={{ fontSize: 18, fontWeight: 900, color: "#4F625D" }}>Did that help?</div>
+            <div style={{ marginTop: 5, color: "#6B7F78", fontSize: 12, lineHeight: 1.5 }}>Your answer stays private and helps PlushLife learn which tools are useful for you. It never becomes a diagnosis.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,1fr)", gap: 8, marginTop: 13 }}>
+              {[["helped","💚 Yes"],["a_little","🌱 A little"],["not_really","🤍 Not really"],["worse","🫶 It made things worse"]].map(([value,label]) => <button key={value} type="button" onClick={() => saveCareOutcome(value)} style={{ padding: "10px 8px", borderRadius: 11, border: "1px solid #BFE5D2", background: "white", color: "#526F67", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{label}</button>)}
+            </div>
+            <button type="button" onClick={() => saveCareOutcome("skipped")} style={{ marginTop: 9, width: "100%", padding: "8px", borderRadius: 10, border: 0, background: "transparent", color: "#7B8F89", fontWeight: 800, cursor: "pointer" }}>Skip</button>
+          </div>
+        </div>
+      )}
       {autoPopupToShow === "notification_nudge" && (
         <div role="dialog" aria-modal="true" aria-labelledby="notif-nudge-title" onClick={dismissNotificationNudge} style={{ position: "fixed", inset: 0, zIndex: 60, display: "grid", placeItems: "center", padding: 18, background: "rgba(64,39,80,.46)", backdropFilter: "blur(5px)" }}>
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)", padding: "22px 20px", borderRadius: 26, background: "linear-gradient(160deg,#FFFDFE,#F1FFF9 58%,#EBFBFF)", border: "2px solid #A9DFC4", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
@@ -4586,9 +4912,66 @@ function GlowUpTracker() {
         {dashboard === "today" && (
           <div style={{ display: "flex", justifyContent: "flex-end", margin: "-10px 0 14px" }}>
             <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
-              🎯 {dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
+              🎯 {dailyCheckIn.mood ? `${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[1] || ""} ${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[2] || ""}` : dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
+              {dailyCheckIn.day_type && dailyCheckIn.day_type !== "full" ? ` · ${DAY_TYPES.find(([value]) => value === dailyCheckIn.day_type)?.[2] || dailyCheckIn.day_type}` : ""}
               {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
             </button>
+          </div>
+        )}
+
+        {dashboard === "care" && (
+          <div style={{ marginBottom: 18, display: "grid", gap: 14 }}>
+            <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#F2FFFB,#FFF7FC)", border: "1px solid #BFE5D2", boxShadow: "0 8px 24px rgba(49,140,121,.09)" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
+                <div><div style={{ fontSize: 11, letterSpacing: ".15em", color: "#318C79", fontWeight: 900 }}>🫶 PLUSHCARE</div><div style={{ marginTop: 4, fontSize: 20, color: "#4F405C", fontWeight: 900 }}>What would help right now?</div></div>
+                <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "7px 10px", borderRadius: 10, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Update check-in</button>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#607A73" }}>Choose what is happening. PlushLife will offer one short tool and one realistic next step.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 12 }}>
+                {HELP_ME_NOW_OPTIONS.map((option) => (
+                  <button key={option.id} type="button" onClick={() => { setCareMessage(option.next); openCareSession(option.tool); }} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #CFE8E1", background: "#FFFFFFD9", color: "#4F625D", textAlign: "left", fontWeight: 800, fontSize: 12, lineHeight: 1.35, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{option.icon}</span>{option.label}</button>
+                ))}
+              </div>
+              {careMessage && <div aria-live="polite" style={{ marginTop: 10, padding: "9px 11px", borderRadius: 10, background: "#FFFFFFB8", color: "#5E766F", fontSize: 11.5, lineHeight: 1.5 }}>{careMessage}</div>}
+            </div>
+
+            <div style={{ padding: 17, borderRadius: 20, background: "#FFFFFFB8", border: "1px solid #E6D4F2" }}>
+              <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#A65DC1" }}>🌿 QUICK CARE SESSIONS</div>
+              <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Short, private, and always free. Tell PlushLife afterward whether it helped.</div>
+              {(() => {
+                const helpful = careSessionHistory.find((entry) => ["helped", "a_little"].includes(entry.outcome));
+                const tool = helpful && COMFORT_TOOLS.find((entry) => entry.id === helpful.session_id);
+                return tool ? <div style={{ marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#F2FFFB", color: "#4D746A", fontSize: 11.5 }}>You previously said <strong>{tool.name}</strong> helped. Want to use it again?</div> : null;
+              })()}
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(120px,1fr))", gap: 8, marginTop: 11 }}>
+                {COMFORT_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => openCareSession(tool.id)} style={{ padding: "12px 8px", borderRadius: 13, border: "1px solid #E3C9EC", background: "#FFF9FD", color: "#6B5A7D", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}><div style={{ fontSize: 23 }}>{tool.icon}</div><div style={{ marginTop: 4 }}>{tool.name}</div></button>)}
+              </div>
+            </div>
+
+            <div style={{ padding: 17, borderRadius: 20, background: "#FFFDF4D9", border: "1px solid #E9C96E" }}>
+              <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#A56D14" }}>🗺️ PLUSHPATHS</div>
+              <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Guided programs that move at your pace. Pause, repeat, or leave any time.</div>
+              <div style={{ display: "grid", gap: 9, marginTop: 11 }}>
+                {PLUSH_PATHS.map((path) => {
+                  const progress = pathProgress.find((item) => item.path_id === path.id);
+                  const completedCount = progress?.completed_days?.length || 0;
+                  return <button key={path.id} type="button" onClick={() => setSelectedCarePath(path.id)} style={{ width: "100%", padding: "12px", borderRadius: 13, border: "1px solid #F0D99E", background: "#FFFFFFD9", textAlign: "left", cursor: "pointer" }}>
+                    <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ fontSize: 24 }}>{path.icon}</span><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 900, color: "#5B4B6B", fontSize: 13.5 }}>{path.title}</div><div style={{ marginTop: 2, color: "#8C6B9E", fontSize: 11.5, lineHeight: 1.4 }}>{path.description}</div></div><span style={{ fontSize: 11, fontWeight: 900, color: "#A56D14" }}>{completedCount}/{path.days.length}</span></div>
+                    <div style={{ height: 6, marginTop: 9, borderRadius: 4, overflow: "hidden", background: "#F7EDCF" }}><div style={{ width: `${Math.round((completedCount / path.days.length) * 100)}%`, height: "100%", background: "#D4A017" }} /></div>
+                  </button>;
+                })}
+              </div>
+            </div>
+
+            <div style={{ padding: 17, borderRadius: 20, background: "#F3F6FFD9", border: "1px solid #C7D5F3" }}>
+              <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#4C6FA8" }}>🌙 PLUSHSLEEP</div>
+              <div style={{ marginTop: 5, fontSize: 12, color: "#6B7690" }}>Practical support for difficult nights—not a score and not a medical sleep assessment.</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(145px,1fr))", gap: 8, marginTop: 11 }}>
+                {SLEEP_TOOLS.map((tool) => <button key={tool.id} type="button" onClick={() => setSleepToolOpen(tool.id)} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #D3DCF3", background: "white", color: "#556581", textAlign: "left", fontWeight: 800, fontSize: 12, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{tool.icon}</span>{tool.title}</button>)}
+              </div>
+            </div>
+
+            <div style={{ padding: "11px 13px", borderRadius: 13, background: "#FFF7F9", border: "1px solid #F0B8C4", color: "#7F5660", fontSize: 11.5, lineHeight: 1.5 }}><strong>PlushLife is not emergency care.</strong> If you may hurt yourself or someone else, contact local emergency services or a trusted person who can be physically present. Care tools never replace professional support.</div>
           </div>
         )}
 
@@ -4614,6 +4997,66 @@ function GlowUpTracker() {
           </div>
         )}
 
+        {checkInViewerDate && (() => {
+          const entry = dailyCheckInHistory.find((row) => row.check_date === checkInViewerDate);
+          if (!entry) return null;
+          const mood = CHECKIN_MOODS.find(([value]) => value === entry.mood);
+          const energy = ENERGY_LEVELS.find(([value]) => value === entry.energy);
+          const dayType = DAY_TYPES.find(([value]) => value === entry.day_type);
+          const support = SUPPORT_PREFERENCES.find(([value]) => value === entry.support_preference);
+          return <ToolPanel title="Daily check-in" onClose={() => setCheckInViewerDate(null)}>
+            <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#FFF9FD,#F2FFFB)", border: "1px solid #E3C9EC" }}>
+              <div style={{ fontSize: 11, letterSpacing: ".13em", fontWeight: 900, color: "#A65DC1" }}>{new Date(`${checkInViewerDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).toUpperCase()}</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 11 }}>
+                <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #E9DDEC" }}><div style={{ fontSize: 10, color: "#8C6B9E", fontWeight: 900 }}>FEELING</div><div style={{ marginTop: 4, fontWeight: 900, color: "#5B4B6B" }}>{mood ? `${mood[1]} ${mood[2]}` : "Not recorded"}</div></div>
+                <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #CFE8E1" }}><div style={{ fontSize: 10, color: "#6B8A82", fontWeight: 900 }}>ENERGY</div><div style={{ marginTop: 4, fontWeight: 900, color: "#526F67" }}>{energy ? `${energy[1]} ${energy[2]}` : "Not recorded"}</div></div>
+                <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #CFE4F5" }}><div style={{ fontSize: 10, color: "#6B7C99", fontWeight: 900 }}>DAY TYPE</div><div style={{ marginTop: 4, fontWeight: 900, color: "#4C6F98" }}>{dayType ? `${dayType[1]} ${dayType[2]}` : "Full"}</div></div>
+                <div style={{ padding: 11, borderRadius: 12, background: "white", border: "1px solid #F0D99E" }}><div style={{ fontSize: 10, color: "#A56D14", fontWeight: 900 }}>WANTED</div><div style={{ marginTop: 4, fontWeight: 900, color: "#7B641E" }}>{support ? `${support[1]} ${support[2]}` : "Not recorded"}</div></div>
+              </div>
+              <div style={{ display: "flex", gap: 7, marginTop: 12, flexWrap: "wrap" }}>
+                {reflectionDateSet.has(checkInViewerDate) && <button type="button" onClick={() => { setCheckInViewerDate(null); setReflectionViewerDate(checkInViewerDate); }} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #E3C9EC", background: "white", color: "#A65DC1", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Open private reflection</button>}
+                <button type="button" onClick={() => deleteDailyCheckIn(checkInViewerDate)} style={{ padding: "7px 10px", borderRadius: 9, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Delete this check-in</button>
+              </div>
+            </div>
+          </ToolPanel>;
+        })()}
+
+        {selectedCarePath && (() => {
+          const path = PLUSH_PATHS.find((item) => item.id === selectedCarePath);
+          const progress = pathProgress.find((item) => item.path_id === selectedCarePath) || { current_day: 1, completed_days: [], status: "active" };
+          if (!path) return null;
+          return <ToolPanel title={path.title} onClose={() => setSelectedCarePath(null)}>
+            <div style={{ padding: 17, borderRadius: 18, background: "#FFFDF4", border: "1px solid #E9C96E" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 10 }}><span style={{ fontSize: 32 }}>{path.icon}</span><div><div style={{ fontWeight: 900, color: "#5B4B6B", fontSize: 17 }}>{path.title}</div><div style={{ marginTop: 2, color: "#8C6B9E", fontSize: 12 }}>{path.description}</div></div></div>
+              <div style={{ display: "grid", gap: 8, marginTop: 14 }}>
+                {path.days.map((step, index) => {
+                  const dayNumber = index + 1;
+                  const complete = progress.completed_days.includes(dayNumber);
+                  const available = dayNumber <= progress.current_day || complete;
+                  return <div key={dayNumber} style={{ display: "flex", gap: 9, alignItems: "center", padding: "10px 11px", borderRadius: 12, background: complete ? "#EAF8F4" : "white", border: `1px solid ${complete ? "#BFE5D2" : "#F0E4C2"}`, opacity: available ? 1 : .55 }}>
+                    <span style={{ width: 24, height: 24, borderRadius: 8, display: "grid", placeItems: "center", background: complete ? "#318C79" : "#F7EDCF", color: complete ? "white" : "#A56D14", fontWeight: 900, fontSize: 11 }}>{complete ? "✓" : dayNumber}</span>
+                    <span style={{ flex: 1, color: "#5B4B6B", fontSize: 12.5, fontWeight: 800 }}>{step}</span>
+                    {available && !complete && <button type="button" onClick={() => updatePathDay(path.id, dayNumber)} style={{ padding: "6px 8px", borderRadius: 8, border: 0, background: "#D4A017", color: "white", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>Done</button>}
+                  </div>;
+                })}
+              </div>
+              <button type="button" onClick={() => pauseCarePath(path.id)} style={{ marginTop: 12, padding: "7px 10px", borderRadius: 9, border: "1px solid #E9C96E", background: "white", color: "#A56D14", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{progress.status === "paused" ? "Resume this path" : "Pause this path"}</button>
+            </div>
+          </ToolPanel>;
+        })()}
+
+        {sleepToolOpen && (() => {
+          const tool = SLEEP_TOOLS.find((item) => item.id === sleepToolOpen);
+          if (!tool) return null;
+          return <ToolPanel title={tool.title} onClose={() => setSleepToolOpen(null)}>
+            <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#F4F6FF,#FFF9FD)", border: "1px solid #C7D5F3" }}>
+              <div style={{ fontSize: 34 }}>{tool.icon}</div>
+              <div style={{ marginTop: 7, display: "grid", gap: 9 }}>{tool.steps.map((step, index) => <div key={index} style={{ display: "flex", gap: 9, color: "#556581", fontSize: 13, lineHeight: 1.5 }}><strong style={{ color: "#4C6FA8" }}>{index + 1}.</strong><span>{step}</span></div>)}</div>
+              <button type="button" onClick={() => setSleepToolOpen(null)} style={{ marginTop: 15, width: "100%", padding: "10px", borderRadius: 11, border: 0, background: "#4C6FA8", color: "white", fontWeight: 900, cursor: "pointer" }}>Done for tonight</button>
+            </div>
+          </ToolPanel>;
+        })()}
+
         {helpOpen && (
           <ToolPanel title="Help" onClose={() => setHelpOpen(false)}>
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFDF4", border: "1px solid #E9C96E", boxShadow: "0 8px 22px rgba(166,109,20,.08)" }}>
@@ -4635,7 +5078,9 @@ function GlowUpTracker() {
                 ["Can a Guardian edit or complete my tasks?", "No. A Guardian can only view what you've allowed, send an encouraging note, or suggest a task for you to approve. They cannot check anything off or change your tasks."],
                 ["What happens if I miss a day?", "Nothing is lost. Your current streak resets, but your best streak, every badge, and every outfit you've earned stay yours forever."],
                 ["What's the difference between Required and Bonus tasks?", "Required tasks count toward your daily percentage. Bonus tasks are extras — completing them never lowers your score, and skipping them never counts against you."],
-                ["What is Soft Day?", "A mode for lower-capacity days. Turn it on and your bonus/optional tasks tuck out of view, so your list feels smaller and calmer."],
+                ["What are Full, Soft, Tiny, and Recovery Days?", "They are four ways to size today around your real capacity. Full shows your usual versions, Soft uses gentler versions and hides bonuses, Tiny keeps the smallest essentials, and Recovery helps you restart without a backlog."],
+                ["How do mood and energy patterns work?", "Your check-ins stay private and appear in your Progress calendar. With pattern suggestions on, PlushLife may notice a repeated day-of-week pattern and offer a small routine change. It never diagnoses you, assumes a cause, or changes anything without your approval."],
+                ["Is PlushCare free?", "Yes. PlushCare, PlushPaths, PlushSleep, mood and energy tracking, adaptive habits, accessibility tools, and Guardian support are all free right now."],
                 ["What is Focus Mode?", "Instead of your full checklist, Focus Mode shows just your next task, one at a time — good for when a long list feels like too many decisions."],
                 ["Who can see my private reflections?", "Only you, always. They're never shown to a Guardian, never included in any shared summary, and stored separately from anything else."],
                 ["Can I get my data, or delete my account?", "Yes to both, anytime — Settings → Your Data has a full export, and Settings → Account Actions has account deletion. Deletion is permanent and requires confirmation."],
@@ -4853,6 +5298,7 @@ function GlowUpTracker() {
               ["reduced_motion", "Reduce animation"],
               ["high_contrast", "Higher contrast"],
               ["simple_mode", "Simpler, quieter layout"],
+              ["pattern_insights_enabled", "Show private mood and energy pattern suggestions"],
               ["colorblind_mode", "Colorblind-friendly colors"],
             ].map(([key, label]) => (
               <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontSize: 12.5, fontWeight: 700 }}>
@@ -4993,7 +5439,7 @@ function GlowUpTracker() {
             </div>
           )}
 
-          <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+          {SUPPORTER_FEATURES_ENABLED && <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#C9954A" }}>🌟 SUPPORTER STATUS {!SUPPORTER_FEATURES_ENABLED && <span style={{ fontWeight: 700, color: "#8C6B9E" }}>(gate is currently OFF for everyone)</span>}</div>
             <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>Manually grant or revoke Supporter status for an account — for comping testers or recording a payment before real billing exists.</div>
             <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
@@ -5002,7 +5448,7 @@ function GlowUpTracker() {
               <button type="button" onClick={() => setSupporterStatus(false)} style={{ padding: "8px 12px", borderRadius: 9, border: "1px solid #E8D4B6", background: "white", color: "#C9954A", fontWeight: 800, cursor: "pointer" }}>Revoke</button>
             </div>
             {supporterGrantMessage && <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>{supporterGrantMessage}</div>}
-          </div>
+          </div>}
 
           <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#5F8CC4" }}>🤖 GOOGLE PLAY REVIEW ACCOUNT</div>
@@ -5149,6 +5595,16 @@ function GlowUpTracker() {
                   WHY DOES THIS MATTER TO YOU? · OPTIONAL
                   <input value={newTaskWhy} onChange={(event) => setNewTaskWhy(event.target.value)} maxLength={300} placeholder="e.g. So I have energy for the people I love" aria-label="Why this task matters" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
                 </label>
+                <div style={{ padding: 11, borderRadius: 12, background: "#F4FBF8", border: "1px solid #CFE8E1" }}>
+                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#318C79" }}>VERSIONS FOR DIFFERENT KINDS OF DAYS · OPTIONAL</div>
+                  <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#6B7F78" }}>Keep the main name as the Full version. Add smaller versions so PlushLife can adapt without erasing the goal.</div>
+                  <input value={newTaskSoftLabel} onChange={(event) => setNewTaskSoftLabel(event.target.value)} maxLength={240} placeholder="Soft version — e.g. Take a quick shower" aria-label="Soft task version" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, padding: 9, borderRadius: 9, border: "1px solid #BFE5D2" }} />
+                  <input value={newTaskTinyLabel} onChange={(event) => setNewTaskTinyLabel(event.target.value)} maxLength={240} placeholder="Tiny version — e.g. Wash my face" aria-label="Tiny task version" style={{ width: "100%", boxSizing: "border-box", marginTop: 7, padding: 9, borderRadius: 9, border: "1px solid #BFE5D2" }} />
+                  <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr)", gap: 7, marginTop: 7, alignItems: "center" }}>
+                    <input type="number" min="1" max="1440" value={newTaskEstimatedMinutes} onChange={(event) => setNewTaskEstimatedMinutes(event.target.value)} placeholder="Minutes" aria-label="Estimated minutes" style={{ minWidth: 0, padding: 9, borderRadius: 9, border: "1px solid #BFE5D2" }} />
+                    <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 11.5, color: "#5E766F" }}><input type="checkbox" checked={newTaskEssentialOnLow} onChange={(event) => setNewTaskEssentialOnLow(event.target.checked)} /> Keep on Tiny and Recovery days</label>
+                  </div>
+                </div>
                 <label style={{ display: "grid", gap: 4, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
                   WHAT KIND OF TASK IS THIS?
                   <select value={newTaskKind} onChange={(event) => setNewTaskKind(event.target.value)} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
@@ -5287,6 +5743,21 @@ function GlowUpTracker() {
         {user && dashboard === "guardian" && (
           <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
+            {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (
+              <div style={{ marginBottom: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
+                <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>🫶 SUPPORT REQUESTS</div>
+                {guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").map((request) => (
+                  <div key={request.id} style={{ marginTop: 8, padding: 10, borderRadius: 11, background: "white", border: "1px solid #E3C9EC" }}>
+                    <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B" }}>{request.request_type.replace(/_/g, " ")}</div>
+                    {request.message && <div style={{ marginTop: 4, color: "#6B5A7D", fontSize: 12, lineHeight: 1.45 }}>{request.message}</div>}
+                    <div style={{ display: "flex", gap: 6, marginTop: 8 }}>
+                      {request.status === "open" && <button type="button" onClick={() => updateGuardianSupportRequest(request.id, "acknowledged")} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>I saw this</button>}
+                      <button type="button" onClick={() => updateGuardianSupportRequest(request.id, "resolved")} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>Mark resolved</button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
             {pendingSupportInvites.length > 0 && (
               <div style={{ marginBottom: 14, display: "grid", gap: 8 }}>
                 {pendingSupportInvites.map((invite) => {
@@ -5494,6 +5965,20 @@ function GlowUpTracker() {
                     );
                   })}
                 </div>
+                {ownedSupportLinks.some((link) => link.active && link.accepted_at) && (
+                  <div style={{ marginTop: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
+                    <div style={{ fontSize: 12, fontWeight: 900, color: "#A65DC1" }}>🫶 HELP ME SAY IT</div>
+                    <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Send a clear, consent-based request. This is not an emergency alert and never contacts anyone automatically.</div>
+                    <select value={supportRequestGuardian || ownedSupportLinks.find((link) => link.active && link.accepted_at)?.caregiver_email || ""} onChange={(event) => setSupportRequestGuardian(event.target.value)} aria-label="Choose Guardian for support request" style={{ width: "100%", boxSizing: "border-box", marginTop: 8, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC", background: "white" }}>
+                      {ownedSupportLinks.filter((link) => link.active && link.accepted_at).map((link) => <option key={link.id} value={link.caregiver_email}>{link.caregiver_email}</option>)}
+                    </select>
+                    <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 8 }}>
+                      {[["encouragement","Encouragement"],["company","Quiet company"],["practical_help","Practical help"],["space","Space"],["call","A call"],["body_double","Body-double"]].map(([value,label]) => <button key={value} type="button" onClick={() => setSupportRequestType(value)} aria-pressed={supportRequestType === value} style={{ padding: "6px 8px", borderRadius: 999, border: supportRequestType === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: supportRequestType === value ? "#F7ECFB" : "white", color: "#76558A", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{label}</button>)}
+                    </div>
+                    <textarea value={supportRequestText} onChange={(event) => setSupportRequestText(event.target.value)} maxLength={500} placeholder="Optional note — e.g. I'm safe, but I need quiet company instead of advice." aria-label="Support request note" style={{ width: "100%", boxSizing: "border-box", minHeight: 66, marginTop: 8, padding: 9, borderRadius: 9, border: "1px solid #E3C9EC", resize: "vertical" }} />
+                    <button type="button" onClick={sendGuardianSupportRequest} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Send support request</button>
+                  </div>
+                )}
                 {taskSuggestions.filter((item) => item.status === "pending").length > 0 && (
                   <div style={{ marginTop: 14 }}>
                     <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>TASK SUGGESTIONS · YOU DECIDE</div>
@@ -5778,9 +6263,14 @@ function GlowUpTracker() {
                 )}
                 {(() => {
               let lastSection = "";
+              const lowCapacityRows = rows.filter((r) => !r.isBonus && r.sourceTask?.essential_on_low_capacity);
               const visibleRows = dailyCheckIn.custom_essentials?.length
                 ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
-                : dailyCheckIn.soft_day ? rows.filter((r) => !r.isBonus) : rows;
+                : dailyCheckIn.day_type === "tiny" || dailyCheckIn.day_type === "recovery"
+                  ? (lowCapacityRows.length ? lowCapacityRows : rows.filter((r) => !r.isBonus).slice(0, 3))
+                  : dailyCheckIn.soft_day || dailyCheckIn.day_type === "soft"
+                    ? rows.filter((r) => !r.isBonus)
+                    : rows;
               const incompleteRows = visibleRows.filter((r) => !viewDone[r.key] || recentlyCompletedKeys.includes(r.key));
               const completedRows = visibleRows.filter((r) => viewDone[r.key] && !recentlyCompletedKeys.includes(r.key));
               const renderRow = (r) => {
@@ -5813,6 +6303,7 @@ function GlowUpTracker() {
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
                           {r.label}
+                          {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" || r.dayType === "recovery" ? "Tiny" : "Soft"} version of {r.originalLabel}</span>}
                         </span>
                         {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
                         {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
@@ -5972,6 +6463,16 @@ function GlowUpTracker() {
               <strong>📈 A gentle pattern:</strong> {weekdayPatternInsight}
             </div>
           )}
+          {wellbeingPatternInsight && (
+            <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#EAF8F4", border: "1px solid #BFE5D2", fontSize: 11.5, lineHeight: 1.5, color: "#526F67" }}>
+              <strong>🫶 A possible care pattern:</strong> {wellbeingPatternInsight.text}
+              <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
+                <button type="button" onClick={() => { setDashboard("routines"); setActive(wellbeingPatternInsight.dayId); setSelectedProgressDate(dateForDayId(wellbeingPatternInsight.dayId, period)); }} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Review that routine</button>
+                <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
+              </div>
+              <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
+            </div>
+          )}
           <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 10, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
           <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
             <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>FORGOT SOMETHING? CHOOSE A DAY TO CORRECT IT</div>
@@ -6020,19 +6521,24 @@ function GlowUpTracker() {
               const number = index + 1;
               const date = reflectionCalendarMonth + "-" + String(number).padStart(2, "0");
               const hasReflection = reflectionDateSet.has(date);
+              const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === date) || null;
+              const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
+              const moodEmoji = moodOption?.[1] || null;
               const isRestDay = restDatesSet.has(date);
               const isFutureDate = date > period.date;
               const isSelectedDate = date === selectedProgressDate;
               const pct = dayCompletionPct(date);
               const bg = isSelectedDate ? "#F4E8FA" : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
               const textColor = isFutureDate ? "#C7BBCF" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
-              return <button key={date} type="button" disabled={isFutureDate} title={isRestDay ? "Resting" : pct === null ? undefined : `${pct}% complete`} onClick={() => {
+              const calendarTitle = [isRestDay ? "Resting" : pct === null ? null : `${pct}% complete`, moodOption ? `Feeling ${moodOption[2]}` : null, checkIn?.energy ? `${checkIn.energy} energy` : null, checkIn?.day_type ? `${checkIn.day_type} day` : null].filter(Boolean).join(" · ");
+              return <button key={date} type="button" disabled={isFutureDate} title={calendarTitle || undefined} onClick={() => {
                 if (isFutureDate) return;
                 setSelectedProgressDate(date);
                 if (date === period.date) setActive("daily");
-                if (hasReflection) setReflectionViewerDate(date);
+                if (hasReflection && !checkIn) setReflectionViewerDate(date);
+                if (checkIn) setCheckInViewerDate(date);
               }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : "1px solid #E9DDEC", background: bg, color: textColor, fontWeight: 800, cursor: isFutureDate ? "not-allowed" : "pointer", opacity: isFutureDate ? 0.5 : 1 }}>
-                {isRestDay ? "🌴" : number}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
+                {isRestDay ? "🌴" : number}{moodEmoji && <span aria-label={`Feeling ${moodOption[2]}`} style={{ position: "absolute", left: 3, bottom: 1, fontSize: 11 }}>{moodEmoji}</span>}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
               </button>;
             })}
           </div>
@@ -6279,6 +6785,15 @@ function GlowUpTracker() {
                             WHY DOES THIS MATTER TO YOU? · OPTIONAL
                             <input value={editTaskDraft.why_note || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, why_note: event.target.value }))} maxLength={300} placeholder="e.g. So I have energy for the people I love" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #E3C9EC" }} />
                           </label>
+                          <div style={{ padding: 10, borderRadius: 11, background: "#F4FBF8", border: "1px solid #CFE8E1", display: "grid", gap: 7 }}>
+                            <div style={{ fontSize: 10.5, fontWeight: 900, color: "#318C79" }}>ADAPTIVE VERSIONS · OPTIONAL</div>
+                            <input value={editTaskDraft.soft_label || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, soft_label: event.target.value }))} maxLength={240} placeholder="Soft version" aria-label="Change soft task version" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #BFE5D2" }} />
+                            <input value={editTaskDraft.tiny_label || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, tiny_label: event.target.value }))} maxLength={240} placeholder="Tiny version" aria-label="Change tiny task version" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #BFE5D2" }} />
+                            <div style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) minmax(0,1.5fr)", gap: 7, alignItems: "center" }}>
+                              <input type="number" min="1" max="1440" value={editTaskDraft.estimated_minutes || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, estimated_minutes: event.target.value }))} placeholder="Minutes" aria-label="Change estimated minutes" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #BFE5D2" }} />
+                              <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 11.5 }}><input type="checkbox" checked={!!editTaskDraft.essential_on_low_capacity} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, essential_on_low_capacity: event.target.checked }))} /> Keep on Tiny and Recovery days</label>
+                            </div>
+                          </div>
                           <label style={{ display: "grid", gap: 3, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
                             TASK TYPE
                             <select value={editTaskDraft.habit_type || "regular"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, habit_type: event.target.value }))} aria-label="Change task kind" style={{ minWidth: 0, padding: 8, borderRadius: 8, border: "1px solid #E3C9EC", background: "white" }}>
