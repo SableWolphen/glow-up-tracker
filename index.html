@@ -508,7 +508,6 @@ const DASHBOARDS = [
   { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
-  { id: "more", label: "More", icon: "⋯", accent: "#318C79" },
 ];
 
 const CHECKIN_MOODS = [
@@ -5407,18 +5406,19 @@ function GlowUpTracker() {
             {signInMessage && <div style={{ marginTop: 8, fontSize: 12, color: "#8C6B9E" }}>{signInMessage}</div>}
           </div>
         )}
-        <div style={{ marginBottom: 18, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 12 }}>
-          <div>
+        <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
+          <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"}</div>
             <h1 style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
               {user ? personalPlushlistTitle : "Plushlist"} 💜
             </h1>
           </div>
-          {user && (
-            <button type="button" onClick={() => setCollectionOpen(true)} aria-label="Open mascot collection" title="Your mascot — tap to see the collection" style={{ border: 0, background: "transparent", cursor: "pointer", padding: 0, flexShrink: 0 }}>
-              <PlushMascot outfit={selectedOutfit} size={58} mood={mascotMood} />
+          {user && <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
+            <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", gap: 5, minHeight: 42, padding: "7px 10px", borderRadius: 12, border: "1px solid #E9C96E", background: "#FFFDF4", color: "#94600D", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>
+              <span aria-hidden="true" style={{ fontSize: 17 }}>🏅</span> Rewards
             </button>
-          )}
+            <button type="button" onClick={() => goToDashboard("more")} aria-label="Open more options" aria-pressed={dashboard === "more"} style={{ minWidth: 42, minHeight: 42, padding: 0, borderRadius: 12, border: dashboard === "more" ? "2px solid #318C79" : "1px solid #D6E7E1", background: dashboard === "more" ? "#EAF8F4" : "white", color: "#318C79", fontWeight: 900, fontSize: 18, cursor: "pointer" }}>•••</button>
+          </div>}
         </div>
 
         {user && !betaBannerDismissed && (
@@ -5538,7 +5538,6 @@ function GlowUpTracker() {
               </div>
             </div>}
 
-            <div style={{ padding: "11px 13px", borderRadius: 13, background: "#FFF7F9", border: "1px solid #F0B8C4", color: "#7F5660", fontSize: 11.5, lineHeight: 1.5 }}><strong>PlushLife is not emergency care.</strong> If you may hurt yourself or someone else, contact local emergency services or a trusted person who can be physically present. Care tools never replace professional support.</div>
           </div>
         )}
 
@@ -5546,9 +5545,6 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, display: "grid", gap: 8 }}>
             <button type="button" onClick={() => setSettingsOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #73B7A855", background: "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span style={{ fontSize: 18 }}>⚙️</span> Settings <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Accessibility, notifications, account ›</span>
-            </button>
-            <button type="button" onClick={() => setCollectionOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
-              <span style={{ fontSize: 18 }}>🏅</span> Rewards <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Mascot closet & badges ›</span>
             </button>
             <button type="button" onClick={() => setHelpOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span style={{ fontSize: 18 }}>❓</span> Help & FAQ <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>How this app works ›</span>
