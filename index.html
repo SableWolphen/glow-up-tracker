@@ -4296,7 +4296,7 @@ function GlowUpTracker() {
       )}
       {onboardingStep > 0 && (
         <div style={{ position: "fixed", inset: 0, zIndex: 50, display: "grid", placeItems: "center", padding: 18, background: "rgba(45,32,56,0.42)", backdropFilter: "blur(5px)" }}>
-          <div style={{ width: "min(100%, 480px)", padding: 22, borderRadius: 24, background: "#FFFDFE", border: "1px solid #E9D7F0", boxShadow: "0 24px 70px rgba(45,32,56,.25)" }}>
+          <div style={{ width: "min(100%, 480px)", maxHeight: "calc(100dvh - 36px)", overflowY: "auto", overscrollBehavior: "contain", padding: 22, borderRadius: 24, background: "#FFFDFE", border: "1px solid #E9D7F0", boxShadow: "0 24px 70px rgba(45,32,56,.25)" }}>
             <div style={{ fontSize: 11, color: "#A65DC1", fontWeight: 900, letterSpacing: ".14em" }}>WELCOME TO PLUSHLIST · {onboardingStep}/{onboardingTotalSteps}</div>
             {onboardingStep === 1 && <>
               <h2 style={{ margin: "8px 0 6px" }}>Make this your cozy space 💛</h2>
