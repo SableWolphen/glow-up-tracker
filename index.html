@@ -3367,6 +3367,22 @@ function GlowUpTracker() {
     }
   };
 
+  const deleteAllCheckIns = async () => {
+    if (!user) return;
+    if (!window.confirm("Permanently delete all your mood & energy check-in history? This can't be undone, but your tasks, routines, and account stay exactly as they are.")) return;
+    setSettingsMessage("Deleting your check-in history…");
+    const { error } = await supabase.from("daily_check_ins").delete().eq("user_id", user.id);
+    setSettingsMessage(error ? `Couldn't delete check-ins: ${error.message}` : "All mood & energy check-ins have been deleted.");
+  };
+
+  const deleteAllReflections = async () => {
+    if (!user) return;
+    if (!window.confirm("Permanently delete all your private reflections? This can't be undone, but your tasks, routines, and account stay exactly as they are.")) return;
+    setSettingsMessage("Deleting your reflections…");
+    const { error } = await supabase.from("private_notes").delete().eq("user_id", user.id);
+    setSettingsMessage(error ? `Couldn't delete reflections: ${error.message}` : "All private reflections have been deleted.");
+  };
+
   const requestEmailChange = async () => {
     if (!user) return;
     const nextEmail = emailChangeDraft.trim().toLowerCase();
@@ -5325,6 +5341,14 @@ function GlowUpTracker() {
               <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.45, color: "#4C7AA8" }}>No ads, no data brokers, no "anonymized insights" sold to anyone. Your habits, moods, and reflections are not a product.</div>
             </div>
             <button type="button" onClick={exportMyData} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
+            <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #D9ECFA" }}>
+              <div style={{ fontSize: 10.5, fontWeight: 800, color: "#4C8FE8" }}>DELETE SOME OF MY DATA</div>
+              <div style={{ marginTop: 3, fontSize: 10.5, color: "#8C6B9E" }}>These delete just that category — your account, tasks, and routines stay untouched.</div>
+              <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
+                <button type="button" onClick={deleteAllCheckIns} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E7C5CD", background: "transparent", color: "#A76676", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Delete all check-ins</button>
+                <button type="button" onClick={deleteAllReflections} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #E7C5CD", background: "transparent", color: "#A76676", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>Delete all reflections</button>
+              </div>
+            </div>
           </div>
 
           <div style={{ padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
