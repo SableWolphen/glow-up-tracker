@@ -2941,6 +2941,13 @@ function GlowUpTracker() {
         }
       } catch (_error) {}
     }
+    if (user && window.__plushlifeNativePushToken) {
+      // Same as above, for the native Android FCM registration - a shared Android
+      // device must not keep receiving this account's push after sign-out.
+      try {
+        await supabase.from("push_subscriptions").delete().eq("fcm_token", window.__plushlifeNativePushToken).eq("user_id", user.id);
+      } catch (_error) {}
+    }
     setUser(null);
     setDone({});
     setTrackerTasks([]);
