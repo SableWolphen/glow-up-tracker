@@ -1,89 +1,60 @@
 # Building the signed PlushLife Android release
 
-This can't run inside the Claude Code sandbox — there's no Android SDK there
-and no network path to Google's SDK servers. It runs in
-`.github/workflows/android-release.yml` instead, triggered manually from the
-GitHub Actions tab. This file explains the one-time setup and the keystore
-handling — read it before the first run.
+PlushLife builds with Java 21, Capacitor 8, Android compile/target SDK 36, and
+Gradle 8.14.3. The same signed bundle can be built locally or by the manual
+`.github/workflows/android-release.yml` workflow.
 
-## 1. Create the upload keystore (once, on your own machine)
+## Upload key
 
-```
-keytool -genkeypair -v \
-  -keystore plushlife-upload.keystore \
-  -alias plushlife-upload \
-  -keyalg RSA -keysize 2048 -validity 10000
-```
+The PlushLife upload key was generated on August 1, 2026 with alias
+`plushlife-upload`, RSA 4096, and a 10,000-day validity period.
 
-You'll be asked for a keystore password and a key password (they can be the
-same value or different — either is fine, just record both). This keystore
-**is your app's permanent identity on Google Play.** Losing it means you can
-never publish an update to `com.PlushLife` again under the same listing —
-Google cannot recover or reset it for you.
+The keystore and passwords must never be committed. The local copies live at:
 
-## 2. Store it somewhere durable, not in this repo
+- `%LOCALAPPDATA%\PlushLife\signing\plushlife-upload.keystore`
+- `%LOCALAPPDATA%\PlushLife\signing\release-secrets.dpapi`
 
-- Keep the `.keystore` file in a password manager's file storage, an
-  encrypted drive, or a private cloud folder you control — never in Git,
-  never in a Slack/email attachment.
-- Write down both passwords and the key alias somewhere alongside it.
-- Make at least one offline backup copy (a second encrypted drive, printed
-  recovery info, etc.). This is the single most unrecoverable secret in the
-  whole project.
+`release-secrets.dpapi` is encrypted to the current Windows account. Back up
+both files to secure storage. When Play App Signing is enabled, Google Play
+protects the app-signing key and has a separate recovery process for replacing
+a lost or compromised upload key.
 
-`.gitignore` already excludes `*.jks`, `*.keystore`, and `keystore.properties`
-repo-wide as a safety net, but the real protection is simply never putting
-the file in a folder that gets committed.
+## GitHub Actions secrets
 
-## 3. Add it to GitHub Actions as secrets (once)
+The repository has these encrypted Actions secrets:
 
-Repo → **Settings → Secrets and variables → Actions → New repository secret**,
-four secrets:
+- `ANDROID_KEYSTORE_BASE64`
+- `ANDROID_KEYSTORE_PASSWORD`
+- `ANDROID_KEY_ALIAS`
+- `ANDROID_KEY_PASSWORD`
 
-| Secret name | Value |
-|---|---|
-| `ANDROID_KEYSTORE_BASE64` | `base64 -i plushlife-upload.keystore` (macOS/Linux: `base64 -i file`, or `base64 -w0 file` on some Linux distros to avoid line wraps) |
-| `ANDROID_KEYSTORE_PASSWORD` | the keystore password from step 1 |
-| `ANDROID_KEY_ALIAS` | `plushlife-upload` (or whatever alias you chose) |
-| `ANDROID_KEY_PASSWORD` | the key password from step 1 |
+They are exposed only to the manual release workflow. The decoded CI keystore
+is deleted after every run, including failed runs.
 
-These are encrypted at rest by GitHub, only exposed to workflow runs as
-environment variables, and never appear in logs (GitHub automatically
-redacts secret values that show up in step output).
+## Run a release build
 
-## 4. Run the build
+Open **Actions → Build signed Android App Bundle → Run workflow** and provide:
 
-Repo → **Actions → Build signed Android App Bundle → Run workflow**. It asks
-for two inputs:
+- `versionCode`: a positive integer higher than every previous Play release.
+- `versionName`: the user-visible version, such as `1.0.0`.
 
-- **versionCode** — a plain increasing integer (1, 2, 3, …). Google Play
-  rejects any upload whose versionCode isn't higher than what's already
-  live, so bump this every release.
-- **versionName** — the human-readable version string shown to users, e.g.
-  `1.0.0`.
+The workflow installs Android API 36, builds and signs the AAB, validates it
+with Google's `bundletool`, verifies `targetSdkVersion=36`, checks the signing
+certificate owner, and uploads the AAB as a workflow artifact. It does not
+publish to Google Play automatically.
 
-The workflow builds `www/` from the current repo state (same as
-`scripts/sync-www.js` does locally), syncs it into the Android project,
-decodes the keystore into a throwaway file that only exists for the duration
-of the job, signs the release bundle with it, deletes that decoded file
-immediately after (even if the build fails), and uploads the resulting
-`app-release.aab` as a downloadable workflow artifact.
+## Notifications
 
-**It does not publish anything.** Download the artifact from the completed
-run and upload it to Play Console yourself.
+The Android app requests the Android 13+ notification permission, creates the
+`plushlife-care` channel, registers a Firebase Cloud Messaging token, and saves
+that token to the signed-in user's RLS-protected `push_subscriptions` row.
 
-## What never gets committed
+Native delivery also requires a Firebase Android app registered for package
+`com.PlushLife`, its `google-services.json` in `android/app/`, and server-side
+FCM credentials stored as Supabase Edge Function secrets. Never put a Firebase
+service-account private key in this repository or in browser-delivered code.
 
-- The keystore file itself
-- Its passwords
-- The key alias's password
-- Any decoded/temporary copy of the above (the workflow cleans this up as
-  its own last step, `if: always()`, so it runs even on build failure)
+## Local development
 
-## Local development builds
-
-`./gradlew assembleDebug` (or opening `android/` in Android Studio) doesn't
-need any of the above — Android's own auto-generated debug keystore handles
-that, and the `signingConfigs.release` block in `android/app/build.gradle`
-only activates when the four `PLUSHLIFE_*` environment variables are present,
-which they only are inside the CI workflow.
+Debug builds use Android's generated debug keystore. Release signing activates
+only when the four `PLUSHLIFE_*` environment variables are present.

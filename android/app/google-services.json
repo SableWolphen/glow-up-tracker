@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "418293046233",
+    "project_id": "plushlife-f7f0a",
+    "storage_bucket": "plushlife-f7f0a.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:418293046233:android:5af23c9547db7b672a97c8",
+        "android_client_info": {
+          "package_name": "com.PlushLife"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyB60B-4tB1FVfFwdMRC6EvuECz0H28NFvg"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
