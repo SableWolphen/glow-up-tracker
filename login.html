@@ -80,6 +80,12 @@
     <button id="verify" class="secondary" type="button">Sign in</button>
 
     <div id="message" role="status"></div>
+    <a class="back" href="#" id="togglePassword">Have a password instead?</a>
+    <div id="passwordSection" style="display:none">
+      <label for="password">Password</label>
+      <input id="password" type="password" autocomplete="current-password" placeholder="Your password">
+      <button id="passwordSignIn" class="secondary" type="button">Sign in with password</button>
+    </div>
     <a class="back" href="./">Back to Plushlist</a>
     <div class="legal">
       <div>© 2026 Alexander K. Johnston · Plushlist™ · All rights reserved.</div>
@@ -149,6 +155,42 @@
       if (error) {
         verify.disabled = false;
         message.textContent = "That code didn't work or expired. Please send a fresh one.";
+        return;
+      }
+      message.textContent = "Signed in! Opening your tracker…";
+      window.location.replace("./");
+    });
+
+    const togglePassword = document.getElementById("togglePassword");
+    const passwordSection = document.getElementById("passwordSection");
+    const password = document.getElementById("password");
+    const passwordSignIn = document.getElementById("passwordSignIn");
+
+    togglePassword.addEventListener("click", (event) => {
+      event.preventDefault();
+      const showing = passwordSection.style.display !== "none";
+      passwordSection.style.display = showing ? "none" : "block";
+      togglePassword.textContent = showing ? "Have a password instead?" : "Use the emailed code instead";
+    });
+
+    passwordSignIn.addEventListener("click", async () => {
+      const address = email.value.trim();
+      if (!address || !address.includes("@")) {
+        message.textContent = "Please enter your email address first.";
+        email.focus();
+        return;
+      }
+      if (!password.value) {
+        message.textContent = "Please enter your password.";
+        password.focus();
+        return;
+      }
+      passwordSignIn.disabled = true;
+      message.textContent = "Signing you in…";
+      const { error } = await client.auth.signInWithPassword({ email: address, password: password.value });
+      passwordSignIn.disabled = false;
+      if (error) {
+        message.textContent = "That email or password didn't work.";
         return;
       }
       message.textContent = "Signed in! Opening your tracker…";
