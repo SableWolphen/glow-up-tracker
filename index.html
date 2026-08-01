@@ -70,11 +70,25 @@
   // up yet. The app-source script picks up window.__plushlifeNativePushToken
   // once a user is signed in and upserts it into push_subscriptions.
   if (Plugins.PushNotifications) {
+    Plugins.PushNotifications.createChannel({
+      id: "plushlife-care",
+      name: "PlushLife care reminders",
+      description: "Gentle check-ins and Guardian support chosen in PlushLife",
+      importance: 3,
+      visibility: 1,
+      vibration: true,
+    }).catch(function () {});
     Plugins.PushNotifications.addListener("registration", function (token) {
       window.__plushlifeNativePushToken = token && token.value;
       document.dispatchEvent(new CustomEvent("plushlife-native-push-token"));
     });
     Plugins.PushNotifications.addListener("registrationError", function () {});
+    Plugins.PushNotifications.addListener("pushNotificationActionPerformed", function (event) {
+      var target = event && event.notification && event.notification.data && event.notification.data.url;
+      if (typeof target === "string" && /^https:\/\/sablewolphen\.github\.io\/plushlist\/?/.test(target)) {
+        window.location.href = target;
+      }
+    });
   }
 })();
 </script>
