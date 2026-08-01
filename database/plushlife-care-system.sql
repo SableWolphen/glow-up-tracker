@@ -121,21 +121,38 @@ grant select, insert, delete on public.guardian_support_requests to authenticate
 grant update(status, resolved_at) on public.guardian_support_requests to authenticated;
 
 drop policy if exists "Owners manage their support requests" on public.guardian_support_requests;
-create policy "Owners manage their support requests"
-  on public.guardian_support_requests for all to authenticated
-  using ((select auth.uid()) = owner_user_id)
+drop policy if exists "Guardians read requests addressed to them" on public.guardian_support_requests;
+drop policy if exists "Guardians update requests addressed to them" on public.guardian_support_requests;
+
+drop policy if exists "Owners create their support requests" on public.guardian_support_requests;
+create policy "Owners create their support requests"
+  on public.guardian_support_requests for insert to authenticated
   with check ((select auth.uid()) = owner_user_id);
 
-drop policy if exists "Guardians read requests addressed to them" on public.guardian_support_requests;
-create policy "Guardians read requests addressed to them"
-  on public.guardian_support_requests for select to authenticated
-  using (lower(caregiver_email) = lower((select auth.jwt() ->> 'email')));
+drop policy if exists "Owners delete their support requests" on public.guardian_support_requests;
+create policy "Owners delete their support requests"
+  on public.guardian_support_requests for delete to authenticated
+  using ((select auth.uid()) = owner_user_id);
 
-drop policy if exists "Guardians update requests addressed to them" on public.guardian_support_requests;
-create policy "Guardians update requests addressed to them"
+drop policy if exists "Owners and addressed Guardians read support requests" on public.guardian_support_requests;
+create policy "Owners and addressed Guardians read support requests"
+  on public.guardian_support_requests for select to authenticated
+  using (
+    (select auth.uid()) = owner_user_id
+    or lower(caregiver_email) = lower((select auth.jwt()) ->> 'email')
+  );
+
+drop policy if exists "Owners and addressed Guardians update support requests" on public.guardian_support_requests;
+create policy "Owners and addressed Guardians update support requests"
   on public.guardian_support_requests for update to authenticated
-  using (lower(caregiver_email) = lower((select auth.jwt() ->> 'email')))
-  with check (lower(caregiver_email) = lower((select auth.jwt() ->> 'email')));
+  using (
+    (select auth.uid()) = owner_user_id
+    or lower(caregiver_email) = lower((select auth.jwt()) ->> 'email')
+  )
+  with check (
+    (select auth.uid()) = owner_user_id
+    or lower(caregiver_email) = lower((select auth.jwt()) ->> 'email')
+  );
 
 comment on table public.care_session_logs is 'Private records of PlushCare and PlushSleep sessions and user-reported outcomes.';
 comment on table public.plush_path_progress is 'Private progress through the free guided PlushPaths.';
