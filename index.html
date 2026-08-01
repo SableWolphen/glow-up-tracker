@@ -507,7 +507,7 @@ const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
   { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
-  { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
+  { id: "more", label: "More", icon: "•••", accent: "#8D5CA5" },
 ];
 
 const CHECKIN_MOODS = [
@@ -5414,10 +5414,9 @@ function GlowUpTracker() {
             </h1>
           </div>
           {user && <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", gap: 5, minHeight: 42, padding: "7px 10px", borderRadius: 12, border: "1px solid #E9C96E", background: "#FFFDF4", color: "#94600D", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>
-              <span aria-hidden="true" style={{ fontSize: 17 }}>🏅</span> Rewards
+            <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
+              <PlushMascot outfit={selectedOutfit} size={46} mood="happy" />
             </button>
-            <button type="button" onClick={() => goToDashboard("more")} aria-label="Open more options" aria-pressed={dashboard === "more"} style={{ minWidth: 42, minHeight: 42, padding: 0, borderRadius: 12, border: dashboard === "more" ? "2px solid #318C79" : "1px solid #D6E7E1", background: dashboard === "more" ? "#EAF8F4" : "white", color: "#318C79", fontWeight: 900, fontSize: 18, cursor: "pointer" }}>•••</button>
           </div>}
         </div>
 
@@ -5458,7 +5457,7 @@ function GlowUpTracker() {
               const on = item.id === dashboard;
               return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
                 <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
-                {item.id === "guardian" && unreadNoteCount > 0 && (
+                {item.id === "more" && unreadNoteCount > 0 && (
                   <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
                 )}
               </button>;
@@ -5543,6 +5542,11 @@ function GlowUpTracker() {
 
         {dashboard === "more" && (
           <div style={{ marginBottom: 18, display: "grid", gap: 8 }}>
+            <button type="button" onClick={() => goToDashboard("guardian")} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #4C8FE855", background: "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span style={{ fontSize: 18 }}>💛</span> Guardian
+              {unreadNoteCount > 0 && <span aria-label={`${unreadNoteCount} unread notes`} style={{ minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>}
+              <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Support connections and notes ›</span>
+            </button>
             <button type="button" onClick={() => setSettingsOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #73B7A855", background: "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span style={{ fontSize: 18 }}>⚙️</span> Settings <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Accessibility, notifications, account ›</span>
             </button>
@@ -6359,7 +6363,7 @@ function GlowUpTracker() {
         )}
 
         {user && dashboard === "guardian" && (
-          <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
+          <ToolPanel inline title="Guardian" onClose={() => setDashboard("more")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
             {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (
               <div style={{ marginBottom: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
