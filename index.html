@@ -597,6 +597,9 @@ const PLUSH_PATHS = [
   { id: "back_on_track", icon: "🌱", title: "Getting Back on Track", description: "Seven forgiving days for returning after routines slipped away.", days: ["Open PlushLife and check in", "Choose three essentials", "Use one Tiny task", "Make one task easier", "Take a planned rest", "Notice what helped", "Build next week's gentle version"] },
   { id: "morning_reset", icon: "🌤️", title: "Gentle Morning Reset", description: "A seven-day path toward mornings with less friction.", days: ["Drink something", "Open the curtains", "Choose tomorrow's first step", "Try a Tiny hygiene task", "Add one pleasant cue", "Remove one morning obstacle", "Save your new morning routine"] },
   { id: "sleep_foundations", icon: "🌙", title: "Better Sleep Foundations", description: "Seven practical wind-down experiments without perfection pressure.", days: ["Pick a wind-down time", "Dim one source of light", "Move the phone farther away", "Prepare one thing for morning", "Try a quiet body reset", "Notice what helped", "Save your preferred bedtime routine"] },
+  { id: "small_sips", icon: "💧", title: "Small Sips, Steady Days", description: "Seven days of noticing water and energy without any tracking pressure.", days: ["Keep water somewhere you'll actually see it", "Drink one glass before a screen turns on", "Pair a sip with an existing habit", "Notice one moment you felt foggy", "Try water before reaching for caffeine", "Take a Tiny check-in on how you feel", "Keep whatever worked, drop the rest"] },
+  { id: "gentle_movement", icon: "🚶", title: "Move a Little, Feel a Little Better", description: "Seven days of movement sized to however much energy you actually have.", days: ["Stand up and stretch once", "Take a two-minute walk, indoors is fine", "Move to different music for one song", "Try a seated stretch if energy is low", "Step outside for any length of time", "Notice how your body feels afterward", "Choose one movement to keep doing"] },
+  { id: "softer_self_talk", icon: "💬", title: "Softer Self-Talk", description: "Seven days of noticing your inner voice and offering it one kinder option.", days: ["Notice one harsh thought without acting on it", "Say one thing you did today, plainly", "Replace one 'should' with 'could'", "Talk to yourself like you would a friend", "Write down one thing that went okay", "Forgive one missed task out loud", "Keep one phrase that felt kind"] },
 ];
 
 const SLEEP_TOOLS = [
@@ -618,6 +621,11 @@ function trackerPeriod(now = new Date()) {
 
 function dayIdForDate(date) {
   return WEEKDAY_IDS[new Date(`${date}T12:00:00Z`).getUTCDay()];
+}
+
+function pathOfTheWeekId(weekStart) {
+  const weekIndex = Math.floor(new Date(`${weekStart}T12:00:00Z`).getTime() / (7 * 24 * 60 * 60 * 1000));
+  return PLUSH_PATHS[((weekIndex % PLUSH_PATHS.length) + PLUSH_PATHS.length) % PLUSH_PATHS.length].id;
 }
 
 function dateForDayId(dayId, period) {
@@ -5517,16 +5525,22 @@ function GlowUpTracker() {
 
             {careSection === "paths" && <div style={{ padding: 17, borderRadius: 20, background: "#FFFDF4D9", border: "1px solid #E9C96E" }}>
               <div style={{ fontSize: 11, letterSpacing: ".14em", fontWeight: 900, color: "#A56D14" }}>🗺️ PLUSHPATHS</div>
-              <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Guided programs that move at your pace. Pause, repeat, or leave any time.</div>
+              <div style={{ marginTop: 5, fontSize: 12, color: "#7B6888" }}>Guided programs that move at your pace. Pause, repeat, or leave any time. One is featured each week — try it, or pick any other.</div>
               <div style={{ display: "grid", gap: 9, marginTop: 11 }}>
-                {PLUSH_PATHS.map((path) => {
+                {(() => {
+                  const featuredId = pathOfTheWeekId(period.weekStart);
+                  const ordered = [...PLUSH_PATHS].sort((a, b) => (a.id === featuredId ? -1 : b.id === featuredId ? 1 : 0));
+                  return ordered.map((path) => {
                   const progress = pathProgress.find((item) => item.path_id === path.id);
                   const completedCount = progress?.completed_days?.length || 0;
-                  return <button key={path.id} type="button" onClick={() => setSelectedCarePath(path.id)} style={{ width: "100%", padding: "12px", borderRadius: 13, border: "1px solid #F0D99E", background: "#FFFFFFD9", textAlign: "left", cursor: "pointer" }}>
+                  const featured = path.id === featuredId;
+                  return <button key={path.id} type="button" onClick={() => setSelectedCarePath(path.id)} style={{ width: "100%", padding: "12px", borderRadius: 13, border: featured ? "2px solid #D4A017" : "1px solid #F0D99E", background: "#FFFFFFD9", textAlign: "left", cursor: "pointer" }}>
+                    {featured && <div style={{ marginBottom: 6, fontSize: 10.5, fontWeight: 900, letterSpacing: ".1em", color: "#A56D14" }}>🌟 FEATURED THIS WEEK</div>}
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ fontSize: 24 }}>{path.icon}</span><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 900, color: "#5B4B6B", fontSize: 13.5 }}>{path.title}</div><div style={{ marginTop: 2, color: "#8C6B9E", fontSize: 11.5, lineHeight: 1.4 }}>{path.description}</div></div><span style={{ fontSize: 11, fontWeight: 900, color: "#A56D14" }}>{completedCount}/{path.days.length}</span></div>
                     <div style={{ height: 6, marginTop: 9, borderRadius: 4, overflow: "hidden", background: "#F7EDCF" }}><div style={{ width: `${Math.round((completedCount / path.days.length) * 100)}%`, height: "100%", background: "#D4A017" }} /></div>
                   </button>;
-                })}
+                  });
+                })()}
               </div>
             </div>}
 
