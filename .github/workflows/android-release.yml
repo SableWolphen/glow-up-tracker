@@ -1,8 +1,12 @@
 name: Build signed Android App Bundle
 
-# Manual only — this never runs on a push, and never publishes to Play
-# Console. It builds app-release.aab and uploads it as a workflow artifact
-# for you to download and upload yourself.
+# Manual only — this never runs on a push. It builds app-release.aab and
+# always uploads it as a workflow artifact for you to download yourself.
+#
+# It will ALSO publish straight to Google Play if (and only if) the
+# PLAY_SERVICE_ACCOUNT_JSON secret is set — see docs/google-play-auto-publish.md
+# for how to create that service account. Without the secret, this workflow
+# behaves exactly as before: a downloadable .aab and nothing else.
 on:
   workflow_dispatch:
     inputs:
@@ -14,6 +18,16 @@ on:
         description: "Android versionName (e.g. 1.0.0)"
         required: true
         type: string
+      track:
+        description: "Google Play track to publish to (only used if PLAY_SERVICE_ACCOUNT_JSON is set)"
+        required: true
+        type: choice
+        default: internal
+        options:
+          - internal
+          - alpha
+          - beta
+          - production
 
 jobs:
   build:
@@ -91,3 +105,13 @@ jobs:
           name: app-release-${{ inputs.versionCode }}
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
+
+      - name: Publish to Google Play
+        if: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON != '' }}
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.PlushLife
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: ${{ inputs.track }}
+          status: completed
