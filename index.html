@@ -352,7 +352,6 @@ const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
   { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
-  { id: "routines", label: "Routines", icon: "✨", accent: "#FF7A94" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
   { id: "more", label: "More", icon: "⋯", accent: "#318C79" },
@@ -925,7 +924,7 @@ function ToolPanel({ title, onClose, children, inline = false }) {
 }
 
 function GlowUpTracker() {
-  const [active, setActive] = useState("daily");
+  const [active, setActive] = useState(() => dayIdForDate(trackerPeriod().date));
   const [dashboard, setDashboard] = useState("today");
   const swipeStartX = React.useRef(null);
   const swipeStartY = React.useRef(null);
@@ -1102,7 +1101,7 @@ function GlowUpTracker() {
     if (!view) return;
     if (view === "today") setDashboard("today");
     else if (view === "week") setDashboard("week");
-    else if (view === "tasks") { setDashboard("routines"); setManageTasks(true); }
+    else if (view === "tasks") { setDashboard("today"); setActive(dayIdForDate(period.date)); setNewTaskDay(dayIdForDate(period.date)); setTodayCardIndex(1); setManageTasks(true); }
     else if (view === "care") setDashboard("care");
     else if (view === "progress") setDashboard("progress");
     window.history.replaceState(null, "", window.location.pathname);
@@ -2229,12 +2228,10 @@ function GlowUpTracker() {
 
   const goWriteWeeklyIntention = () => {
     setWeeklyKickoffOpen(false);
-    setDashboard("routines");
-    setActive("sun");
+    setDashboard("today");
+    setActive(dayIdForDate(period.date));
     setSelectedProgressDate(period.date);
-    window.setTimeout(() => {
-      document.getElementById("private-reflection-card")?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 80);
+    setWeeklyIntentionEditing(true);
   };
 
   const saveWeeklyKickoffFeeling = async (feeling) => {
@@ -2322,16 +2319,19 @@ function GlowUpTracker() {
   const newTaskSectionOptions = taskSectionsForDay(newTaskDay);
   const editTaskSectionOptions = editTaskDraft ? taskSectionsForDay(editTaskDraft.day_id) : [];
 
-  useEffect(() => {
-    // Defaults to "Every day" whenever the add/change tasks panel opens, so a task
-    // never gets silently filed under whichever weekday tab happened to be open.
-    // People can still pick a specific day from the selector before saving.
-    if (!manageTasks) return;
-    const nextSections = taskSectionsForDay("daily");
-    setNewTaskDay("daily");
+  const openTaskManager = (dayId = dayIdForDate(period.date)) => {
+    const nextSections = taskSectionsForDay(dayId);
+    setNewTaskDay(dayId);
     setNewTaskSection(nextSections[0] || "My tasks");
     setNewTaskCustomSection("");
     setTaskAdvancedOpen(false);
+    setManageTasks(true);
+  };
+
+  useEffect(() => {
+    if (!manageTasks) return;
+    const nextSections = taskSectionsForDay(newTaskDay);
+    setNewTaskSection((current) => current === "__custom__" || nextSections.includes(current) ? current : (nextSections[0] || "My tasks"));
   }, [manageTasks]);
 
   useEffect(() => {
@@ -3538,10 +3538,9 @@ function GlowUpTracker() {
     : done;
 
   useEffect(() => {
-    if (dashboard !== "routines") return;
-    const date = routineDateOverride || period.date;
-    setActive(dayIdForDate(date));
-    setSelectedProgressDate(date);
+    if (dashboard !== "today") return;
+    setActive(dayIdForDate(period.date));
+    setSelectedProgressDate(period.date);
     setRoutineDateOverride(null);
   }, [dashboard, period.date]);
 
@@ -4151,7 +4150,7 @@ function GlowUpTracker() {
   const goToDashboard = (id) => {
     setDashboard(id);
     if (id === "today") {
-      setActive("daily");
+      setActive(dayIdForDate(period.date));
       setSelectedProgressDate(period.date);
     }
     if (id === "guardian") {
@@ -5000,28 +4999,6 @@ function GlowUpTracker() {
         </div>
         <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>Swipe or tap to change sections</div>
 
-        {/* Routine tabs */}
-        {dashboard === "routines" && <>
-          <div role="tablist" aria-label="Planner dashboards" style={{ display: "flex", gap: 6, marginBottom: 8, flexWrap: "wrap" }}>
-            {ALL.map((d) => {
-              const on = d.id === active;
-              return (
-                <button key={d.id} role="tab" aria-selected={on} onClick={() => { setActive(d.id); setSelectedProgressDate(dateForDayId(d.id, period)); }}
-                  style={{ flex: "1 1 10%", padding: "9px 4px", borderRadius: 12,
-                    border: on ? `2px solid ${d.accent}` : "2px solid #F3D9EC",
-                    background: on ? `${d.accent}22` : "#FFFFFF",
-                    color: on ? d.accent : "#B08AC7", fontWeight: 700, fontSize: 10.5,
-                    letterSpacing: "0.05em", cursor: "pointer" }}>
-                  {d.label}
-                </button>
-              );
-            })}
-          </div>
-          <div aria-live="polite" style={{ margin: "0 2px 18px", color: "#8C6B9E", fontSize: 11.5, textAlign: "center" }}>
-            ← Swipe this routine card to change days · or tap a day
-          </div>
-        </>}
-
         {dashboard === "today" && (
           <div style={{ display: "flex", justifyContent: "flex-end", margin: "-10px 0 14px" }}>
             <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ display: "flex", alignItems: "center", gap: 6, padding: "7px 10px", borderRadius: 9, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>
@@ -5050,7 +5027,7 @@ function GlowUpTracker() {
             </div>
 
             <div role="tablist" aria-label="Care library" style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 7, padding: 6, borderRadius: 15, background: "#FFFFFF99", border: "1px solid #E6D4F2" }}>
-              {[["quick", "🌿", "Quick Care"], ["paths", "🗺️", "Paths"], ["sleep", "🌙", "Sleep"]].map(([value, icon, label]) => (
+              {[["quick", "🌿", "PlushCare"], ["paths", "🗺️", "PlushPath"], ["sleep", "🌙", "PlushSleep"]].map(([value, icon, label]) => (
                 <button key={value} type="button" role="tab" aria-selected={careSection === value} onClick={() => setCareSection(value)} style={{ minWidth: 0, padding: "9px 6px", borderRadius: 11, border: careSection === value ? "2px solid #A65DC1" : "1px solid transparent", background: careSection === value ? "#F7ECFB" : "transparent", color: careSection === value ? "#75428C" : "#7B6888", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{icon} {label}</button>
               ))}
             </div>
@@ -6279,7 +6256,7 @@ function GlowUpTracker() {
         <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
           <button type="button" aria-label="Previous card" onClick={() => setTodayCardIndex((index) => index === 0 ? 1 : 0)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setTodayCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 0 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 0 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Schedule</button>
-          <button type="button" onClick={() => setTodayCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 1 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 1 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✅ Tasks</button>
+          <button type="button" onClick={() => setTodayCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: todayCardIndex === 1 ? `2px solid ${day.accent}` : "1px solid #F3D9EC", background: todayCardIndex === 1 ? `${day.accent}22` : "#FFFFFFAA", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✅ Today’s Tasks</button>
           <button type="button" aria-label="Next card" onClick={() => setTodayCardIndex((index) => index === 1 ? 0 : 1)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #F3D9EC", background: "#FFFFFFAA", color: day.accent, fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
@@ -6345,9 +6322,12 @@ function GlowUpTracker() {
 
         {todayCardIndex === 1 && rows.length > 0 && (
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "baseline", marginBottom: 4 }}>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{dailyCheckIn.day_type === "rest" ? "REST DAY" : isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
-              <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{dailyCheckIn.day_type === "rest" ? "NO TASKS REQUIRED" : `${pct}% · ${requiredDoneCount}/${requiredRows.length}`}</span>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, flexWrap: "wrap" }}>
+                <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{dailyCheckIn.day_type === "rest" ? "NO TASKS REQUIRED" : `${pct}% · ${requiredDoneCount}/${requiredRows.length}`}</span>
+                {!isHistoricalView && <button type="button" onClick={() => openTaskManager(dayIdForDate(period.date))} style={{ padding: "6px 9px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>✏️ Edit tasks</button>}
+              </div>
             </div>
             {dailyCheckIn.day_type !== "rest" && <div style={{ height: 12, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "10px 0 14px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
@@ -6496,7 +6476,8 @@ function GlowUpTracker() {
         )}
         {todayCardIndex === 1 && rows.length === 0 && (
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px dashed #C9B3DC", textAlign: "center", color: "#8C6B9E", fontSize: 12.5 }}>
-            No tasks for this day yet. Add some from the Routines tab. 🧸
+            <div>No tasks for today yet. Build a list that fits your day. 🧸</div>
+            <button type="button" onClick={() => openTaskManager(dayIdForDate(period.date))} style={{ marginTop: 10, padding: "8px 12px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>＋ Add today’s tasks</button>
           </div>
         )}
         </div>
@@ -6614,7 +6595,7 @@ function GlowUpTracker() {
             <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#EAF8F4", border: "1px solid #BFE5D2", fontSize: 11.5, lineHeight: 1.5, color: "#526F67" }}>
               <strong>♥ A possible care pattern:</strong> {wellbeingPatternInsight.text}
               <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => { setDashboard("routines"); setActive(wellbeingPatternInsight.dayId); setSelectedProgressDate(dateForDayId(wellbeingPatternInsight.dayId, period)); }} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Review that routine</button>
+                <button type="button" onClick={() => openTaskManager(wellbeingPatternInsight.dayId)} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Edit that day’s tasks</button>
                 <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
               </div>
               <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
