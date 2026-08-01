@@ -1,5 +1,6 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
+    <string name="widget_description">Your next gentle PlushLife step</string>
     <string name="app_name">PlushLife</string>
     <string name="title_activity_main">PlushLife</string>
     <string name="package_name">com.PlushLife</string>
