@@ -366,6 +366,23 @@ const CHECKIN_MOODS = [
 
 const PRIMARY_CHECKIN_MOODS = ["happy", "okay", "tired", "anxious", "sad", "overwhelmed"];
 
+const MOOD_DAY_GUESSES = {
+  happy: { capacity: "high", energy: "high", day_type: "full" },
+  calm: { capacity: "usual", energy: "steady", day_type: "full" },
+  okay: { capacity: "usual", energy: "steady", day_type: "full" },
+  tired: { capacity: "low", energy: "low", day_type: "soft" },
+  stressed: { capacity: "low", energy: "steady", day_type: "soft" },
+  anxious: { capacity: "low", energy: "steady", day_type: "soft" },
+  sad: { capacity: "very_low", energy: "low", day_type: "tiny" },
+  angry: { capacity: "low", energy: "high", day_type: "soft" },
+  lonely: { capacity: "low", energy: "low", day_type: "soft" },
+  overwhelmed: { capacity: "very_low", energy: "empty", day_type: "tiny" },
+  numb: { capacity: "very_low", energy: "empty", day_type: "tiny" },
+  sick: { capacity: "very_low", energy: "empty", day_type: "tiny" },
+};
+
+const CAPACITY_LABELS = { very_low: "Very low", low: "Low", usual: "Usual", high: "High" };
+
 const ENERGY_LEVELS = [
   ["empty", "○", "Empty"], ["low", "🌙", "Low"], ["steady", "🌤️", "Steady"], ["high", "⚡", "High"],
 ];
@@ -2238,12 +2255,14 @@ function GlowUpTracker() {
     setWeeklyIntentionEditing(true);
   };
 
-  const selectCapacity = async (value) => {
-    const dayType = value === "very_low" ? "tiny" : value === "low" ? "soft" : "full";
+  const selectCheckInMood = async (value) => {
+    const guess = MOOD_DAY_GUESSES[value] || MOOD_DAY_GUESSES.okay;
     await saveDailyCheckIn({
-      capacity: value,
-      day_type: dayType,
-      soft_day: dayType === "soft" || dayType === "tiny",
+      mood: value,
+      capacity: guess.capacity,
+      energy: guess.energy,
+      day_type: guess.day_type,
+      soft_day: guess.day_type === "soft" || guess.day_type === "tiny",
     });
   };
 
@@ -4549,33 +4568,19 @@ function GlowUpTracker() {
               <button type="button" onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} aria-label="Close" style={{ padding: "4px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>✕</button>
             </div>
             <div style={{ marginTop: 14, display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>1 · HOW DO YOU FEEL? <span style={{ opacity: 0.7 }}>OPTIONAL</span></div>
+              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>HOW DO YOU FEEL?</div>
               <button type="button" onClick={() => setCheckInMoreMoodsOpen((open) => !open)} style={{ padding: "4px 8px", borderRadius: 999, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{checkInMoreMoodsOpen ? "Fewer" : "More feelings"}</button>
             </div>
             <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 6, marginTop: 7 }}>
-              {CHECKIN_MOODS.filter(([value]) => checkInMoreMoodsOpen || PRIMARY_CHECKIN_MOODS.includes(value)).map(([value, emoji, label]) => (
-                <button key={value} type="button" onClick={() => saveDailyCheckIn({ mood: value })} aria-pressed={dailyCheckIn.mood === value} style={{ padding: "7px 4px", borderRadius: 11, border: dailyCheckIn.mood === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.mood === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
+              {CHECKIN_MOODS.filter(([value]) => checkInMoreMoodsOpen || PRIMARY_CHECKIN_MOODS.includes(value) || dailyCheckIn.mood === value).map(([value, emoji, label]) => (
+                <button key={value} type="button" onClick={() => selectCheckInMood(value)} aria-pressed={dailyCheckIn.mood === value} style={{ padding: "9px 4px", borderRadius: 11, border: dailyCheckIn.mood === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.mood === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
                   <div style={{ fontSize: 18 }}>{emoji}</div><div style={{ marginTop: 2, fontSize: 10, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
                 </button>
               ))}
             </div>
-            <div style={{ marginTop: 13, fontSize: 10.5, letterSpacing: "0.12em", color: "#8E4EAA", fontWeight: 900 }}>2 · WHAT CAN YOU HANDLE TODAY?</div>
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(4, 1fr)", gap: 7, marginTop: 7 }}>
-              {[
-                ["very_low", "😞", "Very low"],
-                ["low", "😕", "Low"],
-                ["usual", "🙂", "Usual"],
-                ["high", "💪", "High"],
-              ].map(([value, emoji, label]) => (
-                <button key={value} type="button" onClick={() => selectCapacity(value)} aria-pressed={dailyCheckIn.capacity === value} style={{ padding: "10px 5px", borderRadius: 12, border: dailyCheckIn.capacity === value ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: dailyCheckIn.capacity === value ? "#F7ECFB" : "white", cursor: "pointer", textAlign: "center" }}>
-                  <div style={{ fontSize: 22 }}>{emoji}</div>
-                  <div style={{ marginTop: 3, fontSize: 11, fontWeight: 800, color: "#6B5A7D" }}>{label}</div>
-                </button>
-              ))}
-            </div>
-            {dailyCheckIn.capacity && (
+            {dailyCheckIn.mood && dailyCheckIn.capacity && (
               <div style={{ marginTop: 9, padding: "8px 10px", borderRadius: 10, background: "#F7ECFB", color: "#6B5A7D", fontSize: 11.5, lineHeight: 1.4 }}>
-                {dailyCheckIn.capacity === "very_low" ? "We'll show Tiny versions today." : dailyCheckIn.capacity === "low" ? "We'll make today a Soft Day." : "We'll keep your full list today."}
+                PlushLife's gentle guess: <strong>{DAY_TYPES.find(([value]) => value === dailyCheckIn.day_type)?.[2] || "Full"} Day</strong> · {CAPACITY_LABELS[dailyCheckIn.capacity]} capacity · {ENERGY_LEVELS.find(([value]) => value === dailyCheckIn.energy)?.[2] || "Steady"} energy
               </div>
             )}
             <button type="button" onClick={() => setCheckInCustomizeOpen((open) => !open)} aria-expanded={checkInCustomizeOpen} style={{ marginTop: 12, width: "100%", padding: "8px 11px", borderRadius: 11, border: "1px solid #D9B8E8", background: "rgba(255,255,255,.72)", color: "#75428C", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>
@@ -4650,7 +4655,7 @@ function GlowUpTracker() {
               <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
             </div>
             </>}
-            <button type="button" disabled={!dailyCheckIn.capacity} onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: dailyCheckIn.capacity ? "#A65DC1" : "#D8C8E2", color: "white", fontWeight: 900, cursor: dailyCheckIn.capacity ? "pointer" : "not-allowed" }}>{dailyCheckIn.capacity ? "Done for now" : "Choose your capacity to finish"}</button>
+            <button type="button" disabled={!dailyCheckIn.mood} onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: dailyCheckIn.mood ? "#A65DC1" : "#D8C8E2", color: "white", fontWeight: 900, cursor: dailyCheckIn.mood ? "pointer" : "not-allowed" }}>{dailyCheckIn.mood ? "Looks good" : "Choose the closest feeling"}</button>
           </div>
         </div>
       )}
