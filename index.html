@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#b75acb">
 <meta name="description" content="PlushLife is a gentle, private care and routine companion that adapts to the day you are actually having.">
 <meta property="og:title" content="PlushLife — Care that fits today.">
@@ -4932,7 +4932,7 @@ function GlowUpTracker() {
       fontFamily: babyMode ? "'Comic Sans MS','Nunito','Segoe UI',sans-serif" : "'Avenir Next','Segoe UI',system-ui,sans-serif",
       color: preferences.high_contrast ? "#2D2038" : "#5B4B6B",
       fontSize: babyMode ? "118%" : "100%",
-      padding: "24px 16px 48px",
+      padding: "max(24px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right)) max(48px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left))",
       position: "relative",
     }}>
       <style>{`
