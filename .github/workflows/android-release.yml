@@ -94,6 +94,13 @@ jobs:
             -jarfile android/app/build/outputs/bundle/release/app-release.aab \
             | grep 'Owner: CN=PlushLife Upload'
 
+      - name: Dump full manifest for diagnostics
+        run: |
+          java -jar bundletool.jar dump manifest \
+            --bundle=android/app/build/outputs/bundle/release/app-release.aab
+          echo "--- native libs per module (ABI check) ---"
+          unzip -l android/app/build/outputs/bundle/release/app-release.aab | grep -i "\.so$" || echo "(no .so files found)"
+
       - name: Remove decoded keystore
         if: always()
         run: rm -f android/app/release.keystore
