@@ -1111,6 +1111,21 @@ function datesThroughToday(period) {
   return dates;
 }
 
+function AppLoadingScreen() {
+  return (
+    <div style={{ minHeight: "100vh", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", gap: 14, background: "#FFF8FC", backgroundImage: "radial-gradient(circle at 6% 8%, #FCE1F3 0%, transparent 38%), radial-gradient(circle at 96% 4%, #D8F3EC 0%, transparent 38%)", fontFamily: "'Nunito','Segoe UI',sans-serif" }}>
+      <style>{`
+        @keyframes appLoadingBob { 0%,100% { transform:translateY(0) } 50% { transform:translateY(-8px) } }
+        @keyframes appLoadingFade { 0%,100% { opacity:0.55 } 50% { opacity:1 } }
+      `}</style>
+      <div style={{ animation: "appLoadingBob 1.6s ease-in-out infinite" }}>
+        <PlushMascot size={84} />
+      </div>
+      <div style={{ fontSize: 13.5, fontWeight: 800, color: "#8574A0", letterSpacing: "0.02em", animation: "appLoadingFade 1.6s ease-in-out infinite" }}>Loading your PlushLife…</div>
+    </div>
+  );
+}
+
 function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShowSignIn, sendSignInLink, verifySignInCode, signInMessage, codeCooldown, password, setPassword, showPasswordField, setShowPasswordField, signInWithPassword }) {
   const colors = { bg: "#FFF8FC", plum: "#4A3A5C", soft: "#8574A0", orchid: "#B95FCE", mint: "#3FC7A6", amber: "#F2A93B", line: "#F0D9EE" };
   const demoTasks = [
@@ -5180,6 +5195,10 @@ function GlowUpTracker() {
   }, [user?.id]);
 
   let lastSection = null;
+
+  if (syncStatus === "loading") {
+    return <AppLoadingScreen />;
+  }
 
   if (!user) {
     return <LandingPage email={email} setEmail={setEmail} otpCode={otpCode} setOtpCode={setOtpCode} showSignIn={showSignIn} setShowSignIn={setShowSignIn} sendSignInLink={sendSignInLink} verifySignInCode={verifySignInCode} signInMessage={signInMessage} codeCooldown={codeCooldown} password={password} setPassword={setPassword} showPasswordField={showPasswordField} setShowPasswordField={setShowPasswordField} signInWithPassword={signInWithPassword} />;
