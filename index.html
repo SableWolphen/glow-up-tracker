@@ -2326,7 +2326,11 @@ function GlowUpTracker() {
     let alive = true;
     (async () => {
       const [{ data: noteRow }, { data: checkinRow }] = await Promise.all([
-        supabase.from("private_notes").select("body").eq("user_id", user.id).eq("note_date", offsetDate(period.date, -7)).maybeSingle(),
+        // Intentions are filed under the Sunday that closes their week (see
+        // saveWeeklyIntentionEdit), and this popup only opens on a Sunday —
+        // meaning "this week's" intention is filed under today's own date,
+        // not seven days back. -7 was pointing at the wrong week entirely.
+        supabase.from("private_notes").select("body").eq("user_id", user.id).eq("note_date", period.date).maybeSingle(),
         supabase.from("weekly_intention_checkins").select("id").eq("user_id", user.id).eq("week_start", period.weekStart).maybeSingle(),
       ]);
       if (!alive) return;
