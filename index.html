@@ -1381,6 +1381,7 @@ function GlowUpTracker() {
   const [user, setUser] = useState(null);
   const [syncStatus, setSyncStatus] = useState("loading");
   const pendingQueueRef = React.useRef([]);
+  const latestSupportOwnerRequestRef = React.useRef(null);
   const [lastSyncedAt, setLastSyncedAt] = useState(null);
   const [online, setOnline] = useState(() => navigator.onLine);
   const [email, setEmail] = useState("");
@@ -2020,6 +2021,7 @@ function GlowUpTracker() {
   const [ownerIsRestingToday, setOwnerIsRestingToday] = useState(false);
 
   const loadSupportOwner = async (targetOwnerId) => {
+    latestSupportOwnerRequestRef.current = targetOwnerId;
     if (!targetOwnerId) {
       setSupportOwnerId(null);
       setSupportNotes([]);
@@ -2041,6 +2043,7 @@ function GlowUpTracker() {
       supabase.from("user_achievements").select("visit_streak, best_visit_streak, best_care_streak, last_celebrated_date").eq("user_id", targetOwnerId).maybeSingle(),
       supabase.from("rest_days").select("rest_date").eq("user_id", targetOwnerId).eq("rest_date", period.date).maybeSingle(),
     ]);
+    if (latestSupportOwnerRequestRef.current !== targetOwnerId) return; // superseded by a newer request
     setSupportNotes(notesResult.data || []);
     setSupportRewards(rewardsResult.data || []);
     setSupportProgress((progressResult.data?.completed_keys || []).map((taskKey) => ({ task_key: taskKey, completed: true })));
@@ -2593,10 +2596,11 @@ function GlowUpTracker() {
   }, [preferences.onboarding_complete, dailyCheckInLoaded, dailyCheckIn.capacity, checkInPopupDismissedToday]);
 
   const saveDailyCheckIn = async (patch) => {
+    const previous = dailyCheckIn;
     const next = { ...dailyCheckIn, ...patch };
     setDailyCheckIn(next);
     if (!user) return;
-    await supabase.from("daily_check_ins").upsert({
+    const { error } = await supabase.from("daily_check_ins").upsert({
       user_id: user.id,
       check_date: period.date,
       capacity: next.capacity,
@@ -2608,6 +2612,12 @@ function GlowUpTracker() {
       custom_essentials: next.custom_essentials,
       updated_at: new Date().toISOString(),
     }, { onConflict: "user_id,check_date" });
+    if (error) {
+      // Roll back the optimistic update — otherwise the UI keeps showing
+      // this check-in as saved even though it never reached the database.
+      setDailyCheckIn(previous);
+      return;
+    }
     setDailyCheckInHistory((rows) => [
       ...rows.filter((row) => row.check_date !== period.date),
       { ...next, check_date: period.date },
@@ -2720,7 +2730,8 @@ function GlowUpTracker() {
       updated_at: new Date().toISOString(),
     };
     const { error } = await supabase.from("plush_path_progress").upsert(nextRow, { onConflict: "user_id,path_id" });
-    if (!error) setPathProgress((rows) => [...rows.filter((row) => row.path_id !== pathId), nextRow]);
+    if (error) { setCareMessage("That path could not be updated yet."); return; }
+    setPathProgress((rows) => [...rows.filter((row) => row.path_id !== pathId), nextRow]);
   };
 
   useEffect(() => {
@@ -2760,7 +2771,11 @@ function GlowUpTracker() {
       cursor = offsetDate(cursor, 1);
       guard += 1;
     }
-    await supabase.from("rest_days").upsert(rangeDates.map((date) => ({ user_id: user.id, rest_date: date })), { onConflict: "user_id,rest_date" });
+    const { error } = await supabase.from("rest_days").upsert(rangeDates.map((date) => ({ user_id: user.id, rest_date: date })), { onConflict: "user_id,rest_date" });
+    if (error) {
+      setSettingsMessage("That rest range couldn't be saved yet.");
+      return;
+    }
     setRestDates((dates) => Array.from(new Set([...dates, ...rangeDates])));
     setRestRangeDraft({ start: "", end: "" });
   };
@@ -2771,6 +2786,8 @@ function GlowUpTracker() {
     if (!error) {
       setTrackerTasks((tasks) => tasks.map((task) => task.task_key === taskKey ? { ...task, one_time_date: tomorrow } : task));
       setTaskMessage("Moved to tomorrow 🌙");
+    } else {
+      setTaskMessage("Couldn't move that task yet.");
     }
   };
 
@@ -2789,8 +2806,15 @@ function GlowUpTracker() {
 
   const clearTaskSnooze = async (taskKey) => {
     if (!user || !taskKey) return;
+    const previousSnoozes = taskSnoozes;
     setTaskSnoozes((items) => items.filter((item) => item.task_key !== taskKey));
-    await supabase.from("task_snoozes").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    const { error } = await supabase.from("task_snoozes").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    if (error) {
+      // Roll back — otherwise the UI shows reminders as back on while the
+      // snooze row still exists server-side and keeps suppressing them.
+      setTaskSnoozes(previousSnoozes);
+      setTaskMessage("Couldn't turn that reminder back on yet.");
+    }
   };
 
   const archiveTrackerTask = async (taskKey, reason = "no_longer_needed") => {
@@ -3176,10 +3200,17 @@ function GlowUpTracker() {
   const undoDeleteTimer = React.useRef(null);
   const pendingDeleteKey = React.useRef(null);
 
-  const finalizeDeleteTask = async (taskKey) => {
-    if (!taskKey) return;
-    await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
-    await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+  const finalizeDeleteTask = async (taskKey, taskRow) => {
+    if (!taskKey || !user) return;
+    const { error: tasksError } = await supabase.from("tracker_tasks").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    const { error: progressError } = await supabase.from("tracker_progress").delete().eq("user_id", user.id).eq("task_key", taskKey);
+    if ((tasksError || progressError) && taskRow) {
+      // The delete never actually happened server-side (network blip, RLS
+      // reject, etc.) — restore it rather than leaving the task silently
+      // gone from the UI while it still exists in the database.
+      setTrackerTasks((tasks) => tasks.some((task) => task.task_key === taskKey) ? tasks : [...tasks, taskRow]);
+      setTaskMessage(`"${taskRow.task}" couldn't be deleted yet, so it's back on your list.`);
+    }
   };
 
   const deleteTrackerTask = async (taskKey, taskLabel) => {
@@ -3196,13 +3227,13 @@ function GlowUpTracker() {
       window.clearTimeout(undoDeleteTimer.current);
       // A previous delete was still waiting to be undone — since we're replacing
       // its toast now, finalize that one for real instead of silently dropping it.
-      finalizeDeleteTask(pendingDeleteKey.current);
+      finalizeDeleteTask(pendingDeleteKey.current, recentlyDeletedTask);
     }
     pendingDeleteKey.current = taskKey;
     setRecentlyDeletedTask(taskRow ? { ...taskRow, label: taskLabel } : null);
     undoDeleteTimer.current = window.setTimeout(() => {
       setRecentlyDeletedTask(null);
-      finalizeDeleteTask(taskKey);
+      finalizeDeleteTask(taskKey, taskRow);
       pendingDeleteKey.current = null;
     }, 6000);
   };
@@ -3783,18 +3814,24 @@ function GlowUpTracker() {
         if (!starterError) setTrackerTasks(starterTasks);
       }
     }
+    let softError = null;
     const weeklyIntention = onboardingIntentionDraft.trim();
     if (weeklyIntention) {
       const sundayDate = dateForDayId("sun", period);
-      await supabase.from("private_notes").upsert({
+      const { error: noteError } = await supabase.from("private_notes").upsert({
         user_id: user.id,
         note_date: sundayDate,
         body: weeklyIntention,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,note_date" });
-      setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
+      if (noteError) {
+        softError = "Your space is saved, but your weekly intention couldn't be saved yet — you can add it again from the Progress tab.";
+      } else {
+        setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
+      }
     }
     const reasonProfile = onboardingReason ? ONBOARDING_REASON_PROFILES[onboardingReason] : null;
+    const previousPreferences = preferences;
     const next = {
       ...preferences,
       onboarding_complete: true,
@@ -3803,7 +3840,14 @@ function GlowUpTracker() {
       ...(reasonProfile?.preferences || {}),
     };
     setPreferences(next);
-    await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    const { error: preferencesError } = await supabase.from("app_preferences").upsert({ user_id: user.id, ...next, updated_at: new Date().toISOString() }, { onConflict: "user_id" });
+    if (preferencesError) {
+      // This flag controls whether onboarding shows again — a silent failure
+      // here would mean it silently reappears next sign-in with no explanation.
+      setPreferences(previousPreferences);
+      setOnboardingMessage("Your space is saved, but your settings couldn't be saved yet. Please try again.");
+      return;
+    }
     if (onboardingReason === "burnout") {
       const recoveryCheckIn = {
         capacity: "low",
@@ -3814,21 +3858,25 @@ function GlowUpTracker() {
         soft_day: true,
         custom_essentials: null,
       };
-      await supabase.from("daily_check_ins").upsert({
+      const { error: checkInError } = await supabase.from("daily_check_ins").upsert({
         user_id: user.id,
         check_date: period.date,
         ...recoveryCheckIn,
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,check_date" });
-      setDailyCheckIn(recoveryCheckIn);
-      setDailyCheckInHistory((rows) => [
-        ...rows.filter((row) => row.check_date !== period.date),
-        { ...recoveryCheckIn, check_date: period.date },
-      ].sort((a, b) => a.check_date.localeCompare(b.check_date)));
+      if (checkInError) {
+        softError = "Your space is saved, but today's recovery check-in couldn't be saved yet.";
+      } else {
+        setDailyCheckIn(recoveryCheckIn);
+        setDailyCheckInHistory((rows) => [
+          ...rows.filter((row) => row.check_date !== period.date),
+          { ...recoveryCheckIn, check_date: period.date },
+        ].sort((a, b) => a.check_date.localeCompare(b.check_date)));
+      }
     }
     supabase.from("onboarding_events").insert({ user_id: user.id, step: onboardingStep, onboarding_mode: onboardingMode, event: "completed" }).then(() => {});
     setTrackerProfile(profileData);
-    setOnboardingMessage("");
+    setOnboardingMessage(softError || "");
     setOnboardingStep(0);
   };
 
@@ -4370,6 +4418,7 @@ function GlowUpTracker() {
       else { nextKeys.add(key); triggerCelebrate(key); }
       const completedKeys = [...nextKeys];
       const previousHistory = [...weeklyHistory];
+      const previousHabitHistory = [...habitHistory];
       setWeeklyHistory((entries) => [
         ...entries.filter((entry) => entry.progress_date !== targetDate),
         { progress_date: targetDate, completed_keys: completedKeys },
@@ -4393,6 +4442,7 @@ function GlowUpTracker() {
             return;
           }
           setWeeklyHistory(previousHistory);
+          setHabitHistory(previousHabitHistory);
           setSyncStatus("error");
           return;
         }
