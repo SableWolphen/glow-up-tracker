@@ -923,6 +923,27 @@ const GUARDIAN_ROLE_PRESETS = [
   { id: "full", label: "Full support", icon: "🌟", permissions: { can_view_progress: true, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: true } },
 ];
 
+// Tables restorable from a "Download my data" export. Guardian-relationship
+// tables (caregiver_links, support_notes, support_rewards, task_suggestions,
+// guardian_support_requests) are deliberately excluded — they reference
+// another person's account, which a solo restore can't safely reconstruct.
+// They're still included in the export itself for transparency.
+const RESTORABLE_DATA_TABLES = [
+  { payloadKey: "tasks", table: "tracker_tasks", onConflict: "user_id,task_key" },
+  { payloadKey: "schedules", table: "tracker_schedules", onConflict: "user_id,day_id" },
+  { payloadKey: "private_reflections", table: "private_notes", onConflict: "user_id,note_date" },
+  { payloadKey: "daily_progress", table: "daily_progress", onConflict: "user_id,progress_date" },
+  { payloadKey: "mood_and_energy_check_ins", table: "daily_check_ins", onConflict: "user_id,check_date" },
+  { payloadKey: "plush_path_progress", table: "plush_path_progress", onConflict: "user_id,path_id" },
+  { payloadKey: "rest_days", table: "rest_days", onConflict: "user_id,rest_date" },
+  { payloadKey: "weekly_intention_checkins", table: "weekly_intention_checkins", onConflict: "user_id,week_start", stripId: true },
+  { payloadKey: "task_completion_history", table: "tracker_progress", onConflict: "user_id,task_key" },
+  { payloadKey: "care_session_history", table: "care_session_logs", stripId: true },
+  { payloadKey: "profile", table: "tracker_profiles", onConflict: "user_id", single: true },
+  { payloadKey: "preferences", table: "app_preferences", onConflict: "user_id", single: true },
+  { payloadKey: "achievements", table: "user_achievements", onConflict: "user_id", single: true },
+];
+
 const HABIT_REWARDS = [
   { count: 1, badge: "🌱", label: "First sprout" },
   { count: 3, badge: "✨", label: "Three caring check-ins" },
@@ -1240,6 +1261,7 @@ function GlowUpTracker() {
   const weekSwipeStartX = React.useRef(null);
   const weekSwipeStartY = React.useRef(null);
   const newTaskNameInputRef = React.useRef(null);
+  const restoreFileInputRef = React.useRef(null);
   const [todayCardIndex, setTodayCardIndex] = useState(1);
   const [taskListCollapsed, setTaskListCollapsed] = useState(true);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
@@ -3881,7 +3903,11 @@ function GlowUpTracker() {
     if (!user) return;
     setSettingsMessage("Preparing your data for download…");
     try {
-      const [profileRes, prefsRes, tasksRes, schedulesRes, notesRes, dailyRes, checkInsRes, careRes, pathsRes, supportRequestsRes, achievementsRes] = await Promise.all([
+      const [
+        profileRes, prefsRes, tasksRes, schedulesRes, notesRes, dailyRes, checkInsRes, careRes, pathsRes,
+        supportRequestsRes, achievementsRes, restDaysRes, weeklyIntentionRes, taskCompletionRes,
+        caregiverLinksRes, supportNotesRes, supportRewardsRes, taskSuggestionsRes,
+      ] = await Promise.all([
         supabase.from("tracker_profiles").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("app_preferences").select("*").eq("user_id", user.id).maybeSingle(),
         supabase.from("tracker_tasks").select("*").eq("user_id", user.id),
@@ -3893,6 +3919,13 @@ function GlowUpTracker() {
         supabase.from("plush_path_progress").select("*").eq("user_id", user.id),
         supabase.from("guardian_support_requests").select("*").eq("owner_user_id", user.id),
         supabase.from("user_achievements").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("rest_days").select("*").eq("user_id", user.id),
+        supabase.from("weekly_intention_checkins").select("*").eq("user_id", user.id),
+        supabase.from("tracker_progress").select("*").eq("user_id", user.id),
+        supabase.from("caregiver_links").select("*").eq("owner_user_id", user.id),
+        supabase.from("support_notes").select("*").or(`owner_user_id.eq.${user.id},recipient_user_id.eq.${user.id}`),
+        supabase.from("support_rewards").select("*").or(`owner_user_id.eq.${user.id},recipient_user_id.eq.${user.id}`),
+        supabase.from("task_suggestions").select("*").or(`owner_user_id.eq.${user.id},recipient_user_id.eq.${user.id}`),
       ]);
       const payload = {
         exported_at: new Date().toISOString(),
@@ -3908,6 +3941,13 @@ function GlowUpTracker() {
         plush_path_progress: pathsRes.data || [],
         guardian_support_requests: supportRequestsRes.data || [],
         achievements: achievementsRes.data || null,
+        rest_days: restDaysRes.data || [],
+        weekly_intention_checkins: weeklyIntentionRes.data || [],
+        task_completion_history: taskCompletionRes.data || [],
+        guardian_connections: caregiverLinksRes.data || [],
+        guardian_notes: supportNotesRes.data || [],
+        guardian_rewards: supportRewardsRes.data || [],
+        guardian_task_suggestions: taskSuggestionsRes.data || [],
       };
       const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
       const url = URL.createObjectURL(blob);
@@ -3922,6 +3962,52 @@ function GlowUpTracker() {
     } catch (exportError) {
       setSettingsMessage(`Couldn't prepare your download: ${exportError?.message || "unknown error"}`);
     }
+  };
+
+  const restoreFromBackup = async (file) => {
+    if (!user || !file) return;
+    setSettingsMessage("Reading your backup file…");
+    let payload;
+    try {
+      payload = JSON.parse(await file.text());
+    } catch {
+      setSettingsMessage("That file doesn't look like a Plushlist backup (couldn't read it as JSON).");
+      return;
+    }
+    if (!payload || typeof payload !== "object" || !payload.exported_at) {
+      setSettingsMessage("That file doesn't look like a Plushlist backup export.");
+      return;
+    }
+    if (!window.confirm("Restore this backup? Anything in it will overwrite matching tasks, days, and entries you currently have. Guardian connections aren't restored this way — you'll need to re-invite any Guardian afterward.")) {
+      return;
+    }
+    setSettingsMessage("Restoring your backup…");
+    const restoredTables = [];
+    const failedTables = [];
+    for (const spec of RESTORABLE_DATA_TABLES) {
+      const raw = payload[spec.payloadKey];
+      const rows = spec.single ? (raw ? [raw] : []) : (Array.isArray(raw) ? raw : []);
+      if (rows.length === 0) continue;
+      const prepared = rows.map((row) => {
+        const clean = { ...row, user_id: user.id };
+        if (spec.stripId) delete clean.id;
+        return clean;
+      });
+      const { error } = spec.onConflict
+        ? await supabase.from(spec.table).upsert(prepared, { onConflict: spec.onConflict })
+        : await supabase.from(spec.table).insert(prepared);
+      if (error) failedTables.push(spec.table); else restoredTables.push(spec.table);
+    }
+    if (failedTables.length === 0 && restoredTables.length === 0) {
+      setSettingsMessage("That backup didn't have any of your own data to restore.");
+      return;
+    }
+    setSettingsMessage(
+      failedTables.length === 0
+        ? `Backup restored ✨ (${restoredTables.length} categories). Reloading… Guardian connections need to be re-invited if you had any.`
+        : `Restored ${restoredTables.length} categories, but ${failedTables.length} had trouble (${failedTables.join(", ")}). Reloading…`
+    );
+    setTimeout(() => window.location.reload(), 1600);
   };
 
   const deleteAllCheckIns = async () => {
@@ -6090,7 +6176,13 @@ function GlowUpTracker() {
               <div style={{ fontSize: 12, fontWeight: 900, color: "#2D6BB5" }}>🔒 We will never sell your data. Ever.</div>
               <div style={{ marginTop: 3, fontSize: 11, lineHeight: 1.45, color: "#4C7AA8" }}>No ads, no data brokers, no "anonymized insights" sold to anyone. Your habits, moods, and reflections are not a product.</div>
             </div>
-            <button type="button" onClick={exportMyData} style={{ marginTop: 8, padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
+            <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
+              <button type="button" onClick={exportMyData} style={{ padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬇️ Download my data</button>
+              <button type="button" onClick={() => restoreFileInputRef.current?.click()} style={{ padding: "8px 11px", borderRadius: 9, border: "1px solid #B9DCF6", background: "white", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>⬆️ Restore from backup</button>
+              <input ref={restoreFileInputRef} type="file" accept="application/json" style={{ display: "none" }}
+                onChange={(event) => { const file = event.target.files?.[0]; event.target.value = ""; if (file) restoreFromBackup(file); }} />
+            </div>
+            <div style={{ marginTop: 6, fontSize: 10.5, lineHeight: 1.4, color: "#8C6B9E" }}>Restoring brings back your own tasks, schedules, progress, and reflections from a downloaded backup — useful after a reinstall or a new phone. Guardian connections aren't included; re-invite any Guardian afterward.</div>
             <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #D9ECFA" }}>
               <div style={{ fontSize: 10.5, fontWeight: 800, color: "#4C8FE8" }}>DELETE SOME OF MY DATA</div>
               <div style={{ marginTop: 3, fontSize: 10.5, color: "#8C6B9E" }}>These delete just that category — your account, tasks, and routines stay untouched.</div>
