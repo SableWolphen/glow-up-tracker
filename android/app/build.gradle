@@ -46,6 +46,14 @@ android {
             }
         }
     }
+    // androidx.activity (added for edge-to-edge support) pulls in androidx.datastore's
+    // native shared-counter library transitively. This app never uses Jetpack DataStore
+    // directly, and the library's sudden first-time presence made Play Console report
+    // 0 supported devices for the release. Excluding it restores the previous (working)
+    // zero-native-library state without touching the edge-to-edge fix itself.
+    packagingOptions {
+        exclude 'lib/*/libdatastore_shared_counter.so'
+    }
 }
 
 repositories {
