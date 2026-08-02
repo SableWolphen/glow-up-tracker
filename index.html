@@ -4253,16 +4253,6 @@ function GlowUpTracker() {
   const requiredDoneCount = requiredRows.filter((row) => viewDone[row.key]).length;
   const optionalDoneCount = optionalRows.filter((row) => viewDone[row.key]).length;
   const pct = requiredRows.length ? Math.round((requiredDoneCount / requiredRows.length) * 100) : 0;
-  useEffect(() => {
-    const WidgetBridge = window.Capacitor?.Plugins?.WidgetBridge;
-    if (!WidgetBridge || !user || selectedProgressDate !== period.date) return;
-    const nextTask = rows.find((row) => !row.isBonus && !viewDone[row.key]) || rows.find((row) => !viewDone[row.key]);
-    WidgetBridge.updateWidget({
-      nextTask: dailyCheckIn.day_type === "rest" ? "Resting counts today" : (nextTask?.label || "Today's caring steps are complete"),
-      dayType: `${(dailyCheckIn.day_type || "full").replace(/^./, (letter) => letter.toUpperCase())} Day · ${pct}%`,
-      progress: pct,
-    }).catch(() => {});
-  }, [user?.id, selectedProgressDate, period.date, dailyCheckIn.day_type, pct, JSON.stringify(rows.map((row) => [row.key, row.label, !!viewDone[row.key]]))]);
   // The helper always offers an unfinished required task from the date you're currently viewing.
   const focusChoices = trackerTasks
     .filter((task) =>
@@ -4397,6 +4387,19 @@ function GlowUpTracker() {
   const weeklyOverallPct = weeklyOverallPossible
     ? Math.round((weeklyOverallDone / weeklyOverallPossible) * 100)
     : 0;
+
+  useEffect(() => {
+    const WidgetBridge = window.Capacitor?.Plugins?.WidgetBridge;
+    if (!WidgetBridge || !user || selectedProgressDate !== period.date) return;
+    const nextTask = rows.find((row) => !row.isBonus && !viewDone[row.key]) || rows.find((row) => !viewDone[row.key]);
+    WidgetBridge.updateWidget({
+      nextTask: dailyCheckIn.day_type === "rest" ? "Resting counts today" : (nextTask?.label || "Today's caring steps are complete"),
+      dayType: `${(dailyCheckIn.day_type || "full").replace(/^./, (letter) => letter.toUpperCase())} Day · ${pct}%`,
+      progress: pct,
+      weeklyProgress: weeklyOverallPct,
+      tasks: rows.slice(0, 3).map((row) => ({ label: row.label, done: !!viewDone[row.key] })),
+    }).catch(() => {});
+  }, [user?.id, selectedProgressDate, period.date, dailyCheckIn.day_type, pct, weeklyOverallPct, JSON.stringify(rows.slice(0, 3).map((row) => [row.key, row.label, !!viewDone[row.key]]))]);
 
   const previousWeekHistoryByDate = new Map(previousWeekHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
   let previousWeekDone = 0;

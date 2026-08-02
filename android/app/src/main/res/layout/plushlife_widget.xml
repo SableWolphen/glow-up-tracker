@@ -20,14 +20,63 @@
     <TextView
         android:id="@+id/widget_next_task"
         android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
+        android:layout_height="wrap_content"
         android:layout_marginTop="6dp"
         android:maxLines="2"
         android:ellipsize="end"
         android:text="Open PlushLife for one caring step"
         android:textColor="#5B4B6B"
         android:textSize="16sp"
+        android:textStyle="bold"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_task_0"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#5B4B6B"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_task_1"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#5B4B6B"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <TextView
+        android:id="@+id/widget_task_2"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="3dp"
+        android:maxLines="1"
+        android:ellipsize="end"
+        android:textColor="#5B4B6B"
+        android:textSize="13sp"
+        android:visibility="gone" />
+
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
+        android:minHeight="6dp" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="TODAY"
+        android:textAllCaps="true"
+        android:textColor="#8C6B9E"
+        android:textSize="9sp"
         android:textStyle="bold" />
 
     <ProgressBar
@@ -35,7 +84,28 @@
         style="?android:attr/progressBarStyleHorizontal"
         android:layout_width="match_parent"
         android:layout_height="8dp"
+        android:layout_marginTop="2dp"
         android:progress="0"
         android:progressTint="#A65DC1"
         android:progressBackgroundTint="#EADCF0" />
+
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:text="THIS WEEK"
+        android:textAllCaps="true"
+        android:textColor="#8C6B9E"
+        android:textSize="9sp"
+        android:textStyle="bold" />
+
+    <ProgressBar
+        android:id="@+id/widget_weekly_progress"
+        style="?android:attr/progressBarStyleHorizontal"
+        android:layout_width="match_parent"
+        android:layout_height="8dp"
+        android:layout_marginTop="2dp"
+        android:progress="0"
+        android:progressTint="#4C8FE8"
+        android:progressBackgroundTint="#DCE9FA" />
 </LinearLayout>
