@@ -1023,10 +1023,10 @@ const MAKE_IT_EASIER_SUGGESTIONS = [
 ];
 
 const GUARDIAN_ROLE_PRESETS = [
-  { id: "view_only", label: "Just keep an eye on things", icon: "👀", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: false } },
-  { id: "accountability", label: "Accountability partner", icon: "🎯", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: true } },
-  { id: "encouragement", label: "Encouragement only", icon: "💛", permissions: { can_view_progress: false, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: false } },
-  { id: "full", label: "Full support", icon: "🌟", permissions: { can_view_progress: true, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: true } },
+  { id: "view_only", label: "Just keep an eye on things", icon: "👀", description: "Can see your progress and tasks. Can't message you, add rewards, or suggest tasks.", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: false } },
+  { id: "accountability", label: "Accountability partner", icon: "🎯", description: "Can see your progress and suggest tasks for you to add. Can't send notes or add rewards.", permissions: { can_view_progress: true, can_send_notes: false, can_add_rewards: false, can_suggest_tasks: true } },
+  { id: "encouragement", label: "Encouragement only", icon: "💛", description: "Can send you encouraging notes and set up rewards. Can't see your progress or tasks at all.", permissions: { can_view_progress: false, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: false } },
+  { id: "full", label: "Full support", icon: "🌟", description: "Can see your progress, send notes, add rewards, and suggest tasks — everything.", permissions: { can_view_progress: true, can_send_notes: true, can_add_rewards: true, can_suggest_tasks: true } },
 ];
 
 // Tables restorable from a "Download my data" export. Guardian-relationship
@@ -5646,6 +5646,10 @@ function GlowUpTracker() {
                   </button>
                 ))}
               </div>
+              {(() => {
+                const selectedRole = GUARDIAN_ROLE_PRESETS.find((role) => role.id === guardianRolePreset);
+                return selectedRole && <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.4, color: "#6B7E98" }}>{selectedRole.description}</div>;
+              })()}
             </>}
             {((onboardingMode === "cozy" && onboardingStep === 2) || (onboardingMode === "guardian" && onboardingStep === 3)) && <>
               <h2 style={{ margin: "8px 0 6px" }}>One comforting detail 🧸</h2>
@@ -7050,6 +7054,10 @@ function GlowUpTracker() {
                       </button>
                     ))}
                   </div>
+                  {(() => {
+                    const selectedRole = GUARDIAN_ROLE_PRESETS.find((role) => role.id === guardianRolePreset);
+                    return selectedRole && <div style={{ marginTop: 6, fontSize: 10.5, lineHeight: 1.4, color: "#6B7E98" }}>{selectedRole.description}</div>;
+                  })()}
                   <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>You can fine-tune each permission afterward too.</div>
                 </div>
                 <div style={{ marginTop: 12 }}>
