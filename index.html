@@ -6700,7 +6700,7 @@ function GlowUpTracker() {
         )}
 
         {user && dashboard === "guardian" && (
-          <ToolPanel inline title="Guardian" onClose={() => setDashboard("today")}>
+          <ToolPanel inline title={supportViewMode === "caretaker" ? "Supporting" : (hasOwnGuardian ? "Guardian" : "Add a Guardian")} onClose={() => setDashboard("today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
             {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (
               <div style={{ marginBottom: 14, padding: 13, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
