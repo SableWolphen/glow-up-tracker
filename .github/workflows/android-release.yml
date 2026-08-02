@@ -29,6 +29,13 @@ on:
           - beta
           - production
 
+# Least-privilege GITHUB_TOKEN: this workflow only checks out the repo and
+# uploads a build artifact; Play Store publishing uses its own service
+# account secret, not this token, so read-only contents access is all it
+# ever needs.
+permissions:
+  contents: read
+
 jobs:
   build:
     runs-on: ubuntu-latest
