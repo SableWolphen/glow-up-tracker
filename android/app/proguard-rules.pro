@@ -19,3 +19,15 @@
 # If you keep the line number information, uncomment this to
 # hide the original source file name.
 #-renamesourcefileattribute SourceFile
+
+# Firebase Cloud Messaging (used by @capacitor/push-notifications) discovers
+# some of its startup components via reflection/manifest metadata rather than
+# normal class references, so R8 can't always see that they're still needed
+# and may strip or rename them — which surfaces as a crash on real devices
+# the moment a push-notifications call touches Firebase, even though nothing
+# looks wrong in a debug build. Keeping these wholesale is the standard,
+# low-risk fix (it only prevents removal/renaming, it can't hide real bugs).
+-keep class com.google.firebase.** { *; }
+-keep class com.google.android.gms.** { *; }
+-dontwarn com.google.firebase.**
+-dontwarn com.google.android.gms.**
