@@ -7758,15 +7758,27 @@ function GlowUpTracker() {
                     <div style={{ fontSize: 13.5, fontWeight: 900, color: "#4F405C" }}>
                       {habit.habitType === "build" ? "🌱" : "🛡️"} {habit.task}
                     </div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center" }}>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ padding: "3px 7px", borderRadius: 999, background: habit.habitType === "build" ? "#EAF4FF" : "#FFF3E4", color: habit.habitType === "build" ? "#4C8FE8" : "#B4761D", fontSize: 9.5, fontWeight: 800 }}>
                         {habit.habitType === "build" ? "Building" : "Reducing"}
                       </span>
+                      {habit.stats.current > 0 && (
+                        <div title={`Best ever: ${habit.stats.best}`} style={{ padding: "4px 7px", borderRadius: 999, background: "#FFF3E4", color: "#B4761D", fontSize: 10.5, fontWeight: 900 }}>
+                          🔥 {habit.stats.current}-day streak
+                        </div>
+                      )}
                       <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
                         {habit.stats.total} total
                       </div>
                     </div>
                   </div>
+                  {habit.stats.best > 0 && (
+                    <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>
+                      {habit.stats.current === habit.stats.best && habit.stats.current > 0
+                        ? "🏆 This is your longest streak yet!"
+                        : `Best streak: ${habit.stats.best} ${habit.stats.best === 1 ? "day" : "days"}`}
+                    </div>
+                  )}
                   {habit.stats.earnedReward && (
                     <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
                       Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Every check-in keeps your progress
