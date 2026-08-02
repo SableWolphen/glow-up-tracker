@@ -1545,11 +1545,16 @@ function GlowUpTracker() {
   const [settingsMessage, setSettingsMessage] = useState("");
   const [helpOpen, setHelpOpen] = useState(false);
   const [focusHelperOpen, setFocusHelperOpen] = useState(false);
+  const [insightCardIndex, setInsightCardIndex] = useState(0);
   const [focusSuggestionKey, setFocusSuggestionKey] = useState(null);
   useEffect(() => {
     setFocusHelperOpen(false);
     setFocusSuggestionKey(null);
   }, [selectedProgressDate]);
+
+  useEffect(() => {
+    setInsightCardIndex(0);
+  }, [period.date]);
 
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -4757,6 +4762,62 @@ function GlowUpTracker() {
     };
   })();
 
+  const energyCompletionInsight = (() => {
+    if (preferences.pattern_insights_enabled === false) return null;
+    const habitByDate = new Map(habitHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
+    const higherEnergyPcts = [];
+    const lowerEnergyPcts = [];
+    dailyCheckInHistory.forEach((entry) => {
+      if (entry.energy !== "high" && entry.energy !== "steady" && entry.energy !== "low" && entry.energy !== "empty") return;
+      const requiredKeys = requiredKeysForDate(entry.check_date);
+      if (requiredKeys.length === 0) return;
+      const completed = habitByDate.get(entry.check_date) || new Set();
+      const pct = requiredKeys.filter((key) => completed.has(key)).length / requiredKeys.length;
+      (entry.energy === "high" || entry.energy === "steady" ? higherEnergyPcts : lowerEnergyPcts).push(pct);
+    });
+    if (higherEnergyPcts.length < 4 || lowerEnergyPcts.length < 4) return null;
+    const average = (values) => values.reduce((a, b) => a + b, 0) / values.length;
+    const higherPct = Math.round(average(higherEnergyPcts) * 100);
+    const lowerPct = Math.round(average(lowerEnergyPcts) * 100);
+    if (Math.abs(higherPct - lowerPct) < 15) return null;
+    return { higherPct, lowerPct, sampleSize: higherEnergyPcts.length + lowerEnergyPcts.length };
+  })();
+
+  // Shown one at a time (with a Next control) rather than stacked, so having
+  // several pattern insights available at once doesn't turn this card into a
+  // wall of text.
+  const patternInsightCards = [
+    weekdayPatternInsight && {
+      key: "weekday",
+      background: "#F3E8FA99", border: "#E6D4F2", color: "#6B5A7D",
+      node: <><strong>📈 A gentle pattern:</strong> {weekdayPatternInsight}</>,
+    },
+    wellbeingPatternInsight && {
+      key: "wellbeing",
+      background: "#EAF8F4", border: "#BFE5D2", color: "#526F67",
+      node: (
+        <>
+          <strong>♥ A possible care pattern:</strong> {wellbeingPatternInsight.text}
+          <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
+            <button type="button" onClick={() => openTaskManager(wellbeingPatternInsight.dayId)} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Edit that day’s tasks</button>
+            <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
+          </div>
+          <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
+        </>
+      ),
+    },
+    energyCompletionInsight && {
+      key: "energy",
+      background: "#FFFBEF", border: "#F0D99E", color: "#6B5A3D",
+      node: (
+        <>
+          <strong>⚡ Energy and your list:</strong> On days you've logged higher energy, you've completed about {energyCompletionInsight.higherPct}% of your list — on lower-energy days, about {energyCompletionInsight.lowerPct}%.
+          <div style={{ marginTop: 6, fontSize: 10.5, color: "#A56D14" }}>Based on {energyCompletionInsight.sampleSize} check-ins. Not a rule — just a pattern that might help you plan gentler days ahead of time.</div>
+        </>
+      ),
+    },
+  ].filter(Boolean);
+
   const weeklyHighlights = (() => {
     const weekDates = datesThroughToday(period);
     const completedOn = (date) => date === period.date
@@ -7747,21 +7808,19 @@ function GlowUpTracker() {
           <div style={{ marginTop: 9, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
             <strong>Gentle weekly review:</strong> {weeklyEssentialDone} essentials and {weeklyBonusDone} bonus wins completed across {caringDays} caring {caringDays === 1 ? "day" : "days"}. A missed day never erases the care you gave yourself.
           </div>
-          {weekdayPatternInsight && (
-            <div style={{ marginTop: 9, padding: "10px 12px", borderRadius: 10, background: "#F3E8FA99", border: "1px solid #E6D4F2", fontSize: 11.5, lineHeight: 1.5, color: "#6B5A7D" }}>
-              <strong>📈 A gentle pattern:</strong> {weekdayPatternInsight}
-            </div>
-          )}
-          {wellbeingPatternInsight && (
-            <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#EAF8F4", border: "1px solid #BFE5D2", fontSize: 11.5, lineHeight: 1.5, color: "#526F67" }}>
-              <strong>♥ A possible care pattern:</strong> {wellbeingPatternInsight.text}
-              <div style={{ marginTop: 7, display: "flex", gap: 6, flexWrap: "wrap" }}>
-                <button type="button" onClick={() => openTaskManager(wellbeingPatternInsight.dayId)} style={{ padding: "6px 9px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Edit that day’s tasks</button>
-                <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
+          {patternInsightCards.length > 0 && (() => {
+            const card = patternInsightCards[insightCardIndex % patternInsightCards.length];
+            return (
+              <div key={card.key} style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: card.background, border: `1px solid ${card.border}`, fontSize: 11.5, lineHeight: 1.5, color: card.color }}>
+                {card.node}
+                {patternInsightCards.length > 1 && (
+                  <button type="button" onClick={() => setInsightCardIndex((index) => index + 1)} style={{ marginTop: 8, padding: "5px 9px", borderRadius: 8, border: `1px solid ${card.border}`, background: "white", color: card.color, fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>
+                    Next insight ({(insightCardIndex % patternInsightCards.length) + 1} of {patternInsightCards.length}) →
+                  </button>
+                )}
               </div>
-              <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
-            </div>
-          )}
+            );
+          })()}
           {weeklyHighlights && (
             <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#FFF9FD", border: "1px solid #F0D5E8", fontSize: 11.5, lineHeight: 1.6, color: "#6B5A7D" }}>
               <strong>🌟 This week's highlights:</strong>
