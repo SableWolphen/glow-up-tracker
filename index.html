@@ -2322,16 +2322,19 @@ function GlowUpTracker() {
 
 
   useEffect(() => {
-    if (!user || dayIdForDate(period.date) !== "sun") { setWeeklyKickoffOpen(false); return; }
+    // Only ever shows for a signed-in user, and only on Monday — the actual
+    // first day of a Mon-Sun week — not Sunday (the last day of the week
+    // that's ending), which is when this used to fire despite talking about
+    // "the week ahead." Since today is now the day AFTER the week closed,
+    // "last week" means yesterday's Sunday and the week before this one.
+    if (!user || dayIdForDate(period.date) !== "mon") { setWeeklyKickoffOpen(false); return; }
     let alive = true;
+    const closingWeekSunday = offsetDate(period.date, -1);
+    const closingWeekStart = offsetDate(period.weekStart, -7);
     (async () => {
       const [{ data: noteRow }, { data: checkinRow }] = await Promise.all([
-        // Intentions are filed under the Sunday that closes their week (see
-        // saveWeeklyIntentionEdit), and this popup only opens on a Sunday —
-        // meaning "this week's" intention is filed under today's own date,
-        // not seven days back. -7 was pointing at the wrong week entirely.
-        supabase.from("private_notes").select("body").eq("user_id", user.id).eq("note_date", period.date).maybeSingle(),
-        supabase.from("weekly_intention_checkins").select("id").eq("user_id", user.id).eq("week_start", period.weekStart).maybeSingle(),
+        supabase.from("private_notes").select("body").eq("user_id", user.id).eq("note_date", closingWeekSunday).maybeSingle(),
+        supabase.from("weekly_intention_checkins").select("id").eq("user_id", user.id).eq("week_start", closingWeekStart).maybeSingle(),
       ]);
       if (!alive) return;
       if (!checkinRow) {
@@ -2733,9 +2736,11 @@ function GlowUpTracker() {
 
   const saveWeeklyKickoffFeeling = async (feeling) => {
     setWeeklyKickoffMessage("Saving…");
+    // This rates the week that just closed, not the new week the popup
+    // opened on — same reasoning as the kickoff lookup above.
     const { error } = await supabase.from("weekly_intention_checkins").upsert({
       user_id: user.id,
-      week_start: period.weekStart,
+      week_start: offsetDate(period.weekStart, -7),
       feeling,
     }, { onConflict: "user_id,week_start" });
     if (error) {
@@ -5608,21 +5613,26 @@ function GlowUpTracker() {
           stepDashboard(deltaX < 0 ? 1 : -1);
         }}
         style={{ maxWidth: 520, margin: "0 auto", touchAction: "pan-y" }}>
-        <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 12, background: "rgba(255,255,255,0.55)", border: "1px solid #F3D9EC", fontSize: 12.5, color: "#8C6B9E" }}>
-          {user ? (
-            <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-              <span>{
-                !online || syncStatus === "offline" ? "📡 Offline — changes will wait for a connection" :
-                syncStatus === "syncing" ? "☁️ Syncing…" :
-                syncStatus === "error" ? "⚠️ Sync failed" :
-                `☁️ Synced${lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}`
-              }</span>
-              <button type="button" disabled={syncStatus === "syncing"} onClick={syncNow} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D7B8E2", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 11, cursor: syncStatus === "syncing" ? "wait" : "pointer" }}>
-                {syncStatus === "error" ? "Retry" : "Sync now"}
-              </button>
+        {/* The routine "signed in and synced" state moved into Settings — it
+            doesn't need to occupy the top of every screen. A real problem
+            (offline or a failed sync) still surfaces here since that's worth
+            noticing right away, not only after opening Settings. */}
+        {user ? (
+          (!online || syncStatus === "offline" || syncStatus === "error") && (
+            <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 12, background: "rgba(255,255,255,0.55)", border: "1px solid #F3D9EC", fontSize: 12.5, color: "#8C6B9E" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                <span>{!online || syncStatus === "offline" ? "📡 Offline — changes will wait for a connection" : "⚠️ Sync failed"}</span>
+                <button type="button" disabled={syncStatus === "syncing"} onClick={syncNow} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D7B8E2", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 11, cursor: syncStatus === "syncing" ? "wait" : "pointer" }}>
+                  {syncStatus === "error" ? "Retry" : "Sync now"}
+                </button>
+              </div>
             </div>
-          ) : "☁️ Sign in to keep checkmarks on every device"}
-        </div>
+          )
+        ) : (
+          <div style={{ marginBottom: 14, padding: "9px 12px", borderRadius: 12, background: "rgba(255,255,255,0.55)", border: "1px solid #F3D9EC", fontSize: 12.5, color: "#8C6B9E" }}>
+            ☁️ Sign in to keep checkmarks on every device
+          </div>
+        )}
         {!user && showSignIn && (
           <div style={{ margin: "-5px 0 14px", padding: 12, borderRadius: 12, background: "rgba(255,255,255,0.7)", border: "1px solid #F3D9EC" }}>
             <div style={{ fontSize: 12, color: "#8C6B9E", marginBottom: 8 }}>Use the same email on your phone and computer.</div>
@@ -6200,6 +6210,17 @@ function GlowUpTracker() {
           <div style={{ padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#A76676" }}>🔐 ACCOUNT</div>
             <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Current email: {user.email || "—"}</div>
+            <div style={{ marginTop: 8, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap", padding: "8px 10px", borderRadius: 9, background: "rgba(255,255,255,0.6)", border: "1px solid #F0D5DB" }}>
+              <span style={{ fontSize: 11.5, color: "#8C6B9E" }}>{
+                !online || syncStatus === "offline" ? "📡 Offline — changes will wait for a connection" :
+                syncStatus === "syncing" ? "☁️ Syncing…" :
+                syncStatus === "error" ? "⚠️ Sync failed" :
+                `☁️ Synced${lastSyncedAt ? ` · ${new Date(lastSyncedAt).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}` : ""}`
+              }</span>
+              <button type="button" disabled={syncStatus === "syncing"} onClick={syncNow} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D7B8E2", background: "white", color: "#8D5CA5", fontWeight: 800, fontSize: 11, cursor: syncStatus === "syncing" ? "wait" : "pointer" }}>
+                {syncStatus === "error" ? "Retry" : "Sync now"}
+              </button>
+            </div>
             <div style={{ display: "flex", gap: 7, marginTop: 8, flexWrap: "wrap" }}>
               <input type="email" value={emailChangeDraft} onChange={(event) => setEmailChangeDraft(event.target.value)} placeholder="New email address" aria-label="New email address" style={{ flex: "1 1 190px", minWidth: 0, padding: "8px 10px", borderRadius: 9, border: "1px solid #DCC9E8", background: "white" }} />
               <button type="button" onClick={requestEmailChange} style={{ padding: "8px 10px", borderRadius: 9, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, cursor: "pointer" }}>Change email</button>
