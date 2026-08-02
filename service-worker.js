@@ -1,4 +1,4 @@
-const CACHE_NAME = "plushlife-v20";
+const CACHE_NAME = "plushlife-v21";
 const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
@@ -35,7 +35,11 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  if (event.request.mode === "navigate") {
+  // Android's Capacitor WebView doesn't always report top-level page loads
+  // with mode "navigate" the way a normal browser tab does, so relying on
+  // that alone let stale cached HTML get served after a fix shipped —
+  // "destination: document" catches those cases too.
+  if (event.request.mode === "navigate" || event.request.destination === "document") {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
         .then((response) => {
