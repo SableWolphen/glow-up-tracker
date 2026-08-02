@@ -18,5 +18,14 @@
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
         <item name="android:background">@drawable/splash</item>
+        <!-- This theme (and its splash drawable) stays applied to the
+             activity's window after the splash screen itself is gone, so
+             its background is what shows through the gap edge-to-edge
+             leaves at the top of the screen. @drawable/splash has a
+             drawable-night variant that's nearly black — fine for a brief
+             splash flash, wrong as a persistent background on a device
+             with system dark mode on. Pinning windowBackground to a plain
+             color (no night variant) keeps that gap the app's own pink. -->
+        <item name="android:windowBackground">@color/colorPrimaryDark</item>
     </style>
 </resources>
