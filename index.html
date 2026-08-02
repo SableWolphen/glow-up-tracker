@@ -4757,6 +4757,27 @@ function GlowUpTracker() {
     };
   })();
 
+  const energyCompletionInsight = (() => {
+    if (preferences.pattern_insights_enabled === false) return null;
+    const habitByDate = new Map(habitHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
+    const higherEnergyPcts = [];
+    const lowerEnergyPcts = [];
+    dailyCheckInHistory.forEach((entry) => {
+      if (entry.energy !== "high" && entry.energy !== "steady" && entry.energy !== "low" && entry.energy !== "empty") return;
+      const requiredKeys = requiredKeysForDate(entry.check_date);
+      if (requiredKeys.length === 0) return;
+      const completed = habitByDate.get(entry.check_date) || new Set();
+      const pct = requiredKeys.filter((key) => completed.has(key)).length / requiredKeys.length;
+      (entry.energy === "high" || entry.energy === "steady" ? higherEnergyPcts : lowerEnergyPcts).push(pct);
+    });
+    if (higherEnergyPcts.length < 4 || lowerEnergyPcts.length < 4) return null;
+    const average = (values) => values.reduce((a, b) => a + b, 0) / values.length;
+    const higherPct = Math.round(average(higherEnergyPcts) * 100);
+    const lowerPct = Math.round(average(lowerEnergyPcts) * 100);
+    if (Math.abs(higherPct - lowerPct) < 15) return null;
+    return { higherPct, lowerPct, sampleSize: higherEnergyPcts.length + lowerEnergyPcts.length };
+  })();
+
   const weeklyHighlights = (() => {
     const weekDates = datesThroughToday(period);
     const completedOn = (date) => date === period.date
@@ -7760,6 +7781,12 @@ function GlowUpTracker() {
                 <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Choose a gentler day</button>
               </div>
               <div style={{ marginTop: 6, fontSize: 10.5, color: "#6B8A82" }}>This is an observation, not a diagnosis. PlushLife never changes your routine without you.</div>
+            </div>
+          )}
+          {energyCompletionInsight && (
+            <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#FFFBEF", border: "1px solid #F0D99E", fontSize: 11.5, lineHeight: 1.5, color: "#6B5A3D" }}>
+              <strong>⚡ Energy and your list:</strong> On days you've logged higher energy, you've completed about {energyCompletionInsight.higherPct}% of your list — on lower-energy days, about {energyCompletionInsight.lowerPct}%.
+              <div style={{ marginTop: 6, fontSize: 10.5, color: "#A56D14" }}>Based on {energyCompletionInsight.sampleSize} check-ins. Not a rule — just a pattern that might help you plan gentler days ahead of time.</div>
             </div>
           )}
           {weeklyHighlights && (
