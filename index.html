@@ -784,6 +784,7 @@ function setSoundscapeVolume(volume) {
 }
 
 const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
+const TREND_WEEKS = 8;
 
 function trackerPeriod(now = new Date()) {
   const chicagoDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" });
@@ -1392,6 +1393,7 @@ function GlowUpTracker() {
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [longHistory, setLongHistory] = useState([]);
   const [previousWeekHistory, setPreviousWeekHistory] = useState([]);
+  const [tappedTrendWeek, setTappedTrendWeek] = useState(null);
   const [habitHistory, setHabitHistory] = useState([]);
   const [selectedProgressDate, setSelectedProgressDate] = useState(() => trackerPeriod().date);
   const [reflectionDates, setReflectionDates] = useState([]);
@@ -2385,7 +2387,7 @@ function GlowUpTracker() {
       .from("daily_progress")
       .select("progress_date, completed_keys")
       .eq("user_id", user.id)
-      .gte("progress_date", offsetDate(period.weekStart, -7))
+      .gte("progress_date", offsetDate(period.weekStart, -7 * TREND_WEEKS))
       .lte("progress_date", offsetDate(period.weekStart, -1))
       .then(({ data, error }) => {
         if (!alive || error) return;
@@ -4664,6 +4666,20 @@ function GlowUpTracker() {
   });
   const previousWeekPct = previousWeekPossible ? Math.round((previousWeekDone / previousWeekPossible) * 100) : null;
   const weekOverWeekDelta = previousWeekPct === null ? null : weeklyOverallPct - previousWeekPct;
+
+  const weeklyTrendPoints = Array.from({ length: TREND_WEEKS }, (_, weekIndex) => {
+    const weeksAgo = TREND_WEEKS - weekIndex;
+    const trendWeekStart = offsetDate(period.weekStart, -7 * weeksAgo);
+    let trendDone = 0;
+    let trendPossible = 0;
+    Array.from({ length: 7 }, (_, dayIndex) => offsetDate(trendWeekStart, dayIndex)).forEach((date) => {
+      const completed = previousWeekHistoryByDate.get(date) || new Set();
+      const overallKeys = trackerTasks.filter((task) => taskIsScheduledForDate(task, date) && !taskIsOptional(task)).map((task) => task.task_key);
+      trendDone += overallKeys.filter((key) => completed.has(key)).length;
+      trendPossible += overallKeys.length;
+    });
+    return { weekStart: trendWeekStart, pct: trendPossible ? Math.round((trendDone / trendPossible) * 100) : null, isCurrent: false };
+  }).concat([{ weekStart: period.weekStart, pct: weeklyOverallPct, isCurrent: true }]);
 
   const completedKeysForToday = new Set(Object.keys(done).filter((key) => done[key]));
   const todayDayId = dayIdForDate(period.date);
@@ -7613,6 +7629,47 @@ function GlowUpTracker() {
               {weekOverWeekDelta > 0 ? `📈 ${weekOverWeekDelta}% more than last week` : weekOverWeekDelta < 0 ? `${Math.abs(weekOverWeekDelta)}% less than last week — that's okay 💛` : "Same as last week"}
             </div>
           )}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#8C6B9E", fontWeight: 800 }}>LAST {TREND_WEEKS + 1} WEEKS</div>
+            <div style={{ position: "relative", marginTop: 10, height: 64 }}>
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 1, background: "#EDE0F5" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, top: 32, height: 1, background: "#EDE0F5" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", alignItems: "flex-end", gap: 3, height: 64 }}>
+                {weeklyTrendPoints.map((point, index) => (
+                  <button
+                    key={point.weekStart}
+                    type="button"
+                    onClick={() => setTappedTrendWeek(tappedTrendWeek === point.weekStart ? null : point.weekStart)}
+                    aria-label={`Week of ${new Date(`${point.weekStart}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}: ${point.pct === null ? "no data" : `${point.pct}%`}`}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      height: point.pct === null ? 3 : Math.max(4, Math.round((point.pct / 100) * 56)),
+                      borderRadius: "4px 4px 0 0",
+                      border: point.isCurrent ? "2px solid #7A3D93" : tappedTrendWeek === point.weekStart ? "2px solid #A65DC1" : "none",
+                      background: point.pct === null ? "#EDE0F5" : point.isCurrent ? "linear-gradient(180deg, #C77DD6, #7FC8F8)" : "#D9B3E8",
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9.5, color: "#8C6B9E" }}>
+              <span>{new Date(`${weeklyTrendPoints[0].weekStart}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}</span>
+              <span>This week</span>
+            </div>
+            {tappedTrendWeek && (() => {
+              const tapped = weeklyTrendPoints.find((point) => point.weekStart === tappedTrendWeek);
+              if (!tapped) return null;
+              const weekLabel = tapped.isCurrent ? "This week" : `Week of ${new Date(`${tapped.weekStart}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`;
+              return (
+                <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 10, background: "#F2E3FA", fontSize: 12, fontWeight: 700, color: "#7A3D93" }}>
+                  {weekLabel}: {tapped.pct === null ? "no data" : `${tapped.pct}%`}
+                </div>
+              );
+            })()}
+          </div>
           <div style={{ display: "grid", gridTemplateColumns: preferences.gentle_streaks ? "repeat(2, minmax(0, 1fr))" : "repeat(3, minmax(0, 1fr))", gap: 8, marginTop: 12 }}>
             <div style={{ padding: "10px 8px", borderRadius: 12, textAlign: "center", background: "#FFF8FC" }}>
               <div style={{ fontSize: 17, fontWeight: 900, color: "#A65DC1" }}>{weeklyEssentialPct}%</div>
