@@ -3692,11 +3692,13 @@ function GlowUpTracker() {
   const enableNativeNotifications = async () => {
     const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
     try {
-      const localPermission = await window.Capacitor?.Plugins?.LocalNotifications?.requestPermissions?.();
-      if (localPermission && localPermission.display !== "granted") {
-        setSettingsMessage("Notifications are still off. You can allow them in this device's app settings.");
-        return;
-      }
+      // Used to also call LocalNotifications.requestPermissions() first —
+      // on Android 13+ both plugins request the same underlying
+      // POST_NOTIFICATIONS permission, and firing two native permission
+      // requests back to back (even sequentially in JS) is a known crash
+      // risk in Android's permission-request bookkeeping. Local reminders
+      // elsewhere (syncDailyReminders) already schedule without calling
+      // this first, so it wasn't actually load-bearing here.
       const permission = await PushNotifications.requestPermissions();
       if (permission?.receive !== "granted") {
         setSettingsMessage("Notifications are still off. You can allow them in this device's app settings.");
