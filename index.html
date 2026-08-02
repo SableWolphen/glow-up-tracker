@@ -1475,6 +1475,15 @@ function GlowUpTracker() {
   const [checkInPopupOpen, setCheckInPopupOpen] = useState(false);
   const [checkInMoreMoodsOpen, setCheckInMoreMoodsOpen] = useState(false);
   const [checkInCustomizeOpen, setCheckInCustomizeOpen] = useState(false);
+  useEffect(() => {
+    // Both sections are opt-in expansions, not settings — without this they'd
+    // stay expanded for the rest of the session once opened once, making the
+    // "optional" label a lie the next time the check-in opens.
+    if (checkInPopupOpen) {
+      setCheckInMoreMoodsOpen(false);
+      setCheckInCustomizeOpen(false);
+    }
+  }, [checkInPopupOpen]);
   const [completedTodayExpanded, setCompletedTodayExpanded] = useState(false);
   const [comfortToolOpen, setComfortToolOpen] = useState(null);
   const [breathPhase, setBreathPhase] = useState("in");
@@ -5292,13 +5301,6 @@ function GlowUpTracker() {
                 )}
               </div>
             )}
-            <div style={{ marginTop: 13, paddingTop: 13, borderTop: "1px solid #E6D4F2", display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div>
-                <div style={{ fontSize: 12.5, fontWeight: 800, color: "#5B4B6B" }}>🌴 Resting today</div>
-                <div style={{ marginTop: 2, fontSize: 11, color: "#8C6B9E" }}>Pauses today's task list and reminders. Planning ahead? Set a range in Settings.</div>
-              </div>
-              <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
-            </div>
             </>}
             <button type="button" disabled={!dailyCheckIn.mood} onClick={() => { setCheckInPopupOpen(false); setCheckInPopupDismissedToday(true); }} style={{ marginTop: 16, width: "100%", padding: "10px 14px", borderRadius: 12, border: 0, background: dailyCheckIn.mood ? "#A65DC1" : "#D8C8E2", color: "white", fontWeight: 900, cursor: dailyCheckIn.mood ? "pointer" : "not-allowed" }}>{dailyCheckIn.mood ? "Looks good" : "Choose the closest feeling"}</button>
           </div>
@@ -6160,6 +6162,10 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
             <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🌴 REST DAYS / VACATION MODE</div>
             <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#7B6888" }}>Plan ahead for a trip, illness, or any stretch of days. Rest days pause the list and reminders without erasing progress.</div>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginTop: 9, padding: "9px 11px", borderRadius: 10, background: "#F2FFFB", border: "1px solid #CFE8E1" }}>
+              <span style={{ fontSize: 12, fontWeight: 700, color: "#318C79" }}>Just resting today?</span>
+              <button type="button" onClick={toggleRestToday} style={{ padding: "6px 10px", borderRadius: 999, border: restDatesSet.has(period.date) ? "2px solid #318C79" : "1px solid #D9B8E8", background: restDatesSet.has(period.date) ? "#E7F7EF" : "white", color: restDatesSet.has(period.date) ? "#318C79" : "#8E4EAA", fontWeight: 800, fontSize: 11.5, cursor: "pointer", flexShrink: 0 }}>{restDatesSet.has(period.date) ? "✓ Resting" : "Turn on"}</button>
+            </div>
             <div style={{ display: "flex", gap: 7, marginTop: 9, flexWrap: "wrap", alignItems: "flex-end" }}>
               <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>From<input type="date" value={restRangeDraft.start} onChange={(event) => setRestRangeDraft((current) => ({ ...current, start: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
               <label style={{ fontSize: 11, fontWeight: 800, color: "#318C79" }}>To<input type="date" value={restRangeDraft.end} onChange={(event) => setRestRangeDraft((current) => ({ ...current, end: event.target.value }))} style={{ display: "block", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
