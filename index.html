@@ -2139,6 +2139,8 @@ function GlowUpTracker() {
   };
 
   const updateGuardianSupportRequest = async (requestId, status) => {
+    // No owner_user_id filter here on purpose — RLS lets the addressed Guardian
+    // resolve a request too, not just the owner who created it.
     const { error } = await supabase.from("guardian_support_requests").update({ status, resolved_at: status === "resolved" ? new Date().toISOString() : null }).eq("id", requestId);
     if (error) { setSupportMessage("That request could not be updated."); return; }
     setGuardianSupportRequests((rows) => rows.map((row) => row.id === requestId ? { ...row, status } : row));
@@ -2352,6 +2354,8 @@ function GlowUpTracker() {
     const changes = action === "approve"
       ? { approved_at: new Date().toISOString() }
       : { claimed_at: new Date().toISOString(), active: false };
+    // No owner_user_id filter here on purpose — RLS lets a permitted caregiver
+    // approve/claim rewards too, not just the owner who set them up.
     const { error } = await supabase.from("support_rewards").update(changes).eq("id", reward.id);
     if (error) { setSupportMessage("That reward couldn't be updated."); return; }
     setSupportRewards((items) => action === "claim" ? items.filter((item) => item.id !== reward.id) : items.map((item) => item.id === reward.id ? { ...item, ...changes } : item));
