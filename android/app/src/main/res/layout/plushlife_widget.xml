@@ -4,7 +4,7 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:orientation="vertical"
-    android:padding="16dp"
+    android:padding="12dp"
     android:background="@drawable/plushlife_widget_background">
 
     <TextView
@@ -67,45 +67,69 @@
         android:layout_width="match_parent"
         android:layout_height="0dp"
         android:layout_weight="1"
-        android:minHeight="6dp" />
+        android:minHeight="4dp" />
 
-    <TextView
+    <!-- Today's and this week's progress side by side instead of stacked —
+         two separate label+bar rows needed enough vertical space that on
+         anything but a tall widget placement, Android clipped them off the
+         bottom entirely rather than shrinking them to fit. -->
+    <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="TODAY"
-        android:textAllCaps="true"
-        android:textColor="#8C6B9E"
-        android:textSize="9sp"
-        android:textStyle="bold" />
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal">
 
-    <ProgressBar
-        android:id="@+id/widget_progress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="2dp"
-        android:progress="0"
-        android:progressTint="#A65DC1"
-        android:progressBackgroundTint="#EADCF0" />
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:layout_marginEnd="6dp"
+            android:orientation="vertical">
 
-    <TextView
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="8dp"
-        android:text="THIS WEEK"
-        android:textAllCaps="true"
-        android:textColor="#8C6B9E"
-        android:textSize="9sp"
-        android:textStyle="bold" />
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="TODAY"
+                android:textAllCaps="true"
+                android:textColor="#8C6B9E"
+                android:textSize="9sp"
+                android:textStyle="bold" />
 
-    <ProgressBar
-        android:id="@+id/widget_weekly_progress"
-        style="?android:attr/progressBarStyleHorizontal"
-        android:layout_width="match_parent"
-        android:layout_height="8dp"
-        android:layout_marginTop="2dp"
-        android:progress="0"
-        android:progressTint="#4C8FE8"
-        android:progressBackgroundTint="#DCE9FA" />
+            <ProgressBar
+                android:id="@+id/widget_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="2dp"
+                android:progress="0"
+                android:progressTint="#A65DC1"
+                android:progressBackgroundTint="#EADCF0" />
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:orientation="vertical">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="WEEK"
+                android:textAllCaps="true"
+                android:textColor="#8C6B9E"
+                android:textSize="9sp"
+                android:textStyle="bold" />
+
+            <ProgressBar
+                android:id="@+id/widget_weekly_progress"
+                style="?android:attr/progressBarStyleHorizontal"
+                android:layout_width="match_parent"
+                android:layout_height="6dp"
+                android:layout_marginTop="2dp"
+                android:progress="0"
+                android:progressTint="#4C8FE8"
+                android:progressBackgroundTint="#DCE9FA" />
+        </LinearLayout>
+    </LinearLayout>
 </LinearLayout>
