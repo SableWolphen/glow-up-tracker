@@ -4299,7 +4299,6 @@ function GlowUpTracker() {
     if (dashboard !== "today") return;
     setActive(dayIdForDate(period.date));
     setSelectedProgressDate(period.date);
-    setRoutineDateOverride(null);
   }, [dashboard, period.date]);
 
   useEffect(() => {
