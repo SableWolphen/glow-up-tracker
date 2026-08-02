@@ -308,7 +308,7 @@ function mascotGrowthStageForDays(activityDays) {
   return MASCOT_GROWTH_STAGES.find((stage) => activityDays >= stage.minDays) || MASCOT_GROWTH_STAGES[MASCOT_GROWTH_STAGES.length - 1];
 }
 
-function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = false, mood = "neutral", activityDays = 0 }) {
+function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = false, mood = "neutral", activityDays = 0, darkMode = false }) {
   const accessorySize = Math.round(size * 0.23);
   const ACCESSORY_POSITIONS = {
     bow: { left: "24%", top: "9%" },
@@ -319,7 +319,11 @@ function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = fal
   const accessoryPos = ACCESSORY_POSITIONS[outfit.id] || { left: "50%", top: "1%", transform: "translateX(-50%)" };
   const growth = mascotGrowthStageForDays(activityDays);
   return (
-    <div className={celebrating ? "plush-mascot mascot-celebrating" : "plush-mascot"} style={{ width: size, height: size, position: "relative", borderRadius: "50%", boxShadow: growth.glow }}>
+    // Dark Mode inverts the whole app's colors via a single CSS filter (see the
+    // preferences.dark_mode effect). That trick makes hand-drawn art like the
+    // mascot come out with wrong, muddy colors, so we cancel it back out here
+    // with an equal-and-opposite filter, keeping the mascot's real colors.
+    <div className={celebrating ? "plush-mascot mascot-celebrating" : "plush-mascot"} style={{ width: size, height: size, position: "relative", borderRadius: "50%", boxShadow: growth.glow, filter: darkMode ? "invert(1) hue-rotate(180deg)" : "none" }}>
       {growth.sparkles.map((sparkle, index) => (
         <span key={index} aria-hidden="true" style={{ position: "absolute", fontSize: Math.round(size * 0.16), left: `${[6, 88, 12, 82][index % 4]}%`, top: `${[4, 8, 78, 74][index % 4]}%`, pointerEvents: "none" }}>{sparkle}</span>
       ))}
@@ -1237,6 +1241,7 @@ function GlowUpTracker() {
   const weekSwipeStartY = React.useRef(null);
   const newTaskNameInputRef = React.useRef(null);
   const [todayCardIndex, setTodayCardIndex] = useState(1);
+  const [taskListCollapsed, setTaskListCollapsed] = useState(true);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
@@ -5059,7 +5064,7 @@ function GlowUpTracker() {
           <div onClick={(event) => event.stopPropagation()} style={{ width: "min(100%, 380px)" }}>
             <div style={{ padding: "26px 22px", borderRadius: 28, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 55%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", fontWeight: 900, color: "#A65DC1" }}>PLUSHLIST · MY WEEK</div>
-              <PlushMascot outfit={selectedOutfit} size={110} mood={mascotMood} activityDays={activityDaysTotal} />
+              <PlushMascot outfit={selectedOutfit} size={110} mood={mascotMood} activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
               <div id="share-card-title" style={{ marginTop: 4, fontSize: 34, fontWeight: 900, color: "#75428C" }}>{weeklyOverallPct}%</div>
               <div style={{ fontSize: 12.5, color: "#8C6B9E", fontWeight: 700 }}>whole-week progress</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8, marginTop: 18 }}>
@@ -5309,7 +5314,7 @@ function GlowUpTracker() {
             <span key={index} className="celebration-confetti" style={{ left: `${5 + index * 8}%`, animationDelay: `${(index % 5) * 0.12}s`, fontSize: `${18 + index % 3 * 6}px` }}>{piece}</span>
           ))}
           <div onClick={(event) => event.stopPropagation()} style={{ position: "relative", zIndex: 62, width: "min(100%, 390px)", padding: "22px 20px", borderRadius: 26, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
-            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} mood="excited" activityDays={activityDaysTotal} />
+            <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} mood="excited" activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
             <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{voice.celebrationTitle}</div>
             <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.55, color: "#6B5A7D" }}>
               You cared for every required task today. Bonus items are still optional—this day already counts.
@@ -5547,7 +5552,7 @@ function GlowUpTracker() {
           </div>
           {user && <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
             <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
-              <PlushMascot outfit={selectedOutfit} size={46} mood="happy" activityDays={activityDaysTotal} />
+              <PlushMascot outfit={selectedOutfit} size={46} mood="happy" activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
             </button>
           </div>}
         </div>
@@ -5862,7 +5867,7 @@ function GlowUpTracker() {
           <FeatureTip id="rewards_panel" text="Everything here is earned from all kinds of care, not just streaks — and once unlocked, nothing is ever taken away." />
           <div style={{ marginBottom: 18, padding: 17, borderRadius: 20, background: "linear-gradient(145deg,rgba(255,255,255,.88),rgba(255,245,218,.8))", border: "1px solid #E9C96E", boxShadow: "0 10px 28px rgba(166,109,20,.11)" }}>
             <div style={{ display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
-              <PlushMascot outfit={selectedOutfit} size={132} mood={mascotMood} activityDays={activityDaysTotal} />
+              <PlushMascot outfit={selectedOutfit} size={132} mood={mascotMood} activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
               <div style={{ flex: "1 1 190px" }}>
                 <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".16em", color: "#A56D14" }}>MASCOT CLOSET + BADGES</div>
                 <div style={{ marginTop: 4, fontSize: 20, fontWeight: 900, color: "#5B4B6B" }}>{selectedOutfit.name}</div>
@@ -7092,10 +7097,16 @@ function GlowUpTracker() {
                   <button type="button" onClick={() => setFocusModeShowAll(true)} style={{ marginTop: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>Show full list instead</button>
                 </div>
               );
-            })() : (
+            })() : taskListCollapsed ? (
+              <button type="button" onClick={() => setTaskListCollapsed(false)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "13px 14px", borderRadius: 13, border: `1px solid ${day.accent}55`, background: "white", cursor: "pointer", textAlign: "left" }}>
+                <span style={{ fontWeight: 800, fontSize: 13.5, color: "#5B4B6B" }}>📋 See today's full list</span>
+                <span style={{ fontWeight: 900, fontSize: 12.5, color: day.accent }}>{requiredDoneCount}/{requiredRows.length} done ›</span>
+              </button>
+            ) : (
               <>
+                <button type="button" onClick={() => setTaskListCollapsed(true)} style={{ marginBottom: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>▾ Collapse list</button>
                 {preferences.focus_mode && (
-                  <button type="button" onClick={() => setFocusModeShowAll(false)} style={{ marginBottom: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🎯 Back to one thing at a time</button>
+                  <button type="button" onClick={() => setFocusModeShowAll(false)} style={{ marginBottom: 10, marginLeft: 8, padding: "7px 11px", borderRadius: 9, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 12, cursor: "pointer" }}>🎯 Back to one thing at a time</button>
                 )}
                 {(() => {
               let lastSection = "";
