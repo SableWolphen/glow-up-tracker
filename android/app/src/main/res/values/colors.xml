@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Referenced by styles.xml. Kept as plain solid colors (not day/night
+         variants) so the app's window background can never resolve to
+         something dark when the device's system theme is set to dark —
+         this app doesn't have a native dark theme, only its own in-app
+         Dark Mode toggle, so the native chrome should always stay light. -->
+    <color name="colorPrimary">#C77DD6</color>
+    <color name="colorPrimaryDark">#FFF6FB</color>
+    <color name="colorAccent">#A65DC1</color>
+</resources>
