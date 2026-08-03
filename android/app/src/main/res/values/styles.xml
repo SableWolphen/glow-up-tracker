@@ -12,20 +12,31 @@
     <style name="AppTheme.NoActionBar" parent="Theme.AppCompat.DayNight.NoActionBar">
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
-        <item name="android:background">@null</item>
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        <item name="android:windowBackground">@color/colorPrimaryDark</item>
     </style>
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <!-- This is the actual theme MainActivity uses (see AndroidManifest.xml)
-             — the separate AppTheme.NoActionBar style above, which sets these
-             same two items, was never applied anywhere. Without them here,
-             the activity's title ("PlushLife", from title_activity_main) rendered
-             as a persistent native title bar above the app's own content on
-             every screen — the black bar the splash-icon fix only removed
-             the icon from, not the bar itself. -->
+        <!-- windowActionBar/windowNoTitle here were supposed to be enough on
+             their own, but a real device still showed a persistent native
+             black title bar ("PlushLife", from title_activity_main) above
+             the app's own content — even with a code-level
+             getSupportActionBar()?.hide() added too. The likely reason:
+             this theme was never hooked up with postSplashScreenTheme, so
+             the activity stays on the raw Theme.SplashScreen ancestry for
+             its entire lifetime instead of the documented core-splashscreen
+             pattern of handing off to a real app theme once the splash
+             exits — which on the platform's own Android 12+ splash-screen
+             integration is exactly the scenario where "no action bar"
+             doesn't reliably stick. AppTheme.NoActionBar above already has
+             the right Theme.AppCompat.DayNight.NoActionBar ancestry for
+             that handoff; it just needed to actually be wired in. -->
         <item name="windowActionBar">false</item>
         <item name="windowNoTitle">true</item>
+        <item name="postSplashScreenTheme">@style/AppTheme.NoActionBar</item>
         <!-- android:background used to point at @drawable/splash here, but
              that's a generic legacy attribute the platform SplashScreen
              system doesn't manage — with this theme staying applied to the
@@ -38,11 +49,10 @@
              MainActivity is what tells it to dismiss cleanly. -->
         <item name="android:windowSplashScreenBackground">@color/colorPrimary</item>
         <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
-        <!-- This theme still stays applied to the activity's window after
-             the splash itself is gone, so windowBackground is what shows
-             through the gap edge-to-edge leaves at the top of the screen.
-             Pinning it to a plain color (no night variant) keeps that gap
-             the app's own pink regardless of system dark mode. -->
+        <!-- Shows only during the brief splash window now that
+             postSplashScreenTheme hands off to AppTheme.NoActionBar
+             afterward — pinned to a plain color (no night variant) so it's
+             never dark regardless of system dark mode. -->
         <item name="android:windowBackground">@color/colorPrimaryDark</item>
     </style>
 </resources>
