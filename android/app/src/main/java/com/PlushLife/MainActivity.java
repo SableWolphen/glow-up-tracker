@@ -37,6 +37,16 @@ public class MainActivity extends BridgeActivity {
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(NotificationPermissionPlugin.class);
         super.onCreate(savedInstanceState);
+        // Belt-and-suspenders: the theme-level windowActionBar/windowNoTitle
+        // items didn't visibly remove the persistent bar on a real device,
+        // despite Theme.SplashScreen's own ancestry already being NoActionBar
+        // (confirmed against the actual androidx source) — so whatever this
+        // bar actually is, it's still under investigation. This is a no-op
+        // if there's genuinely no support action bar, and a real fix if one
+        // is somehow present despite the theme.
+        if (getSupportActionBar() != null) {
+            getSupportActionBar().hide();
+        }
         checkForUpdate();
     }
 
