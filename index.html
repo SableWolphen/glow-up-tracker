@@ -4,6 +4,16 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#b75acb">
+<!-- This app has no native dark theme (only its own in-app Dark Mode
+     toggle), but without this the WebView's own automatic "dark theme
+     for web content" feature can still decide to darken elements on its
+     own when the OS is in system dark mode — inverting a light header
+     background to near-black while leaving its text light, which is
+     what showed up as a persistent black title bar that no native
+     Android theme/ActionBar change ever touched, because it was never
+     native chrome to begin with. Declaring the page as light-only opts
+     it out of that automatic darkening. -->
+<meta name="color-scheme" content="light only">
 <meta name="description" content="PlushLife is a gentle, private care and routine companion that adapts to the day you are actually having.">
 <meta property="og:title" content="PlushLife — Care that fits today.">
 <meta property="og:description" content="Adaptive routines, private progress, grounding tools, guided paths, sleep support, and optional Guardian care.">
@@ -24,7 +34,7 @@
      without an explicit background here that strip falls back to the
      WebView's own default canvas color instead of the app's actual color —
      this is what showed up as a black bar at the top on native builds. */
-  html, body { background-color: #FFF6FB; }
+  html, body { background-color: #FFF6FB; color-scheme: light only; }
   :focus-visible { outline: 3px solid #4C8FE8 !important; outline-offset: 3px; }
   .skip-link { position: fixed; left: 12px; top: -60px; z-index: 99999; padding: 10px 14px; border-radius: 10px; background: #5B4B6B; color: white; font: 800 14px system-ui, sans-serif; }
   .skip-link:focus { top: 12px; }
