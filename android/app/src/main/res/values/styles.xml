@@ -17,15 +17,23 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
-        <item name="android:background">@drawable/splash</item>
-        <!-- This theme (and its splash drawable) stays applied to the
-             activity's window after the splash screen itself is gone, so
-             its background is what shows through the gap edge-to-edge
-             leaves at the top of the screen. @drawable/splash has a
-             drawable-night variant that's nearly black — fine for a brief
-             splash flash, wrong as a persistent background on a device
-             with system dark mode on. Pinning windowBackground to a plain
-             color (no night variant) keeps that gap the app's own pink. -->
+        <!-- android:background used to point at @drawable/splash here, but
+             that's a generic legacy attribute the platform SplashScreen
+             system doesn't manage — with this theme staying applied to the
+             activity's window after launch (see below), a sliver of that
+             drawable could keep rendering under edge-to-edge instead of
+             being properly dismissed, showing up as a stray squished icon
+             at the top of the screen. windowSplashScreenBackground/
+             windowSplashScreenAnimatedIcon are the attributes the splash
+             system actually manages, and installSplashScreen() in
+             MainActivity is what tells it to dismiss cleanly. -->
+        <item name="android:windowSplashScreenBackground">@color/colorPrimary</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@mipmap/ic_launcher</item>
+        <!-- This theme still stays applied to the activity's window after
+             the splash itself is gone, so windowBackground is what shows
+             through the gap edge-to-edge leaves at the top of the screen.
+             Pinning it to a plain color (no night variant) keeps that gap
+             the app's own pink regardless of system dark mode. -->
         <item name="android:windowBackground">@color/colorPrimaryDark</item>
     </style>
 </resources>

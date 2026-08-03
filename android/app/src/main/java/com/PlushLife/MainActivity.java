@@ -6,6 +6,7 @@ import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
 import androidx.appcompat.app.AlertDialog;
+import androidx.core.splashscreen.SplashScreen;
 import com.getcapacitor.BridgeActivity;
 import com.google.android.play.core.appupdate.AppUpdateManager;
 import com.google.android.play.core.appupdate.AppUpdateManagerFactory;
@@ -27,6 +28,11 @@ public class MainActivity extends BridgeActivity {
 
     @Override
     public void onCreate(Bundle savedInstanceState) {
+        // Must run before super.onCreate() — this is what tells the system
+        // to actually dismiss the splash screen once the first frame draws,
+        // instead of leaving it (and the permanently-applied splash theme)
+        // in an undefined state.
+        SplashScreen.installSplashScreen(this);
         EdgeToEdge.enable(this);
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(NotificationPermissionPlugin.class);
