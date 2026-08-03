@@ -1554,6 +1554,7 @@ function GlowUpTracker() {
     seen_features: [],
   });
   const [settingsMessage, setSettingsMessage] = useState("");
+  const [nativeBuildInfo, setNativeBuildInfo] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
   const [focusHelperOpen, setFocusHelperOpen] = useState(false);
   const [insightCardIndex, setInsightCardIndex] = useState(0);
@@ -3965,6 +3966,23 @@ function GlowUpTracker() {
     return () => document.removeEventListener("plushlife-native-push-token", handler);
   }, [user?.id]);
 
+  // The WebView's content loads live from GitHub Pages regardless of which
+  // native build is installed, so it has no way on its own to say which
+  // native build (with which native fixes) is actually on the device —
+  // @capacitor/app covers versionName/versionCode, and the small
+  // BuildInfo plugin covers the exact commit that native build compiled
+  // from, set by android-release.yml at CI build time.
+  useEffect(() => {
+    if (!window.Capacitor?.isNativePlatform?.()) return;
+    Promise.all([
+      window.Capacitor.Plugins.App?.getInfo?.().catch(() => null),
+      window.Capacitor.Plugins.BuildInfo?.getInfo?.().catch(() => null),
+    ]).then(([appInfo, buildInfo]) => {
+      if (!appInfo) return;
+      setNativeBuildInfo({ version: appInfo.version, build: appInfo.build, gitSha: buildInfo?.gitSha || "unknown" });
+    });
+  }, []);
+
   const enableNotifications = async () => {
     if (window.Capacitor?.isNativePlatform?.() && window.Capacitor?.Plugins?.PushNotifications) {
       return enableNativeNotifications();
@@ -6169,6 +6187,11 @@ function GlowUpTracker() {
               <button type="button" onClick={() => { setAdminOpen(true); loadAdminData(); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #C45D7455", background: "#FFFFFFAA", color: "#C45D74", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
                 <span aria-hidden="true" style={{ fontSize: 18 }}>🛠️</span> Admin <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>›</span>
               </button>
+            )}
+            {nativeBuildInfo && (
+              <div title={`Commit ${nativeBuildInfo.gitSha}`} style={{ marginTop: 4, textAlign: "center", fontSize: 10.5, color: "#B49FC7" }}>
+                App v{nativeBuildInfo.version} · build {nativeBuildInfo.build} · {String(nativeBuildInfo.gitSha).slice(0, 7)}
+              </div>
             )}
           </div>
         )}

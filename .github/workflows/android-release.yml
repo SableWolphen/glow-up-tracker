@@ -85,6 +85,11 @@ jobs:
           PLUSHLIFE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
           PLUSHLIFE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
           PLUSHLIFE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          # Lets the About screen show exactly which commit this native
+          # build compiled from — the WebView's own content loads live from
+          # GitHub Pages regardless of which native build is installed, so
+          # it has no other way to know.
+          PLUSHLIFE_GIT_SHA: ${{ github.sha }}
         run: ./gradlew bundleRelease
 
       - name: Validate signed AAB
@@ -108,18 +113,44 @@ jobs:
           echo "--- native libs per module (ABI check) ---"
           unzip -l android/app/build/outputs/bundle/release/app-release.aab | grep -i "\.so$" || echo "(no .so files found)"
 
+      # Direct-install APKs aren't something Play Store distribution needs —
+      # this is purely for sideloading onto a test device without going
+      # through Play at all. bundletool derives it from the same signed AAB
+      # (same keystore, same content) rather than a second separate build.
+      - name: Build universal APK for direct-install testing
+        run: |
+          java -jar bundletool.jar build-apks \
+            --bundle=android/app/build/outputs/bundle/release/app-release.aab \
+            --output=app-release.apks \
+            --mode=universal \
+            --ks=android/app/release.keystore \
+            --ks-key-alias="${{ secrets.ANDROID_KEY_ALIAS }}" \
+            --ks-pass=pass:"${{ secrets.ANDROID_KEYSTORE_PASSWORD }}" \
+            --key-pass=pass:"${{ secrets.ANDROID_KEY_PASSWORD }}"
+          unzip -o app-release.apks -d app-release-apks
+          mv app-release-apks/universal.apk app-release-${{ inputs.versionCode }}.apk
+
       - name: Remove decoded keystore
         if: always()
         run: rm -f android/app/release.keystore
 
-      - name: SHA-256 of the AAB
-        run: sha256sum android/app/build/outputs/bundle/release/app-release.aab
+      - name: SHA-256 of the AAB and APK
+        run: |
+          sha256sum android/app/build/outputs/bundle/release/app-release.aab
+          sha256sum app-release-${{ inputs.versionCode }}.apk
 
       - name: Upload AAB
         uses: actions/upload-artifact@v7
         with:
           name: app-release-${{ inputs.versionCode }}
           path: android/app/build/outputs/bundle/release/app-release.aab
+          retention-days: 30
+
+      - name: Upload universal APK
+        uses: actions/upload-artifact@v7
+        with:
+          name: app-release-${{ inputs.versionCode }}-apk
+          path: app-release-${{ inputs.versionCode }}.apk
           retention-days: 30
 
       - name: Publish to Google Play

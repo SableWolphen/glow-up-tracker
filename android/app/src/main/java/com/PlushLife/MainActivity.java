@@ -52,6 +52,7 @@ public class MainActivity extends BridgeActivity {
             SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT));
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(NotificationPermissionPlugin.class);
+        registerPlugin(BuildInfoPlugin.class);
         super.onCreate(savedInstanceState);
         // Belt-and-suspenders: confirmed via a real device screenshot that a
         // native black title bar (showing title_activity_main, "PlushLife")
