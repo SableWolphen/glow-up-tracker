@@ -5103,38 +5103,27 @@ function GlowUpTracker() {
   const canUseCaretakerDashboard = invitedSupportLinks.length > 0;
   const ownedSupportLinks = supportLinks.filter((link) => link.owner_user_id === user?.id);
   const hasOwnGuardian = ownedSupportLinks.some((link) => link.active && link.accepted_at);
-  // Being someone else's Guardian is a distinct role — if this user has
-  // accepted an invite to support someone, it gets its own top-level
-  // "Supporting" tab instead of being hidden behind a toggle inside the
-  // regular Guardian screen.
+  // Being someone else's Guardian is a distinct role, but it's reached via
+  // the "People I Support" toggle inside the regular Guardian screen rather
+  // than its own top-level tab — a separate "Supporting" tab turned out to
+  // just be a second entry point to the exact same view.
   const dashboardItems = [
     ...DASHBOARDS.slice(0, 3),
     { id: "guardian", label: hasOwnGuardian ? "Guardian" : "Add a Guardian", icon: "💛", accent: "#4C8FE8" },
-    ...(canUseCaretakerDashboard ? [{ id: "supporting", label: "Supporting", icon: "🧑‍🤝‍🧑", accent: "#318C79" }] : []),
     DASHBOARDS[4],
   ];
 
   const goToDashboard = (id) => {
-    const targetId = id === "supporting" ? "guardian" : id;
-    setDashboard(targetId);
-    if (targetId === "today") {
+    setDashboard(id);
+    if (id === "today") {
       setActive(dayIdForDate(period.date));
       setSelectedProgressDate(period.date);
     }
-    if (targetId === "guardian") {
-      if (id === "supporting") {
-        setSupportViewMode("caretaker");
-        if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id);
-      } else {
-        setSupportViewMode("mine");
-      }
+    if (id === "guardian") {
+      setSupportViewMode("mine");
     }
   };
-  const dashboardIndex = dashboardItems.findIndex((item) =>
-    item.id === "supporting" ? (dashboard === "guardian" && supportViewMode === "caretaker") :
-    item.id === "guardian" ? (dashboard === "guardian" && supportViewMode !== "caretaker") :
-    item.id === dashboard
-  );
+  const dashboardIndex = dashboardItems.findIndex((item) => item.id === dashboard);
   const stepDashboard = (direction) => {
     const currentIndex = dashboardIndex === -1 ? 0 : dashboardIndex;
     const nextItem = dashboardItems[Math.max(0, Math.min(dashboardItems.length - 1, currentIndex + direction))];
@@ -6006,9 +5995,7 @@ function GlowUpTracker() {
             else if (event.key === "ArrowLeft") { event.preventDefault(); stepDashboard(-1); }
           }} style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${dashboardItems.length}, minmax(0, 1fr))`, gap: 6, minWidth: 0 }}>
             {dashboardItems.map((item) => {
-              const on = item.id === "supporting" ? (dashboard === "guardian" && supportViewMode === "caretaker") :
-                item.id === "guardian" ? (dashboard === "guardian" && supportViewMode !== "caretaker") :
-                item.id === dashboard;
+              const on = item.id === dashboard;
               return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>
                 <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
                 {item.id === "guardian" && unreadNoteCount > 0 && (
