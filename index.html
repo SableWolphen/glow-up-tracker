@@ -1544,7 +1544,13 @@ function GlowUpTracker() {
   }, [selectedProgressDate]);
 
   useEffect(() => {
-    setInsightCardIndex(0);
+    // Rotate which insight leads each day (by days-since-epoch, reduced to
+    // range at render time via `% patternInsightCards.length`) instead of
+    // always resetting to the first card — otherwise whichever insight
+    // happens to compute first (usually the weekday pattern) crowds out the
+    // others indefinitely unless someone manually clicks "Next insight."
+    const daysSinceEpoch = Math.floor(new Date(`${period.date}T12:00:00Z`).getTime() / 86400000);
+    setInsightCardIndex(daysSinceEpoch);
   }, [period.date]);
 
   useEffect(() => {
