@@ -20,6 +20,11 @@
 <link rel="apple-touch-icon" href="./icon-192.png">
 <title>PlushLife</title>
 <style>
+  /* Edge-to-edge (Android) extends the WebView under the status bar, and
+     without an explicit background here that strip falls back to the
+     WebView's own default canvas color instead of the app's actual color —
+     this is what showed up as a black bar at the top on native builds. */
+  html, body { background-color: #FFF6FB; }
   :focus-visible { outline: 3px solid #4C8FE8 !important; outline-offset: 3px; }
   .skip-link { position: fixed; left: 12px; top: -60px; z-index: 99999; padding: 10px 14px; border-radius: 10px; background: #5B4B6B; color: white; font: 800 14px system-ui, sans-serif; }
   .skip-link:focus { top: 12px; }
@@ -3899,16 +3904,21 @@ function GlowUpTracker() {
 
   const enableNativeNotifications = async () => {
     const PushNotifications = window.Capacitor?.Plugins?.PushNotifications;
+    const NotificationPermission = window.Capacitor?.Plugins?.NotificationPermission;
     try {
-      // Used to also call LocalNotifications.requestPermissions() first —
-      // on Android 13+ both plugins request the same underlying
-      // POST_NOTIFICATIONS permission, and firing two native permission
-      // requests back to back (even sequentially in JS) is a known crash
-      // risk in Android's permission-request bookkeeping. Local reminders
-      // elsewhere (syncDailyReminders) already schedule without calling
-      // this first, so it wasn't actually load-bearing here.
-      const permission = await PushNotifications.requestPermissions();
-      if (permission?.receive !== "granted") {
+      // PushNotifications.requestPermissions() routes through a Capacitor
+      // core method (Bridge.getPermissionStates) with an open, unfixed
+      // upstream bug (ionic-team/capacitor#8400) that throws a real native
+      // NullPointerException — a full app crash, not a catchable JS error —
+      // confirmed via Crashlytics stack traces on real releases. Our own
+      // native plugin requests the same POST_NOTIFICATIONS permission
+      // directly with Android's own API, sidestepping that code path
+      // entirely. Falls back to the Capacitor call only if that plugin is
+      // somehow unavailable (e.g. a stale cached build).
+      const permission = NotificationPermission
+        ? await NotificationPermission.requestPostNotifications()
+        : await PushNotifications.requestPermissions().then((result) => ({ granted: result?.receive === "granted" }));
+      if (!permission?.granted) {
         setSettingsMessage("Notifications are still off. You can allow them in this device's app settings.");
         return;
       }
@@ -4729,7 +4739,7 @@ function GlowUpTracker() {
       progress: pct,
       weeklyProgress: weeklyOverallPct,
       tasks: rows.slice(0, 3).map((row) => ({ label: row.label, done: !!viewDone[row.key] })),
-    }).catch(() => {});
+    }).catch((error) => console.error("[widget] updateWidget failed:", error));
   }, [user?.id, selectedProgressDate, period.date, dailyCheckIn.day_type, pct, weeklyOverallPct, JSON.stringify(rows.slice(0, 3).map((row) => [row.key, row.label, !!viewDone[row.key]]))]);
 
   const previousWeekHistoryByDate = new Map(previousWeekHistory.map((entry) => [entry.progress_date, new Set(entry.completed_keys || [])]));
