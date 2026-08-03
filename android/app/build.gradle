@@ -15,6 +15,17 @@ android {
              // Default: https://android.googlesource.com/platform/frameworks/base/+/282e181b58cf72b6ca770dc7ca5f91f135444502/tools/aapt/AaptAssets.cpp#61
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
+        // The web content this app's WebView loads comes live from GitHub
+        // Pages, independent of which native build is installed — so it
+        // can't tell you which native build (with which native fixes) is
+        // actually on the device. android-release.yml sets this env var to
+        // the exact commit the CI build ran from; BuildInfoPlugin exposes it
+        // to the web content for an About screen. Falls back to "unknown"
+        // for a local `./gradlew assembleDebug` where it's never set.
+        buildConfigField "String", "GIT_SHA", "\"${System.getenv('PLUSHLIFE_GIT_SHA') ?: 'unknown'}\""
+    }
+    buildFeatures {
+        buildConfig true
     }
     // Release signing comes entirely from environment variables (set as GitHub
     // Actions secrets in .github/workflows/android-release.yml) so the keystore,
