@@ -73,7 +73,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onResume() {
+    public void onResume() {
         super.onResume();
         // Covers the case where a FLEXIBLE download already finished while
         // the app was backgrounded — the listener above only fires on the
@@ -88,7 +88,7 @@ public class MainActivity extends BridgeActivity {
     }
 
     @Override
-    protected void onDestroy() {
+    public void onDestroy() {
         if (appUpdateManager != null && installStateListener != null) {
             appUpdateManager.unregisterListener(installStateListener);
         }
