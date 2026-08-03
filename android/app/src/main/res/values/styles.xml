@@ -1,9 +1,16 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
 
-    <!-- Base application theme. -->
-    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
-        <!-- Customize your theme here. -->
+    <!-- Application-level fallback theme (only MainActivity's own
+         AppTheme.NoActionBarLaunch is ever actually in effect today, since
+         it overrides this at the <activity> level and there's no second
+         activity in the manifest to fall back to it) — but if a future
+         activity is ever added without its own theme override, this is what
+         it would get. The original DarkActionBar parent here is exactly the
+         class of theme that caused the persistent native black title bar
+         this app spent a long diagnostic chain fixing elsewhere; NoActionBar
+         keeps that mistake from silently coming back through this path. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.NoActionBar">
         <item name="colorPrimary">@color/colorPrimary</item>
         <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
         <item name="colorAccent">@color/colorAccent</item>
