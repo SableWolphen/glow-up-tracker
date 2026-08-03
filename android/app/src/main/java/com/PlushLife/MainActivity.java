@@ -1,6 +1,5 @@
 package com.PlushLife;
 
-import android.content.IntentSender;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
 import androidx.activity.result.ActivityResultLauncher;
@@ -37,13 +36,8 @@ public class MainActivity extends BridgeActivity {
         appUpdateManager.getAppUpdateInfo().addOnSuccessListener(info -> {
             if (info.updateAvailability() == UpdateAvailability.UPDATE_AVAILABLE
                     && info.isUpdateTypeAllowed(AppUpdateType.IMMEDIATE)) {
-                try {
-                    appUpdateManager.startUpdateFlowForResult(
-                        info, updateLauncher, AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
-                } catch (IntentSender.SendIntentException ignored) {
-                    // If Play can't start the flow, the app just continues on
-                    // the current version rather than crashing.
-                }
+                appUpdateManager.startUpdateFlowForResult(
+                    info, updateLauncher, AppUpdateOptions.newBuilder(AppUpdateType.IMMEDIATE).build());
             }
         });
     }
