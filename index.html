@@ -51,7 +51,12 @@
   var Plugins = window.Capacitor.Plugins;
 
   if (Plugins.StatusBar) {
-    Plugins.StatusBar.setBackgroundColor({ color: "#FFF8FC" }).catch(function () {});
+    // setBackgroundColor() used to be called here too, but it routes to
+    // Window.setStatusBarColor() — deprecated on Android 15+ (flagged by
+    // Play Console's pre-launch report) and fundamentally at odds with
+    // EdgeToEdge.enable() in MainActivity, which already draws the app's
+    // own content under a transparent status bar. setStyle() alone (icon
+    // color only) uses the non-deprecated WindowInsetsControllerCompat API.
     Plugins.StatusBar.setStyle({ style: "DARK" }).catch(function () {});
   }
 
