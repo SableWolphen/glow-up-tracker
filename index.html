@@ -4573,6 +4573,15 @@ function GlowUpTracker() {
   const requiredDoneCount = requiredRows.filter((row) => viewDone[row.key]).length;
   const optionalDoneCount = optionalRows.filter((row) => viewDone[row.key]).length;
   const pct = requiredRows.length ? Math.round((requiredDoneCount / requiredRows.length) * 100) : 0;
+  // Hoisted so the "Feeling stuck?" helper further down can tell whether the
+  // One Next Step card is already showing this same single-task suggestion,
+  // instead of duplicating it right underneath.
+  const nextStepEssentialPool = dailyCheckIn.custom_essentials?.length
+    ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
+    : requiredRows;
+  const nextStepTask = dailyCheckIn.day_type !== "rest" && !nextStepDismissedToday
+    ? nextStepEssentialPool.find((r) => !viewDone[r.key] && !nextStepSkipped.includes(r.key))
+    : null;
   // The helper always offers an unfinished required task from the date you're currently viewing.
   const focusChoices = trackerTasks
     .filter((task) =>
@@ -7381,12 +7390,7 @@ function GlowUpTracker() {
           </div>
         )}
 
-        {dailyCheckIn.day_type !== "rest" && !nextStepDismissedToday && (() => {
-          const essentialPool = dailyCheckIn.custom_essentials?.length
-            ? rows.filter((r) => dailyCheckIn.custom_essentials.includes(r.key))
-            : requiredRows;
-          const nextStepTask = essentialPool.find((r) => !viewDone[r.key] && !nextStepSkipped.includes(r.key));
-          if (!nextStepTask) return null;
+        {nextStepTask && (() => {
           return (
             <>
             <FeatureTip id="one_next_step" text="This is your One Next Step — just the single most useful thing to do right now, so you don't have to look at everything at once." />
@@ -7501,7 +7505,11 @@ function GlowUpTracker() {
         )}
         </>}
 
-        {todayCardIndex === 1 && rows.length > 0 && dailyCheckIn.day_type !== "rest" && (
+        {todayCardIndex === 1 && rows.length > 0 && dailyCheckIn.day_type !== "rest" && (focusHelperOpen || !nextStepTask) && (
+          // Suppressed (unless already open) whenever the One Next Step card
+          // above is already showing this same single-task suggestion — no
+          // point offering "pick one thing for me" right under a card that's
+          // already doing exactly that.
           <div style={{ marginBottom: 14, padding: 15, borderRadius: 18, background: focusHelperOpen ? "#F2FFFB" : "#FFFFFF99", border: focusHelperOpen ? "1px solid #73B7A8" : "1px solid #CFE8E1" }}>
             {!focusHelperOpen ? (
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10, flexWrap: "wrap" }}>
