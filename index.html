@@ -373,7 +373,7 @@ function PlushMascot({ outfit = MASCOT_OUTFITS[0], size = 150, celebrating = fal
 
 function isQuietTime(preferences) {
   const parts = new Intl.DateTimeFormat("en-US", {
-    timeZone: "America/Chicago",
+    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     hour: "2-digit",
     minute: "2-digit",
     hourCycle: "h23",
@@ -787,8 +787,8 @@ const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TREND_WEEKS = 8;
 
 function trackerPeriod(now = new Date()) {
-  const chicagoDate = new Intl.DateTimeFormat("en-CA", { timeZone: "America/Chicago" });
-  const date = chicagoDate.format(now);
+  const localDate = new Intl.DateTimeFormat("en-CA", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
+  const date = localDate.format(now);
   const dateAtNoonUtc = new Date(`${date}T12:00:00Z`);
   const monday = new Date(dateAtNoonUtc);
   monday.setUTCDate(monday.getUTCDate() - ((monday.getUTCDay() + 6) % 7));
