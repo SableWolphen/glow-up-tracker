@@ -17,6 +17,15 @@
 
 
     <style name="AppTheme.NoActionBarLaunch" parent="Theme.SplashScreen">
+        <!-- This is the actual theme MainActivity uses (see AndroidManifest.xml)
+             — the separate AppTheme.NoActionBar style above, which sets these
+             same two items, was never applied anywhere. Without them here,
+             the activity's title ("PlushLife", from title_activity_main) rendered
+             as a persistent native title bar above the app's own content on
+             every screen — the black bar the splash-icon fix only removed
+             the icon from, not the bar itself. -->
+        <item name="windowActionBar">false</item>
+        <item name="windowNoTitle">true</item>
         <!-- android:background used to point at @drawable/splash here, but
              that's a generic legacy attribute the platform SplashScreen
              system doesn't manage — with this theme staying applied to the
