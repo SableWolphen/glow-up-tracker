@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Explicitly protects the widget's resources from R8/AAPT2's resource
+     shrinker (minifyEnabled + shrinkResources are both on). The shrinker's
+     static-usage analysis doesn't reliably trace resources that are only
+     ever touched through RemoteViews (PlushLifeWidgetProvider sets view
+     properties by resource ID at runtime, not via normal layout inflation
+     it can follow) — a well-documented way for shrinkResources to strip
+     something a home-screen widget depends on, which then fails to bind at
+     all on the launcher side ("Couldn't add widget"), not just render with
+     missing data. -->
+<resources xmlns:tools="http://schemas.android.com/tools"
+    tools:keep="@layout/plushlife_widget,@drawable/plushlife_widget_background,@xml/plushlife_widget_info,@string/widget_description" />
