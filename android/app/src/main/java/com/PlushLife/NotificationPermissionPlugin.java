@@ -22,7 +22,7 @@ public class NotificationPermissionPlugin extends Plugin {
     private ActivityResultLauncher<String> requestLauncher;
 
     @Override
-    protected void load() {
+    public void load() {
         // Runs during the Bridge's own onCreate-time setup, so this is well
         // before the activity reaches STARTED — same timing rule as any
         // registerForActivityResult call.
