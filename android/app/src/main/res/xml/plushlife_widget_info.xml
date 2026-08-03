@@ -1,10 +1,21 @@
 <?xml version="1.0" encoding="utf-8"?>
+<!-- "Couldn't add widget" showed up specifically on the Samsung One UI
+     placement/preview screen, not as a runtime crash after actually
+     placing it — that's the signature of a preview-generation failure,
+     not a bug in the widget's own RemoteViews. Neither previewImage nor
+     the newer previewLayout (API 31+, lets the system render the real
+     RemoteViews layout as a live preview) was set here; stock AOSP
+     falls back to the app icon when both are missing, but One UI's own
+     widget picker (targetSdk 36 means all Android 12+ widget behavior
+     is in effect here) has been known to fail the add flow outright
+     instead of falling back gracefully. -->
 <appwidget-provider xmlns:android="http://schemas.android.com/apk/res/android"
     android:minWidth="250dp"
     android:minHeight="140dp"
     android:targetCellWidth="4"
     android:targetCellHeight="2"
     android:initialLayout="@layout/plushlife_widget"
+    android:previewLayout="@layout/plushlife_widget"
     android:resizeMode="horizontal|vertical"
     android:widgetCategory="home_screen"
     android:updatePeriodMillis="0"
