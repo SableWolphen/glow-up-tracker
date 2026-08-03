@@ -35,8 +35,15 @@ android {
     }
     buildTypes {
         release {
-            minifyEnabled true
-            shrinkResources true
+            // TEMPORARILY OFF as a diagnostic: the keep.xml rule added to
+            // protect the widget's resources from the shrinker had zero
+            // effect on a real device ("Couldn't add widget" persisted), so
+            // this build turns shrinking off entirely to find out whether
+            // resource shrinking is really the widget's problem at all — if
+            // the widget still fails with shrinking fully disabled, the
+            // real cause is something else and this should go back to true.
+            minifyEnabled false
+            shrinkResources false
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
             ndk {
                 debugSymbolLevel 'FULL'
