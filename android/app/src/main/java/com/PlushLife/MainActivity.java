@@ -1,7 +1,9 @@
 package com.PlushLife;
 
+import android.graphics.Color;
 import android.os.Bundle;
 import androidx.activity.EdgeToEdge;
+import androidx.activity.SystemBarStyle;
 import androidx.activity.result.ActivityResultLauncher;
 import androidx.activity.result.IntentSenderRequest;
 import androidx.activity.result.contract.ActivityResultContracts;
@@ -33,7 +35,21 @@ public class MainActivity extends BridgeActivity {
         // instead of leaving it (and the permanently-applied splash theme)
         // in an undefined state.
         SplashScreen.installSplashScreen(this);
-        EdgeToEdge.enable(this);
+        // The no-arg EdgeToEdge.enable(this) defaults both bars to
+        // SystemBarStyle.auto(...), whose nightMode is MODE_NIGHT_AUTO — and
+        // androidx's own EdgeToEdge implementation reads that to set
+        // window.isNavigationBarContrastEnforced = true, opting the app into
+        // Android's own non-customizable translucent scrim over the
+        // navigation bar. That's a platform-drawn overlay sitting on top of
+        // everything, which is why no theme, windowBackground, or WebView
+        // CSS change ever touched it. This app has no native dark chrome
+        // (colors.xml is deliberately day/night-agnostic), so pinning both
+        // bars to an explicit light style — not auto — keeps nightMode off
+        // MODE_NIGHT_AUTO and turns that enforced scrim off for good.
+        EdgeToEdge.enable(
+            this,
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT),
+            SystemBarStyle.light(Color.TRANSPARENT, Color.TRANSPARENT));
         registerPlugin(WidgetBridgePlugin.class);
         registerPlugin(NotificationPermissionPlugin.class);
         super.onCreate(savedInstanceState);
