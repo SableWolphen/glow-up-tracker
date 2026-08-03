@@ -29,6 +29,7 @@ public class MainActivity extends BridgeActivity {
     public void onCreate(Bundle savedInstanceState) {
         EdgeToEdge.enable(this);
         registerPlugin(WidgetBridgePlugin.class);
+        registerPlugin(NotificationPermissionPlugin.class);
         super.onCreate(savedInstanceState);
         checkForUpdate();
     }
