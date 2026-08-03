@@ -31,3 +31,8 @@
 -keep class com.google.android.gms.** { *; }
 -dontwarn com.google.firebase.**
 -dontwarn com.google.android.gms.**
+
+# Same reasoning as above, for the Play in-app update library (checks Play
+# Store for a newer version on launch and forces an update if one exists).
+-keep class com.google.android.play.core.** { *; }
+-dontwarn com.google.android.play.core.**
