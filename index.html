@@ -4585,6 +4585,11 @@ function GlowUpTracker() {
       why: task.why_note || null,
       right: task.day_id === "daily" || !cleanDetail || cleanDetail.length > 40 ? null : cleanDetail,
       section: task.section,
+      // True "every day" tasks (day_id "daily", or schedule_days covering
+      // all 7 days) get grouped under one "Daily" header below, distinct
+      // from this-list's-own section — otherwise they were indistinguishable
+      // from a today-only task that just happens to share the same section.
+      isEveryday: task.day_id === "daily" || (Array.isArray(task.schedule_days) && task.schedule_days.length === 7),
       isBonus: taskIsOptional(task),
       habitType: habitTypeForTask(task),
     };
@@ -7821,8 +7826,9 @@ function GlowUpTracker() {
               const incompleteRows = visibleRows.filter((r) => !viewDone[r.key] || recentlyCompletedKeys.includes(r.key));
               const completedRows = visibleRows.filter((r) => viewDone[r.key] && !recentlyCompletedKeys.includes(r.key));
               const renderRow = (r) => {
-                const header = r.section !== lastSection ? r.section : null;
-                lastSection = r.section;
+                const groupKey = r.isEveryday ? "__everyday__" : r.section;
+                const header = groupKey !== lastSection ? (r.isEveryday ? "Daily" : r.section) : null;
+                lastSection = groupKey;
                 const checked = !!viewDone[r.key];
                 const isMovable = r.sourceTask?.schedule_type === "once" && !checked && !isFutureView;
                 const expandable = !!(r.how || r.why) || isMovable;
