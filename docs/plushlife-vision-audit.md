@@ -30,29 +30,32 @@ recommended rollout order — read-only, no code changed for this audit.
 
 ## Real gaps
 
-- **PlushCalendar (day / week / agenda views) doesn't exist.** Today
-  there's one month-view heatmap inside the Progress tab (shows
-  completion-percentage shading per day, tap to jump there) — no day view,
-  no week view, no agenda/filterable list, no "add an activity from the
-  calendar" flow, no per-occurrence reschedule ("only this one" vs "this
-  and future"). This is the single largest gap versus the vision, and the
-  vision's own data-model section (separate activity / schedule /
-  occurrence / completion-history records) doesn't match how the app
-  stores things today — tasks carry their own schedule directly, and
-  `daily_progress` is a flat per-date completed-keys array, not
-  per-occurrence records. Building this properly is a real schema project,
-  not a UI tweak.
+- **PlushCalendar now has month, week, day, and agenda views** (all under
+  the PlushCalendar tab). Month is the original completion heatmap; week is
+  a 7-day grid with a read-only future-day preview; day view is a real
+  date-picker that jumps to any date, past or future; agenda is a
+  filterable (all/not-done/done/planned/paused) scrollable list spanning
+  the last 7 and next 7 days. All four are pure UI reusing existing data —
+  no schema changes, no changes to how `daily_progress` or
+  `tracker_tasks` are written.
+  **Still missing**: an "add an activity from the calendar" flow, and real
+  per-occurrence rescheduling ("only this one" vs "this and future"
+  occurrences). Both need the vision's data-model separation (activity /
+  schedule / occurrence / completion as distinct records) — tasks still
+  carry their own schedule directly and `daily_progress` is still a flat
+  per-date completed-keys array, not per-occurrence records. That's a real
+  schema project, not a UI tweak, and hasn't been started.
 - **Bottom navigation doesn't match.** Current tabs: Today, Progress
   (labelled "week"), Care, Guardian, More. Recommended: PlushHome,
   PlushCalendar, PlushCompanion, PlushProgress, PlushProfile. This is a
   live, load-bearing piece of UX for existing real users — changing it
   is a product decision with real disruption risk, not a safe unilateral
   merge.
-- **No unified PlushPause.** There's a "Rest Days" planner and per-day
-  resting state already, but no cross-cutting way to pause a single habit,
-  routine, or Path for a range of days the way the vision describes —
-  today "not doing something" just shows up as an unmarked day, not a
-  distinct paused state kept separate from missed days in PlushProgress.
+- **PlushPause now exists for individual habits/routines and Paths** —
+  see the naming registry for how it's scoped (a stored date range on the
+  task row, not a live boolean, so resuming never rewrites already-elapsed
+  paused days). Whole-plan Rest Days / Vacation Mode is still the separate,
+  unchanged mechanism for pausing everything at once.
 - **PlushMood / PlushJournal naming.** The features exist (daily
   check-in, private reflection) but aren't named or grouped under those
   labels anywhere in the UI yet — flagged in the naming registry as

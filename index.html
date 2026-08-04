@@ -1448,6 +1448,8 @@ function GlowUpTracker() {
   const [upcomingPreviewDate, setUpcomingPreviewDate] = useState(null);
   const [calendarWeekOffset, setCalendarWeekOffset] = useState(0);
   const [calendarWeekPreviewDate, setCalendarWeekPreviewDate] = useState(null);
+  const [dayViewDate, setDayViewDate] = useState(() => trackerPeriod().date);
+  const [agendaFilter, setAgendaFilter] = useState("all");
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
   const [focusModeShowAll, setFocusModeShowAll] = useState(false);
@@ -1982,7 +1984,7 @@ function GlowUpTracker() {
         .select("task_key, completed, updated_at")
         .eq("user_id", user.id),
       supabase.from("tracker_profiles").select("display_name, show_personal_schedule, account_type, comfort_item_name, guardian_read_only").eq("user_id", user.id).maybeSingle(),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, soft_label, tiny_label, estimated_minutes, essential_on_low_capacity, archived_at, archive_reason, schedule_days, reminder_time").eq("user_id", user.id).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, soft_label, tiny_label, estimated_minutes, essential_on_low_capacity, archived_at, archive_reason, schedule_days, reminder_time, paused_since, paused_until, pause_reason").eq("user_id", user.id).order("sort_order"),
       supabase.from("tracker_schedules").select("day_id, label, wake, morning, work, workout, home, entries").eq("user_id", user.id).order("day_id"),
       supabase.from("task_snoozes").select("task_key, snoozed_until").eq("user_id", user.id).gt("snoozed_until", new Date().toISOString()),
     ]).then(async ([dailyResult, legacyResult, profileResult, tasksResult, schedulesResult, snoozesResult]) => {
@@ -2121,7 +2123,7 @@ function GlowUpTracker() {
       supabase.from("support_rewards").select("id, title, details, target_percent, active, week_start, earned_at, claimed_at, approval_required, approved_at, caregiver_user_id, created_at").eq("owner_user_id", targetOwnerId).eq("active", true).order("created_at", { ascending: false }),
       supabase.from("daily_progress").select("completed_keys").eq("user_id", targetOwnerId).eq("progress_date", period.date).maybeSingle(),
       supabase.from("daily_progress").select("progress_date, completed_keys").eq("user_id", targetOwnerId).gte("progress_date", period.weekStart).lte("progress_date", period.date),
-      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, archived_at, schedule_days").eq("user_id", targetOwnerId).is("archived_at", null).order("sort_order"),
+      supabase.from("tracker_tasks").select("task_key, day_id, section, task, detail, sort_order, is_bonus, schedule_type, start_date, end_date, one_time_date, why_note, archived_at, schedule_days, paused_since, paused_until").eq("user_id", targetOwnerId).is("archived_at", null).order("sort_order"),
       supabase.from("task_suggestions").select("id, owner_user_id, caregiver_user_id, caregiver_name, task, suggested_day_id, status, created_at").eq("owner_user_id", targetOwnerId).order("created_at", { ascending: false }),
       supabase.from("user_achievements").select("visit_streak, best_visit_streak, best_care_streak, last_celebrated_date").eq("user_id", targetOwnerId).maybeSingle(),
       supabase.from("rest_days").select("rest_date").eq("user_id", targetOwnerId).eq("rest_date", period.date).maybeSingle(),
@@ -2917,6 +2919,28 @@ function GlowUpTracker() {
     if (error) { setTaskMessage("Couldn't restore that task."); return; }
     setTrackerTasks((items) => items.map((item) => item.task_key === taskKey ? { ...item, archived_at: null, archive_reason: null } : item));
     setTaskMessage("Task returned to your list.");
+  };
+
+  const pauseTrackerTask = async (taskKey, untilDate = null) => {
+    if (!user || !taskKey) return;
+    const pausedSince = period.date;
+    const { error } = await supabase.from("tracker_tasks").update({ paused_since: pausedSince, paused_until: untilDate }).eq("user_id", user.id).eq("task_key", taskKey);
+    if (error) { setTaskMessage("Couldn't pause that task."); return; }
+    setTrackerTasks((items) => items.map((item) => item.task_key === taskKey ? { ...item, paused_since: pausedSince, paused_until: untilDate } : item));
+    setTaskMessage(untilDate ? `Paused through ${untilDate}. It'll come back on its own.` : "Paused. Resume it whenever you're ready.");
+  };
+
+  const resumeTrackerTask = async (taskKey) => {
+    if (!user || !taskKey) return;
+    // Cap paused_until at yesterday rather than clearing paused_since/until
+    // outright — this keeps the days it WAS paused excluded from Progress
+    // history (see isTaskPausedOnDate), instead of quietly rewriting them
+    // to look missed now that the pause is over.
+    const yesterday = offsetDate(period.date, -1);
+    const { error } = await supabase.from("tracker_tasks").update({ paused_until: yesterday }).eq("user_id", user.id).eq("task_key", taskKey);
+    if (error) { setTaskMessage("Couldn't resume that task."); return; }
+    setTrackerTasks((items) => items.map((item) => item.task_key === taskKey ? { ...item, paused_until: yesterday } : item));
+    setTaskMessage("Welcome back — resumed today.");
   };
 
   const duplicateTrackerTask = async (task) => {
@@ -4645,6 +4669,19 @@ function GlowUpTracker() {
     };
   };
 
+  // PlushPause: paused_since/paused_until are a stored date range rather than
+  // a live boolean, specifically so that resuming a task only ever caps the
+  // range going forward (sets paused_until to yesterday) instead of clearing
+  // it - clearing it outright would make isTaskPausedOnDate retroactively
+  // return false for the days it WAS paused, silently rewriting how those
+  // already-recorded days look in Progress after the fact.
+  const isTaskPausedOnDate = (task, date) => {
+    if (!task.paused_since) return false;
+    if (date < task.paused_since) return false;
+    if (task.paused_until && date > task.paused_until) return false;
+    return true;
+  };
+
   // Build this signed-in user's private rows for the selected day.
   const rows = trackerTasks
     .filter((task) => taskIsScheduledForDate(task, selectedProgressDate))
@@ -4656,7 +4693,7 @@ function GlowUpTracker() {
   useEffect(() => {
     if (!user || !window.PlushLifeNativeNotifications) return;
     const taskReminders = trackerTasks
-      .filter((task) => !task.archived_at && task.reminder_time)
+      .filter((task) => !task.archived_at && task.reminder_time && !isTaskPausedOnDate(task, period.date))
       .map((task) => ({
         taskKey: task.task_key,
         label: task.task,
@@ -4806,7 +4843,7 @@ function GlowUpTracker() {
     const completed = date === period.date
       ? new Set(Object.keys(done).filter((key) => done[key]))
       : (historyByDate.get(date) || new Set());
-    const datedTasks = trackerTasks.filter((task) => taskIsScheduledForDate(task, date));
+    const datedTasks = trackerTasks.filter((task) => taskIsScheduledForDate(task, date) && !isTaskPausedOnDate(task, date));
     const datedEssentialKeys = datedTasks.filter((task) => !taskIsOptional(task)).map((task) => task.task_key);
     const datedBonusKeys = datedTasks.filter(taskIsOptional).map((task) => task.task_key);
     const overallKeys = datedEssentialKeys;
@@ -4871,7 +4908,8 @@ function GlowUpTracker() {
       .filter((task) =>
         taskIsScheduledForDate(task, date) &&
         !taskIsOptional(task) &&
-        !task.archived_at
+        !task.archived_at &&
+        !isTaskPausedOnDate(task, date)
       )
       .map((task) => task.task_key);
   };
@@ -5288,7 +5326,8 @@ function GlowUpTracker() {
       .filter((task) =>
         taskIsScheduledForDate(task, date) &&
         !taskIsOptional(task) &&
-        !task.archived_at
+        !task.archived_at &&
+        !isTaskPausedOnDate(task, date)
       )
       .map((task) => task.task_key);
     const applicableKeys = dailyEssentialKeys;
@@ -6281,7 +6320,8 @@ function GlowUpTracker() {
                   const completedCount = progress?.completed_days?.length || 0;
                   const featured = path.id === featuredId;
                   return <button key={path.id} type="button" onClick={() => setSelectedCarePath(path.id)} style={{ width: "100%", padding: "12px", borderRadius: 13, border: featured ? "2px solid #D4A017" : "1px solid #F0D99E", background: "#FFFFFFD9", textAlign: "left", cursor: "pointer" }}>
-                    {featured && <div style={{ marginBottom: 6, fontSize: 10.5, fontWeight: 900, letterSpacing: ".1em", color: "#A56D14" }}>🌟 FEATURED THIS WEEK</div>}
+                    {progress?.status === "paused" && <div style={{ marginBottom: 6, fontSize: 10.5, fontWeight: 900, letterSpacing: ".1em", color: "#9A6918" }}>⏸ PAUSED</div>}
+                    {featured && progress?.status !== "paused" && <div style={{ marginBottom: 6, fontSize: 10.5, fontWeight: 900, letterSpacing: ".1em", color: "#A56D14" }}>🌟 FEATURED THIS WEEK</div>}
                     <div style={{ display: "flex", alignItems: "center", gap: 9 }}><span style={{ fontSize: 24 }}>{path.icon}</span><div style={{ minWidth: 0, flex: 1 }}><div style={{ fontWeight: 900, color: "#5B4B6B", fontSize: 13.5 }}>{path.title}</div><div style={{ marginTop: 2, color: "#8C6B9E", fontSize: 11.5, lineHeight: 1.4 }}>{path.description}</div></div><span style={{ fontSize: 11, fontWeight: 900, color: "#A56D14" }}>{completedCount}/{path.days.length}</span></div>
                     <div style={{ height: 6, marginTop: 9, borderRadius: 4, overflow: "hidden", background: "#F7EDCF" }}><div style={{ width: `${Math.round((completedCount / path.days.length) * 100)}%`, height: "100%", background: "#D4A017" }} /></div>
                   </button>;
@@ -7242,12 +7282,17 @@ function GlowUpTracker() {
                   {[...visibleTasks]
                     .sort((a, b) => (a.section || "").localeCompare(b.section || "") || Number(a.sort_order) - Number(b.sort_order))
                     .map((task) => (
-                        <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: "1px solid #DDEBE7" }}>
+                        <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: isTaskPausedOnDate(task, period.date) ? "1px solid #E9C96E" : "1px solid #DDEBE7" }}>
                           <div style={{ flex: "1 1 190px", minWidth: 0 }}>
-                            <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}{isTaskPausedOnDate(task, period.date) && <span style={{ marginLeft: 6, padding: "2px 7px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 10, fontWeight: 900 }}>⏸ PAUSED{task.paused_until ? ` UNTIL ${task.paused_until}` : ""}</span>}</div>
                             <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{scheduleLabelForTask(task)} · {task.section || "My tasks"}</div>
                           </div>
                           <button type="button" onClick={() => startEditingTask(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
+                          {isTaskPausedOnDate(task, period.date) ? (
+                            <button type="button" onClick={() => resumeTrackerTask(task.task_key)} aria-label={`Resume ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #BFE5D2", background: "#F4FBF8", color: "#318C79", fontWeight: 900, cursor: "pointer" }}>▶️ Resume</button>
+                          ) : (
+                            <button type="button" onClick={() => pauseTrackerTask(task.task_key)} aria-label={`Pause ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 900, cursor: "pointer" }}>⏸ Pause</button>
+                          )}
                           <button type="button" onClick={() => archiveTrackerTask(task.task_key)} aria-label={`Archive ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 900, cursor: "pointer" }}>📦 Archive</button>
                           <button type="button" onClick={() => setPendingTaskDelete({ key: task.task_key, label: task.task, section: task.section })} aria-label={`Delete ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, cursor: "pointer" }}>🗑️ Delete</button>
                         </div>
@@ -8132,12 +8177,18 @@ function GlowUpTracker() {
             <div style={{ display: "flex", gap: 7, marginTop: 7 }}><button type="button" onClick={saveWeeklyIntentionEdit} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button><button type="button" onClick={() => setWeeklyIntentionEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button></div>
           </> : <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.45, color: weeklyIntentionText ? "#6B5A7D" : "#9A86A7" }}>{weeklyIntentionText || "Optional—a simple direction for the week, not another task."}</div>}
         </div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
-          <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => (index + 2) % 3)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
-          <button type="button" onClick={() => setWeekCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 0 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 0 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 0 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✨ Whole-week progress</button>
-          <button type="button" onClick={() => setWeekCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 1 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 1 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 1 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>📅 Progress calendar</button>
-          <button type="button" onClick={() => setWeekCardIndex(2)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 2 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 2 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 2 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Week view</button>
-          <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => (index + 1) % 3)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
+        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
+          <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => (index + 4) % 5)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
+          {[
+            [0, "✨ Whole-week"],
+            [1, "📅 Month"],
+            [2, "🗓️ Week"],
+            [3, "📆 Day"],
+            [4, "📋 Agenda"],
+          ].map(([index, cardLabel]) => (
+            <button key={index} type="button" onClick={() => setWeekCardIndex(index)} style={{ flex: "1 1 28%", minWidth: 0, padding: "7px 6px", borderRadius: 10, border: weekCardIndex === index ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === index ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === index ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>{cardLabel}</button>
+          ))}
+          <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => (index + 1) % 5)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
           onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; weekSwipeStartY.current = event.touches[0]?.clientY ?? null; }}
@@ -8153,7 +8204,7 @@ function GlowUpTracker() {
             const deltaX = endX - startX;
             const deltaY = endY - startY;
             if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
-            setWeekCardIndex((index) => (index + (deltaX < 0 ? 1 : 2)) % 3);
+            setWeekCardIndex((index) => (index + (deltaX < 0 ? 1 : 4)) % 5);
           }}
           style={{ touchAction: "pan-y" }}>
         {weekCardIndex === 0 && <>
@@ -8469,6 +8520,97 @@ function GlowUpTracker() {
                   </div>
                 );
               })()}
+            </div>
+          );
+        })()}
+
+        {weekCardIndex === 3 && (() => {
+          const isFuture = dayViewDate > period.date;
+          const isRestDay = restDatesSet.has(dayViewDate);
+          const pct = isFuture ? null : dayCompletionPct(dayViewDate);
+          const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === dayViewDate) || null;
+          const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
+          const previewTasks = trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, dayViewDate));
+          return (
+            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📆 DAY VIEW</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Jump to any date — past days show what actually happened, future days show what's planned.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+                <button type="button" aria-label="Previous day" onClick={() => { const next = offsetDate(dayViewDate, -1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
+                <input type="date" value={dayViewDate} max={offsetDate(period.date, 365)} onChange={(event) => { const next = event.target.value || period.date; setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #DCC9E8", fontSize: 12.5 }} />
+                <button type="button" aria-label="Next day" onClick={() => { const next = offsetDate(dayViewDate, 1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>→</button>
+                {dayViewDate !== period.date && <button type="button" onClick={() => { setDayViewDate(period.date); setSelectedProgressDate(period.date); setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Today</button>}
+              </div>
+              <div style={{ marginTop: 10, fontSize: 14, fontWeight: 900, color: "#5B4B6B" }}>
+                {new Date(`${dayViewDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                {isRestDay && !isFuture ? " · 🌴 Resting" : pct !== null ? ` · ${pct}% complete` : isFuture ? " · Planned" : ""}
+              </div>
+              {checkIn && <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>{moodOption ? `Feeling ${moodOption[2]}` : ""}</div>}
+              <div style={{ marginTop: 10, display: "grid", gap: 5 }}>
+                {previewTasks.length === 0 ? (
+                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled for this day.</div>
+                ) : previewTasks.map((task) => {
+                  const isDone = !isFuture && (dayViewDate === period.date ? !!done[task.task_key] : (longHistoryByDate.get(dayViewDate) || new Set()).has(task.task_key));
+                  const paused = isTaskPausedOnDate(task, dayViewDate);
+                  return (
+                    <div key={task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                      <span>{taskIsOptional(task) ? "⭐ " : ""}{task.task}</span>
+                      <span style={{ fontSize: 10.5, fontWeight: 800, color: paused ? "#9A6918" : isDone ? "#318C79" : isFuture ? "#8C6B9E" : "#B0576B" }}>{paused ? "⏸ Paused" : isFuture ? "Planned" : isDone ? "✓ Done" : "Not done"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+
+        {weekCardIndex === 4 && (() => {
+          const agendaDates = Array.from({ length: 15 }, (_, index) => offsetDate(period.date, index - 7));
+          const entries = [];
+          agendaDates.forEach((date) => {
+            const isFuture = date > period.date;
+            const completed = date === period.date ? completedKeysForToday : (longHistoryByDate.get(date) || new Set());
+            trackerTasks
+              .filter((task) => !task.archived_at && taskIsScheduledForDate(task, date))
+              .forEach((task) => {
+                const paused = isTaskPausedOnDate(task, date);
+                const isDone = !isFuture && completed.has(task.task_key);
+                const status = paused ? "paused" : isFuture ? "planned" : isDone ? "done" : "open";
+                if (agendaFilter !== "all" && agendaFilter !== status) return;
+                entries.push({ date, task, status });
+              });
+          });
+          const statusLabel = { paused: "⏸ Paused", planned: "Planned", done: "✓ Done", open: "Not done yet" };
+          const statusColor = { paused: "#9A6918", planned: "#8C6B9E", done: "#318C79", open: "#B0576B" };
+          return (
+            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📋 AGENDA</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>The last week and the next week, in one scrollable list.</div>
+              <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
+                {[["all", "All"], ["open", "Not done"], ["done", "Done"], ["planned", "Planned"], ["paused", "Paused"]].map(([value, label]) => (
+                  <button key={value} type="button" aria-pressed={agendaFilter === value} onClick={() => setAgendaFilter(value)} style={{ padding: "5px 9px", borderRadius: 999, border: agendaFilter === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: agendaFilter === value ? "#F2E3FA" : "white", color: agendaFilter === value ? "#7E3D99" : "#6B5A7D", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{label}</button>
+                ))}
+              </div>
+              <div style={{ marginTop: 12, display: "grid", gap: 4, maxHeight: 420, overflowY: "auto" }}>
+                {entries.length === 0 ? (
+                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing matches that filter in this window.</div>
+                ) : entries.map((entry, index) => {
+                  const showDateHeader = index === 0 || entries[index - 1].date !== entry.date;
+                  return (
+                    <React.Fragment key={`${entry.date}-${entry.task.task_key}`}>
+                      {showDateHeader && (
+                        <div style={{ marginTop: index === 0 ? 0 : 8, fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", color: entry.date === period.date ? "#A65DC1" : "#8C6B9E" }}>
+                          {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}{entry.date === period.date ? " · TODAY" : ""}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                        <span>{taskIsOptional(entry.task) ? "⭐ " : ""}{entry.task.task}</span>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: statusColor[entry.status] }}>{statusLabel[entry.status]}</span>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
             </div>
           );
         })()}
