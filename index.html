@@ -564,7 +564,7 @@ const TEMPLATE_PACKS = [
 const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
   { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
-  { id: "week", label: "Progress", icon: "📅", accent: "#4C8FE8" },
+  { id: "week", label: "PlushCalendar", icon: "📅", accent: "#4C8FE8" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
   { id: "more", label: "More", icon: "•••", accent: "#8D5CA5" },
@@ -3878,7 +3878,7 @@ function GlowUpTracker() {
         updated_at: new Date().toISOString(),
       }, { onConflict: "user_id,note_date" });
       if (noteError) {
-        softError = "Your space is saved, but your weekly intention couldn't be saved yet — you can add it again from the Progress tab.";
+        softError = "Your space is saved, but your weekly intention couldn't be saved yet — you can add it again from PlushCalendar.";
       } else {
         setReflectionDates((dates) => Array.from(new Set([...dates, sundayDate])));
       }
@@ -8109,7 +8109,7 @@ function GlowUpTracker() {
           <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => (index + 2) % 3)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
           <button type="button" onClick={() => setWeekCardIndex(0)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 0 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 0 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 0 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>✨ Whole-week progress</button>
           <button type="button" onClick={() => setWeekCardIndex(1)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 1 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 1 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 1 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>📅 Progress calendar</button>
-          <button type="button" onClick={() => setWeekCardIndex(2)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 2 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 2 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 2 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ PlushCalendar</button>
+          <button type="button" onClick={() => setWeekCardIndex(2)} style={{ flex: 1, padding: "7px 10px", borderRadius: 10, border: weekCardIndex === 2 ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === 2 ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === 2 ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 12, cursor: "pointer" }}>🗓️ Week view</button>
           <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => (index + 1) % 3)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
@@ -8371,7 +8371,7 @@ function GlowUpTracker() {
             <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
                 <div>
-                  <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>🗓️ PLUSHCALENDAR · WEEK VIEW</div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>🗓️ WEEK VIEW</div>
                   <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Past days show what actually happened. Days ahead show what's planned — tap one to preview it.</div>
                 </div>
                 <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
