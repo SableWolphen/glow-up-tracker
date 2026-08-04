@@ -1456,8 +1456,10 @@ function GlowUpTracker() {
   const [calendarWeekOffset, setCalendarWeekOffset] = useState(0);
   const [calendarWeekPreviewDate, setCalendarWeekPreviewDate] = useState(null);
   const [dayViewDate, setDayViewDate] = useState(() => trackerPeriod().date);
+  const [dayViewExpanded, setDayViewExpanded] = useState(false);
   const [agendaFilter, setAgendaFilter] = useState("all");
   const [agendaShowHistory, setAgendaShowHistory] = useState(false);
+  const [agendaExpandedDates, setAgendaExpandedDates] = useState(() => [trackerPeriod().date]);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
   const [focusModeShowAll, setFocusModeShowAll] = useState(false);
@@ -8440,7 +8442,15 @@ function GlowUpTracker() {
                 {isRestDay && !isFuture ? " · 🌴 Resting" : pct !== null ? ` · ${pct}% complete` : isFuture ? " · Planned" : ""}
               </div>
               {checkIn && <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>{moodOption ? `Feeling ${moodOption[2]}` : ""}</div>}
-              <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+              {!dayViewExpanded ? (
+                <button type="button" onClick={() => setDayViewExpanded(true)} style={{ marginTop: 12, width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "10px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#5B4B6B", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
+                  <span>📋 {previewTasks.length} {previewTasks.length === 1 ? "activity" : "activities"}</span>
+                  <span style={{ color: "#A65DC1" }}>Show ›</span>
+                </button>
+              ) : (
+              <>
+              <button type="button" onClick={() => setDayViewExpanded(false)} style={{ marginTop: 12, marginBottom: 6, padding: "6px 10px", borderRadius: 8, border: "1px solid #E6D4F2", background: "white", color: "#8C6B9E", fontWeight: 700, fontSize: 11.5, cursor: "pointer" }}>▾ Collapse</button>
+              <div style={{ marginTop: 4, display: "grid", gap: 10 }}>
                 {groupedTasks.length === 0 ? (
                   <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled for this day.</div>
                 ) : groupedTasks.map(({ group, tasks }) => (
@@ -8468,6 +8478,8 @@ function GlowUpTracker() {
                   </div>
                 ))}
               </div>
+              </>
+              )}
             </div>
           );
         })()}
@@ -8492,6 +8504,12 @@ function GlowUpTracker() {
           });
           const statusLabel = { paused: "⏸ Paused", planned: "Planned", done: "✓ Done", open: "Open" };
           const statusColor = { paused: "#9A6918", planned: "#8C6B9E", done: "#318C79", open: "#B0576B" };
+          const dayGroups = [];
+          entries.forEach((entry) => {
+            const lastGroup = dayGroups[dayGroups.length - 1];
+            if (lastGroup && lastGroup.date === entry.date) lastGroup.items.push(entry);
+            else dayGroups.push({ date: entry.date, items: [entry] });
+          });
           return (
             <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
               <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📋 AGENDA</div>
@@ -8502,23 +8520,34 @@ function GlowUpTracker() {
                 ))}
                 <button type="button" aria-pressed={agendaShowHistory} onClick={() => setAgendaShowHistory((value) => !value)} style={{ padding: "5px 9px", borderRadius: 999, border: agendaShowHistory ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: agendaShowHistory ? "#F2E3FA" : "white", color: agendaShowHistory ? "#7E3D99" : "#6B5A7D", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>🕰️ History</button>
               </div>
-              <div style={{ marginTop: 12, display: "grid", gap: 4, maxHeight: 420, overflowY: "auto" }}>
-                {entries.length === 0 ? (
+              <div style={{ marginTop: 12, display: "grid", gap: 6, maxHeight: 460, overflowY: "auto" }}>
+                {dayGroups.length === 0 ? (
                   <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing matches that filter in this window.</div>
-                ) : entries.map((entry, index) => {
-                  const showDateHeader = index === 0 || entries[index - 1].date !== entry.date;
+                ) : dayGroups.map((group) => {
+                  const isToday = group.date === period.date;
+                  const expanded = agendaExpandedDates.includes(group.date);
+                  const doneCount = group.items.filter((entry) => entry.status === "done").length;
                   return (
-                    <React.Fragment key={`${entry.date}-${entry.task.task_key}`}>
-                      {showDateHeader && (
-                        <div style={{ marginTop: index === 0 ? 0 : 8, fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", color: entry.date === period.date ? "#A65DC1" : "#8C6B9E" }}>
-                          {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}{entry.date === period.date ? " · TODAY" : ""}
+                    <div key={group.date}>
+                      <button
+                        type="button"
+                        onClick={() => setAgendaExpandedDates((dates) => dates.includes(group.date) ? dates.filter((date) => date !== group.date) : [...dates, group.date])}
+                        style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 10px", borderRadius: 8, border: "1px solid #E6D4F2", background: isToday ? "#F2E3FA" : "white", color: isToday ? "#7E3D93" : "#6B5A7D", fontWeight: 800, fontSize: 11 }}
+                      >
+                        <span>{new Date(`${group.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" })}{isToday ? " · Today" : ""}</span>
+                        <span>{doneCount}/{group.items.length} done {expanded ? "▾" : "›"}</span>
+                      </button>
+                      {expanded && (
+                        <div style={{ display: "grid", gap: 4, marginTop: 4 }}>
+                          {group.items.map((entry) => (
+                            <div key={entry.task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                              <span>{taskIsOptional(entry.task) ? "⭐ " : ""}{entry.task.task}</span>
+                              <span style={{ fontSize: 10.5, fontWeight: 800, color: statusColor[entry.status] }}>{statusLabel[entry.status]}</span>
+                            </div>
+                          ))}
                         </div>
                       )}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
-                        <span>{taskIsOptional(entry.task) ? "⭐ " : ""}{entry.task.task}</span>
-                        <span style={{ fontSize: 10.5, fontWeight: 800, color: statusColor[entry.status] }}>{statusLabel[entry.status]}</span>
-                      </div>
-                    </React.Fragment>
+                    </div>
                   );
                 })}
               </div>
