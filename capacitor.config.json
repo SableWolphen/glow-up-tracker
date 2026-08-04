@@ -22,7 +22,7 @@
       "backgroundColor": "#fff8fc"
     },
     "Keyboard": {
-      "resize": "body",
+      "resize": "native",
       "resizeOnFullScreen": true
     },
     "PushNotifications": {
