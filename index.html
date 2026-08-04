@@ -7943,7 +7943,8 @@ function GlowUpTracker() {
                 <div style={{ marginTop: 4, fontSize: 12.5, lineHeight: 1.5 }}>Nothing is overdue, no backlog is created, and anything you choose to do is simply a bonus.</div>
               </div>
             ) : preferences.focus_mode && !focusModeShowAll ? (() => {
-              const focusNextTask = rows.find((r) => !r.isBonus && !viewDone[r.key]) || rows.find((r) => !viewDone[r.key]);
+              const isPickable = (r) => !viewDone[r.key] && !(r.sourceTask && isTaskPausedOnDate(r.sourceTask, period.date));
+              const focusNextTask = rows.find((r) => !r.isBonus && isPickable(r)) || rows.find(isPickable);
               if (!focusNextTask) {
                 return (
                   <div style={{ textAlign: "center", padding: "18px 0 2px", color: day.accent, fontWeight: 800, fontSize: 15 }}>Everything's done — proud of you 💜</div>
@@ -7976,6 +7977,17 @@ function GlowUpTracker() {
                         {checked ? "✓" : ""}
                       </button>
                       <span style={{ flex: 1, fontSize: 19, fontWeight: 700, color: "#5B4B6B" }}>{focusNextTask.label}</span>
+                      {focusNextTask.sourceTask && !isFutureView && (
+                        <button
+                          type="button"
+                          onClick={(event) => { event.stopPropagation(); pauseTrackerTask(focusNextTask.sourceTask.task_key); }}
+                          aria-label={`Pause ${focusNextTask.label}`}
+                          title="Pause"
+                          style={{ flexShrink: 0, width: 32, height: 32, borderRadius: 10, border: "none", background: "transparent", color: "#C9B8D4", fontSize: 16, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                        >
+                          ⏸
+                        </button>
+                      )}
                     </div>
                     {expandable && expanded && (
                       <div style={{ padding: "0 18px 16px 74px", fontSize: 14, lineHeight: 1.6, color: "#6B5A7D" }}>
@@ -8061,9 +8073,21 @@ function GlowUpTracker() {
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
                           {r.label}
+                          {r.sourceTask && isTaskPausedOnDate(r.sourceTask, period.date) && <span style={{ marginLeft: 6, padding: "1px 6px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 9.5, fontWeight: 900, textDecoration: "none" }}>PAUSED</span>}
                           {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" ? "Tiny" : r.dayType === "recovery" ? "Recovery" : "Soft"} version of {r.originalLabel}</span>}
                         </span>
                         {r.right && <span style={{ fontSize: 12.5, color: "#B08AC7", whiteSpace: "nowrap" }}>{r.right}</span>}
+                        {r.sourceTask && !isFutureView && (
+                          <button
+                            type="button"
+                            onClick={(event) => { event.stopPropagation(); isTaskPausedOnDate(r.sourceTask, period.date) ? resumeTrackerTask(r.sourceTask.task_key) : pauseTrackerTask(r.sourceTask.task_key); }}
+                            aria-label={isTaskPausedOnDate(r.sourceTask, period.date) ? `Resume ${r.label}` : `Pause ${r.label}`}
+                            title={isTaskPausedOnDate(r.sourceTask, period.date) ? "Resume" : "Pause"}
+                            style={{ flexShrink: 0, width: 26, height: 26, borderRadius: 8, border: "none", background: "transparent", color: isTaskPausedOnDate(r.sourceTask, period.date) ? "#318C79" : "#C9B8D4", fontSize: 14, cursor: "pointer", display: "flex", alignItems: "center", justifyContent: "center", padding: 0 }}
+                          >
+                            {isTaskPausedOnDate(r.sourceTask, period.date) ? "▶️" : "⏸"}
+                          </button>
+                        )}
                         {expandable && <span style={{ color: day.accent, fontSize: 11, transform: expanded ? "rotate(180deg)" : "none", transition: "transform .2s" }}>▾</span>}
                       </div>
                       {expandable && expanded && (
