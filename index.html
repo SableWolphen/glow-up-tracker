@@ -850,6 +850,7 @@ function setSoundscapeVolume(volume) {
 
 const WEEKDAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
 const TREND_WEEKS = 8;
+const TREND_MONTHS = 6;
 
 function trackerPeriod(now = new Date()) {
   const localDate = new Intl.DateTimeFormat("en-CA", { timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone });
@@ -1137,6 +1138,24 @@ function offsetDate(date, dayOffset) {
   const value = new Date(`${date}T12:00:00Z`);
   value.setUTCDate(value.getUTCDate() + dayOffset);
   return value.toISOString().slice(0, 10);
+}
+
+function monthKeyOffset(date, monthOffset) {
+  const value = new Date(`${date}T12:00:00Z`);
+  value.setUTCDate(1); // pin to day 1 first so shifting months never overflows into a different month
+  value.setUTCMonth(value.getUTCMonth() + monthOffset);
+  return value.toISOString().slice(0, 7); // "YYYY-MM"
+}
+
+function daysInCalendarMonth(monthKey) {
+  const [year, month] = monthKey.split("-").map(Number);
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+function datesInMonthThrough(monthKey, throughDate) {
+  const count = daysInCalendarMonth(monthKey);
+  const dates = Array.from({ length: count }, (_, index) => `${monthKey}-${String(index + 1).padStart(2, "0")}`);
+  return throughDate ? dates.filter((date) => date <= throughDate) : dates;
 }
 
 function daysBetweenDates(earlierDate, laterDate) {
@@ -1488,6 +1507,7 @@ function GlowUpTracker() {
   const [longHistory, setLongHistory] = useState([]);
   const [previousWeekHistory, setPreviousWeekHistory] = useState([]);
   const [tappedTrendWeek, setTappedTrendWeek] = useState(null);
+  const [tappedTrendMonth, setTappedTrendMonth] = useState(null);
   const [habitHistory, setHabitHistory] = useState([]);
   const [selectedProgressDate, setSelectedProgressDate] = useState(() => trackerPeriod().date);
   const [reflectionDates, setReflectionDates] = useState([]);
@@ -4956,6 +4976,50 @@ function GlowUpTracker() {
   };
   const todayRequiredKeys = requiredKeysForDate(period.date);
   const todayRequiredDone = todayRequiredKeys.filter((key) => completedKeysForToday.has(key)).length;
+
+  const completedKeysOnDate = (date) => date === period.date ? completedKeysForToday : (habitHistoryByDate.get(date) || new Set());
+  const completionTotalsForDates = (dates) => dates.reduce((totals, date) => {
+    const requiredKeys = requiredKeysForDate(date);
+    const completed = completedKeysOnDate(date);
+    totals.done += requiredKeys.filter((key) => completed.has(key)).length;
+    totals.possible += requiredKeys.length;
+    return totals;
+  }, { done: 0, possible: 0 });
+
+  const currentMonthKey = period.date.slice(0, 7);
+  const currentMonthDates = datesInMonthThrough(currentMonthKey, period.date);
+  const currentMonthTotals = completionTotalsForDates(currentMonthDates);
+  const monthlyOverallPct = currentMonthTotals.possible ? Math.round((currentMonthTotals.done / currentMonthTotals.possible) * 100) : 0;
+
+  const dayOfMonth = Number(period.date.slice(8, 10));
+  const previousMonthKey = monthKeyOffset(period.date, -1);
+  const previousMonthSameRangeDates = datesInMonthThrough(previousMonthKey, null).slice(0, Math.min(dayOfMonth, daysInCalendarMonth(previousMonthKey)));
+  const previousMonthTotals = completionTotalsForDates(previousMonthSameRangeDates);
+  const previousMonthSameRangePct = previousMonthTotals.possible ? Math.round((previousMonthTotals.done / previousMonthTotals.possible) * 100) : null;
+  const monthOverMonthDelta = previousMonthSameRangePct === null ? null : monthlyOverallPct - previousMonthSameRangePct;
+
+  const monthlyTrendPoints = Array.from({ length: TREND_MONTHS }, (_, monthIndex) => {
+    const monthsAgo = TREND_MONTHS - monthIndex;
+    const monthKey = monthKeyOffset(period.date, -monthsAgo);
+    const totals = completionTotalsForDates(datesInMonthThrough(monthKey, period.date));
+    return { monthKey, pct: totals.possible ? Math.round((totals.done / totals.possible) * 100) : null, isCurrent: false };
+  }).concat([{ monthKey: currentMonthKey, pct: currentMonthTotals.possible ? monthlyOverallPct : null, isCurrent: true }]);
+
+  const monthlyMostConsistent = (() => {
+    const recurringTasks = trackerTasks.filter((task) => !taskIsOptional(task) && task.schedule_type !== "once" && !task.archived_at);
+    const routineCounts = recurringTasks
+      .map((task) => ({
+        task,
+        count: currentMonthDates.filter((date) =>
+          taskIsScheduledForDate(task, date) &&
+          !isTaskPausedOnDate(task, date) &&
+          completedKeysOnDate(date).has(task.task_key)
+        ).length,
+      }))
+      .filter((entry) => entry.count >= 3)
+      .sort((a, b) => b.count - a.count);
+    return routineCounts[0] || null;
+  })();
 
   const weekdayPatternInsight = (() => {
     if (habitHistory.length < 10) return null;
@@ -8711,6 +8775,70 @@ function GlowUpTracker() {
           )}
           <button type="button" onClick={goWriteWeeklyIntention} style={{ marginTop: 9, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📝 Set next week's intention</button>
           <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 8, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
+        </div>
+
+        <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>{new Date(`${currentMonthKey}-01T12:00:00`).toLocaleDateString("en-US", { month: "long" }).toUpperCase()} SO FAR</div>
+              <div style={{ marginTop: 4, fontSize: 19, color: "#5B4B6B", fontWeight: 800 }}>Monthly trends 📊</div>
+            </div>
+            <div style={{ fontSize: 27, color: "#A65DC1", fontWeight: 900 }}>{monthlyOverallPct}%</div>
+          </div>
+          <div style={{ height: 12, marginTop: 12, overflow: "hidden", borderRadius: 8, background: "#F2E8F8" }}>
+            <div style={{ height: "100%", width: `${monthlyOverallPct}%`, borderRadius: 8, background: "linear-gradient(90deg, #C77DD6, #7FC8F8)", transition: "width .4s ease" }} />
+          </div>
+          {monthOverMonthDelta !== null && (
+            <div style={{ marginTop: 8, fontSize: 12, fontWeight: 700, color: monthOverMonthDelta > 0 ? "#318C79" : "#8C6B9E" }}>
+              {monthOverMonthDelta > 0 ? `📈 ${monthOverMonthDelta}% ahead of where you were at this point last month` : monthOverMonthDelta < 0 ? `${Math.abs(monthOverMonthDelta)}% behind where you were at this point last month — that's okay 💛` : "Same as this point last month"}
+            </div>
+          )}
+          <div style={{ marginTop: 16 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.14em", color: "#8C6B9E", fontWeight: 800 }}>LAST {TREND_MONTHS + 1} MONTHS</div>
+            <div style={{ position: "relative", marginTop: 10, height: 64 }}>
+              <div style={{ position: "absolute", left: 0, right: 0, top: 0, height: 1, background: "#EDE0F5" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, top: 32, height: 1, background: "#EDE0F5" }} />
+              <div style={{ position: "absolute", left: 0, right: 0, bottom: 0, display: "flex", alignItems: "flex-end", gap: 3, height: 64 }}>
+                {monthlyTrendPoints.map((point) => (
+                  <button
+                    key={point.monthKey}
+                    type="button"
+                    onClick={() => setTappedTrendMonth(tappedTrendMonth === point.monthKey ? null : point.monthKey)}
+                    aria-label={`${new Date(`${point.monthKey}-01T12:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" })}: ${point.pct === null ? "no data" : `${point.pct}%`}`}
+                    style={{
+                      flex: 1,
+                      minWidth: 0,
+                      height: point.pct === null ? 3 : Math.max(4, Math.round((point.pct / 100) * 56)),
+                      borderRadius: "4px 4px 0 0",
+                      border: point.isCurrent ? "2px solid #7A3D93" : tappedTrendMonth === point.monthKey ? "2px solid #A65DC1" : "none",
+                      background: point.pct === null ? "#EDE0F5" : point.isCurrent ? "linear-gradient(180deg, #C77DD6, #7FC8F8)" : "#D9B3E8",
+                      padding: 0,
+                      cursor: "pointer",
+                    }}
+                  />
+                ))}
+              </div>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between", marginTop: 4, fontSize: 9.5, color: "#8C6B9E" }}>
+              <span>{new Date(`${monthlyTrendPoints[0].monthKey}-01T12:00:00`).toLocaleDateString("en-US", { month: "short", year: "2-digit" })}</span>
+              <span>This month</span>
+            </div>
+            {tappedTrendMonth && (() => {
+              const tapped = monthlyTrendPoints.find((point) => point.monthKey === tappedTrendMonth);
+              if (!tapped) return null;
+              const monthLabel = tapped.isCurrent ? "This month" : new Date(`${tapped.monthKey}-01T12:00:00`).toLocaleDateString("en-US", { month: "long", year: "numeric" });
+              return (
+                <div style={{ marginTop: 8, padding: "7px 10px", borderRadius: 10, background: "#F2E3FA", fontSize: 12, fontWeight: 700, color: "#7A3D93" }}>
+                  {monthLabel}: {tapped.pct === null ? "no data" : `${tapped.pct}%`}
+                </div>
+              );
+            })()}
+          </div>
+          {monthlyMostConsistent && (
+            <div style={{ marginTop: 12, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
+              Most consistent this month: <strong>{monthlyMostConsistent.task.task}</strong> ({monthlyMostConsistent.count} of {currentMonthDates.length} days)
+            </div>
+          )}
         </div>
         </>}
 
