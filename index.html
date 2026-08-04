@@ -1539,6 +1539,8 @@ function GlowUpTracker() {
   const [onboardingMessage, setOnboardingMessage] = useState("");
   const [privateNote, setPrivateNote] = useState("");
   const [privateNoteEditing, setPrivateNoteEditing] = useState(false);
+  const [journalQuickOpen, setJournalQuickOpen] = useState(false);
+  const [calmQuickOpen, setCalmQuickOpen] = useState(false);
   const [privateNoteDraft, setPrivateNoteDraft] = useState("");
   const [lastWeekReflection, setLastWeekReflection] = useState("");
   const [weeklyIntentionText, setWeeklyIntentionText] = useState("");
@@ -1753,7 +1755,13 @@ function GlowUpTracker() {
   const [nextStepHint, setNextStepHint] = useState(null);
   const pickEasierSuggestion = (taskKey) => setNextStepHint({ key: taskKey, text: MAKE_IT_EASIER_SUGGESTIONS[Math.floor(Math.random() * MAKE_IT_EASIER_SUGGESTIONS.length)] });
 
-  const [betaBannerDismissed, setBetaBannerDismissed] = useState(false);
+  const [betaBannerDismissed, setBetaBannerDismissed] = useState(() => {
+    try { return window.localStorage.getItem("plushlist-beta-banner-dismissed") === "1"; } catch (_error) { return false; }
+  });
+  const dismissBetaBanner = () => {
+    setBetaBannerDismissed(true);
+    try { window.localStorage.setItem("plushlist-beta-banner-dismissed", "1"); } catch (_error) {}
+  };
   const [collectionTab, setCollectionTab] = useState("mascot");
   const [collectionLoadedFor, setCollectionLoadedFor] = useState(null);
   const [mascotCollection, setMascotCollection] = useState({
@@ -6221,7 +6229,11 @@ function GlowUpTracker() {
           </div>}
         </div>
 
-        {user && !betaBannerDismissed && (
+        {user && (betaBannerDismissed ? (
+          <div style={{ marginBottom: 16, display: "flex", justifyContent: "flex-end" }}>
+            <button type="button" onClick={goToFeedback} title="This is an early test build" style={{ display: "flex", alignItems: "center", gap: 5, padding: "5px 10px", borderRadius: 999, border: "1px solid #B9DCF6", background: "#EAF4FF99", color: "#2D6BB5", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>🧪 Test build · Feedback</button>
+          </div>
+        ) : (
           <div style={{ marginBottom: 16, padding: "12px 14px", borderRadius: 14, background: "#EAF4FF", border: "1px solid #B9DCF6", display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
             <div style={{ flex: "1 1 200px" }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: "#2D6BB5" }}>🧪 You're using an early test build</div>
@@ -6229,10 +6241,10 @@ function GlowUpTracker() {
             </div>
             <div style={{ display: "flex", gap: 6, flexShrink: 0 }}>
               <button type="button" onClick={goToFeedback} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#4C8FE8", color: "white", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💌 Send feedback</button>
-              <button type="button" onClick={() => setBetaBannerDismissed(true)} aria-label="Dismiss test build notice" style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "white", color: "#2D6BB5", fontWeight: 900, cursor: "pointer" }}>✕</button>
+              <button type="button" onClick={dismissBetaBanner} aria-label="Dismiss test build notice" style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "white", color: "#2D6BB5", fontWeight: 900, cursor: "pointer" }}>✕</button>
             </div>
           </div>
-        )}
+        ))}
 
         {!user ? (
           <div style={{ padding: 22, borderRadius: 20, textAlign: "center", background: "rgba(255,255,255,0.72)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
@@ -7056,7 +7068,10 @@ function GlowUpTracker() {
             <div style={{ fontSize: 12, fontWeight: 900, color: "#8D5CA5" }}>🔮 PLUSHPLUS PREVIEW (dev only)</div>
             <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>
               Simulates a future plan for this admin session only — nothing here touches your account, anyone else's account, or real billing.
-              Every real user gets full access regardless of this toggle (PLUSH_ENFORCE_ENTITLEMENTS is {String(PLUSH_ENFORCE_ENTITLEMENTS)}).
+              Every real user gets full access regardless of this toggle.
+            </div>
+            <div style={{ marginTop: 10, padding: "8px 10px", borderRadius: 9, background: "#F7ECFB", border: "1px solid #E3C9EC", fontSize: 11.5, fontWeight: 800, color: "#7A3D93" }}>
+              Currently previewing: {devPreviewPlan ? { [window.PlushLifeEntitlements.PLUSH_PLANS.FREE]: "Free", [window.PlushLifeEntitlements.PLUSH_PLANS.PLUSHPLUS]: "PlushPlus", [window.PlushLifeEntitlements.PLUSH_PLANS.PLUSHFAMILY]: "PlushFamily" }[devPreviewPlan] : "Full access (real state)"}
             </div>
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
               {[
@@ -7084,21 +7099,25 @@ function GlowUpTracker() {
                 </button>
               ))}
             </div>
-            <div style={{ display: "grid", gap: 4, marginTop: 12 }}>
-              {window.PlushLifeEntitlements.PLUSH_FEATURE_FLAGS.map((flag) => {
-                const wouldHaveAccess = window.PlushLifeEntitlements.hasPlushFeature(flag, {
-                  enforced: true,
-                  plan: window.PlushLifeEntitlements.PLUSH_PLANS.FREE,
-                  devPreviewPlan,
-                });
-                return (
-                  <div key={flag} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderRadius: 7, background: "#FBF7FD", fontSize: 11 }}>
-                    <span style={{ color: "#6B5A7D" }}>{flag}</span>
-                    <span style={{ fontWeight: 800, color: wouldHaveAccess ? "#318C79" : "#B0576B" }}>{wouldHaveAccess ? "included" : "not included"}</span>
-                  </div>
-                );
-              })}
-            </div>
+            <details style={{ marginTop: 12 }}>
+              <summary style={{ cursor: "pointer", fontSize: 11, fontWeight: 800, color: "#8D5CA5" }}>Feature flags ({window.PlushLifeEntitlements.PLUSH_FEATURE_FLAGS.length})</summary>
+              <div style={{ display: "grid", gap: 4, marginTop: 8 }}>
+                {window.PlushLifeEntitlements.PLUSH_FEATURE_FLAGS.map((flag) => {
+                  const wouldHaveAccess = window.PlushLifeEntitlements.hasPlushFeature(flag, {
+                    enforced: true,
+                    plan: window.PlushLifeEntitlements.PLUSH_PLANS.FREE,
+                    devPreviewPlan,
+                  });
+                  const humanized = flag.replace(/^plush/, "").replace(/([A-Z])/g, " $1").trim();
+                  return (
+                    <div key={flag} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderRadius: 7, background: "#FBF7FD", fontSize: 11 }}>
+                      <span style={{ color: "#6B5A7D" }} title={flag}>{humanized}</span>
+                      <span style={{ fontWeight: 800, color: wouldHaveAccess ? "#318C79" : "#B0576B" }}>{wouldHaveAccess ? "included" : "not included"}</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </details>
           </div>
           </ToolPanel>
         )}
@@ -8146,55 +8165,69 @@ function GlowUpTracker() {
         )}
         </div>
 
-        <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #F3D9EC" }}>
-          <div style={{ fontSize: 11, letterSpacing: "0.2em", color: "#C77DD6", fontWeight: 700, marginBottom: 8 }}>🛟 IF I FEEL OVERWHELMED</div>
+        <button type="button" onClick={() => setCalmQuickOpen(true)} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 13px", borderRadius: 12, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.55)", color: "#6B5A7D", fontWeight: 800, fontSize: 12.5, cursor: "pointer", marginBottom: 18 }}>
+          <span>🛟 If I feel overwhelmed</span>
+          <span style={{ color: "#C77DD6" }}>›</span>
+        </button>
 
-          <div style={{ padding: "12px 14px", borderRadius: 12, background: "#C77DD622", border: "1px solid #C77DD655", marginBottom: 10 }}>
-            <div style={{ fontSize: 10, letterSpacing: "0.18em", color: "#C77DD6", fontWeight: 700, marginBottom: 4 }}>TRY THIS RIGHT NOW</div>
-            <div style={{ fontSize: 15, fontWeight: 600, color: "#5B4B6B" }}>{currentCopingOption}</div>
-          </div>
-          <button onClick={reshuffle} style={{
-            padding: "7px 14px", borderRadius: 10, border: "1px solid #C77DD655",
-            background: "rgba(255,255,255,0.4)", color: "#C77DD6", fontWeight: 700,
-            fontSize: 12.5, cursor: "pointer", marginBottom: 12,
-          }}>
-            🎲 Give me something else
-          </button>
+        {calmQuickOpen && (
+          <ToolPanel title="PlushCalm" onClose={() => setCalmQuickOpen(false)}>
+            <div style={{ padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #F3D9EC" }}>
+              <div style={{ padding: "12px 14px", borderRadius: 12, background: "#C77DD622", border: "1px solid #C77DD655", marginBottom: 10 }}>
+                <div style={{ fontSize: 10, letterSpacing: "0.18em", color: "#C77DD6", fontWeight: 700, marginBottom: 4 }}>TRY THIS RIGHT NOW</div>
+                <div style={{ fontSize: 15, fontWeight: 600, color: "#5B4B6B" }}>{currentCopingOption}</div>
+              </div>
+              <button onClick={reshuffle} style={{
+                padding: "7px 14px", borderRadius: 10, border: "1px solid #C77DD655",
+                background: "rgba(255,255,255,0.4)", color: "#C77DD6", fontWeight: 700,
+                fontSize: 12.5, cursor: "pointer", marginBottom: 12,
+              }}>
+                🎲 Give me something else
+              </button>
 
-          <div style={{ fontSize: 13.5, lineHeight: 1.7, color: "#8C6B9E" }}>
-            And always: reach out and tell someone I'm struggling if I need to.
-          </div>
+              <div style={{ fontSize: 13.5, lineHeight: 1.7, color: "#8C6B9E" }}>
+                And always: reach out and tell someone I'm struggling if I need to.
+              </div>
 
-          <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #F3D9EC" }}>
-            <FeatureTip id="comfort_toolkit" text="Grounding, breathing, and comfort-break tools all live together on the Care tab now, so there's one place to find them." />
-            <button type="button" onClick={() => { setCareSection("quick"); goToDashboard("care"); }} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 13px", borderRadius: 12, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.55)", color: "#6B5A7D", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
-              <span>🧰 Open the Comfort Toolkit</span>
-              <span style={{ color: "#C77DD6" }}>on the Care tab ›</span>
-            </button>
-          </div>
-          <div style={{ marginTop: 10, fontSize: 13.5, fontStyle: "italic", color: "#C77DD6" }}>
-            "My feelings are real. I don't have to hurt myself to prove they exist."
-          </div>
-        </div>
+              <div style={{ marginTop: 14, paddingTop: 13, borderTop: "1px solid #F3D9EC" }}>
+                <button type="button" onClick={() => { setCalmQuickOpen(false); setCareSection("quick"); goToDashboard("care"); }} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 13px", borderRadius: 12, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.55)", color: "#6B5A7D", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>
+                  <span>🧰 Open the Comfort Toolkit</span>
+                  <span style={{ color: "#C77DD6" }}>on the Care tab ›</span>
+                </button>
+              </div>
+              <div style={{ marginTop: 10, fontSize: 13.5, fontStyle: "italic", color: "#C77DD6" }}>
+                "My feelings are real. I don't have to hurt myself to prove they exist."
+              </div>
+            </div>
+          </ToolPanel>
+        )}
 
         {!isFutureView && (
-          <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #E6D4F2" }}>
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A65DC1" }}>📝 PLUSHJOURNAL</div>
-              {!privateNoteEditing && <button type="button" onClick={() => { setPrivateNoteDraft(privateNote); setPrivateNoteEditing(true); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{privateNote ? "Edit" : "Add one"}</button>}
+          <button type="button" onClick={() => { setPrivateNoteDraft(privateNote); setJournalQuickOpen(true); }} style={{ width: "100%", display: "flex", justifyContent: "space-between", alignItems: "center", padding: "11px 13px", borderRadius: 12, border: "1px solid #E6D4F2", background: "rgba(255,255,255,0.55)", color: "#6B5A7D", fontWeight: 800, fontSize: 12.5, cursor: "pointer", marginBottom: 18 }}>
+            <span>📝 {privateNote ? "Open PlushJournal" : "Write in PlushJournal"}</span>
+            <span style={{ color: "#A65DC1" }}>›</span>
+          </button>
+        )}
+
+        {journalQuickOpen && (
+          <ToolPanel title="PlushJournal" onClose={() => { setJournalQuickOpen(false); setPrivateNoteEditing(false); }}>
+            <div style={{ padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #E6D4F2" }}>
+              <div style={{ fontStyle: "italic", lineHeight: 1.5, fontSize: 12.5, color: "#8C6B9E" }}>{reflectionPrompt}</div>
+              {privateNoteEditing ? <>
+                <textarea value={privateNoteDraft} onChange={(event) => setPrivateNoteDraft(event.target.value)} maxLength={5000} aria-label="Private reflection" placeholder="Only you can read this." style={{ width: "100%", boxSizing: "border-box", minHeight: 120, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
+                <div style={{ display: "flex", gap: 7, marginTop: 7 }}>
+                  <button type="button" onClick={savePrivateNote} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button>
+                  <button type="button" onClick={() => setPrivateNoteEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
+                </div>
+              </> : (
+                <>
+                  <div style={{ marginTop: 9, whiteSpace: "pre-wrap", lineHeight: 1.6, fontSize: 13, color: privateNote ? "#5B4B6B" : "#9A86A7" }}>{privateNote || "Nothing written for this day yet — only you can ever read it."}</div>
+                  <button type="button" onClick={() => setPrivateNoteEditing(true)} style={{ marginTop: 10, padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>{privateNote ? "Edit" : "Add one"}</button>
+                </>
+              )}
+              {privateNoteMessage && <div role="status" aria-live="polite" style={{ marginTop: 8, fontSize: 11.5, color: "#8C6B9E" }}>{privateNoteMessage}</div>}
             </div>
-            <div style={{ marginTop: 6, fontStyle: "italic", lineHeight: 1.5, fontSize: 12.5, color: "#8C6B9E" }}>{reflectionPrompt}</div>
-            {privateNoteEditing ? <>
-              <textarea value={privateNoteDraft} onChange={(event) => setPrivateNoteDraft(event.target.value)} maxLength={5000} aria-label="Private reflection" placeholder="Only you can read this." style={{ width: "100%", boxSizing: "border-box", minHeight: 80, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
-              <div style={{ display: "flex", gap: 7, marginTop: 7 }}>
-                <button type="button" onClick={savePrivateNote} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button>
-                <button type="button" onClick={() => setPrivateNoteEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button>
-              </div>
-            </> : (
-              <div style={{ marginTop: 9, whiteSpace: "pre-wrap", lineHeight: 1.6, fontSize: 13, color: privateNote ? "#5B4B6B" : "#9A86A7" }}>{privateNote || "Nothing written for this day yet — only you can ever read it."}</div>
-            )}
-            {privateNoteMessage && <div role="status" aria-live="polite" style={{ marginTop: 8, fontSize: 11.5, color: "#8C6B9E" }}>{privateNoteMessage}</div>}
-          </div>
+          </ToolPanel>
         )}
 
         </>}
