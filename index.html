@@ -8411,7 +8411,7 @@ function GlowUpTracker() {
               const isFutureDate = date > period.date;
               const isSelectedDate = date === selectedProgressDate;
               const pct = dayCompletionPct(date);
-              const bg = isSelectedDate ? "#F4E8FA" : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+              const bg = isRestDay ? "#8FD4B8" : pct === null ? (isSelectedDate ? "#F4E8FA" : "rgba(255,255,255,0.82)") : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
               const textColor = isFutureDate ? "#C7BBCF" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
               const calendarTitle = [isRestDay ? "Resting" : pct === null ? null : `${pct}% complete`, moodOption ? `Feeling ${moodOption[2]}` : null, checkIn?.energy ? `${checkIn.energy} energy` : null, checkIn?.day_type ? `${checkIn.day_type} day` : null].filter(Boolean).join(" · ");
               return <button key={date} type="button" disabled={isFutureDate} title={calendarTitle || undefined} aria-label={calendarTitle ? `${number}: ${calendarTitle}` : String(number)} onClick={() => {
