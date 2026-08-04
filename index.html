@@ -563,11 +563,10 @@ const TEMPLATE_PACKS = [
 
 const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
-  { id: "today", label: "PlushHome", icon: "☀️", accent: "#C77DD6" },
-  { id: "week", label: "PlushCalendar", icon: "📅", accent: "#4C8FE8" },
+  { id: "today", label: "Home", icon: "☀️", accent: "#C77DD6" },
+  { id: "week", label: "Calendar", icon: "📅", accent: "#4C8FE8" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
-  { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
-  { id: "more", label: "PlushProfile", icon: "•••", accent: "#8D5CA5" },
+  { id: "progress", label: "Progress", icon: "📈", accent: "#8E4EAA" },
 ];
 
 const CHECKIN_MOODS = [
@@ -1444,12 +1443,21 @@ function GlowUpTracker() {
   const restoreFileInputRef = React.useRef(null);
   const [todayCardIndex, setTodayCardIndex] = useState(0);
   const [taskListCollapsed, setTaskListCollapsed] = useState(true);
-  const [weekCardIndex, setWeekCardIndex] = useState(0);
+  const [weekCardIndex, setWeekCardIndex] = useState(() => {
+    try {
+      const stored = Number(window.localStorage.getItem("plushlist-calendar-view"));
+      return Number.isInteger(stored) && stored >= 0 && stored <= 3 ? stored : 1;
+    } catch (_error) { return 1; }
+  });
+  useEffect(() => {
+    try { window.localStorage.setItem("plushlist-calendar-view", String(weekCardIndex)); } catch (_error) {}
+  }, [weekCardIndex]);
   const [upcomingPreviewDate, setUpcomingPreviewDate] = useState(null);
   const [calendarWeekOffset, setCalendarWeekOffset] = useState(0);
   const [calendarWeekPreviewDate, setCalendarWeekPreviewDate] = useState(null);
   const [dayViewDate, setDayViewDate] = useState(() => trackerPeriod().date);
   const [agendaFilter, setAgendaFilter] = useState("all");
+  const [agendaShowHistory, setAgendaShowHistory] = useState(false);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
   const [focusModeShowAll, setFocusModeShowAll] = useState(false);
@@ -1613,6 +1621,7 @@ function GlowUpTracker() {
   const [settingsMessage, setSettingsMessage] = useState("");
   const [nativeBuildInfo, setNativeBuildInfo] = useState(null);
   const [helpOpen, setHelpOpen] = useState(false);
+  const [profileOpen, setProfileOpen] = useState(false);
   const [safetyOpen, setSafetyOpen] = useState(false);
   const [focusHelperOpen, setFocusHelperOpen] = useState(false);
   const [insightCardIndex, setInsightCardIndex] = useState(0);
@@ -1640,7 +1649,7 @@ function GlowUpTracker() {
     else if (view === "week") setDashboard("week");
     else if (view === "tasks") { setDashboard("today"); setActive(dayIdForDate(period.date)); setNewTaskDay(dayIdForDate(period.date)); setTodayCardIndex(1); setManageTasks(true); }
     else if (view === "care") setDashboard("care");
-    else if (view === "progress") setDashboard("week");
+    else if (view === "progress") setDashboard("progress");
     window.history.replaceState(null, "", window.location.pathname);
   }, []);
   const [onboardingStep, setOnboardingStep] = useState(0);
@@ -3012,9 +3021,7 @@ function GlowUpTracker() {
 
   const goWriteWeeklyIntention = () => {
     setWeeklyKickoffOpen(false);
-    setDashboard("today");
-    setActive(dayIdForDate(period.date));
-    setSelectedProgressDate(period.date);
+    setDashboard("progress");
     setWeeklyIntentionEditing(true);
   };
 
@@ -3903,7 +3910,7 @@ function GlowUpTracker() {
         },
       });
       if (guardianEmailError) {
-        setOnboardingMessage("Your guardian was added, but we couldn't send their email yet. Try again from the Guardian tab.");
+        setOnboardingMessage("Your guardian was added, but we couldn't send their email yet. Try again from Profile.");
         return;
       }
     }
@@ -5253,11 +5260,7 @@ function GlowUpTracker() {
   // the "People I Support" toggle inside the regular Guardian screen rather
   // than its own top-level tab — a separate "Supporting" tab turned out to
   // just be a second entry point to the exact same view.
-  const dashboardItems = [
-    ...DASHBOARDS.slice(0, 3),
-    { id: "guardian", label: hasOwnGuardian ? "Guardian" : "Add a Guardian", icon: "💛", accent: "#4C8FE8" },
-    DASHBOARDS[4],
-  ];
+  const dashboardItems = DASHBOARDS;
 
   const goToDashboard = (id) => {
     setDashboard(id);
@@ -6211,6 +6214,10 @@ function GlowUpTracker() {
             <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
               <PlushMascot outfit={selectedOutfit} size={46} mood="happy" activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
             </button>
+            <button type="button" onClick={() => setProfileOpen(true)} aria-label={unreadNoteCount > 0 ? `Open profile, ${unreadNoteCount} unread notes` : "Open profile"} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E6D4F2", background: "#FFFFFFCC", color: "#8D5CA5", fontSize: 19, cursor: "pointer" }}>
+              👤
+              {unreadNoteCount > 0 && <span aria-hidden="true" style={{ position: "absolute", top: -3, right: -3, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>}
+            </button>
           </div>}
         </div>
 
@@ -6251,9 +6258,6 @@ function GlowUpTracker() {
               const on = item.id === dashboard;
               return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: item.label.length > 10 ? 9.5 : 11, lineHeight: 1.15, overflowWrap: "break-word", wordBreak: "break-word", cursor: "pointer" }}>
                 <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
-                {item.id === "guardian" && unreadNoteCount > 0 && (
-                  <span aria-label={`${unreadNoteCount} unread notes`} style={{ position: "absolute", top: -6, right: -6, minWidth: 18, height: 18, padding: "0 4px", borderRadius: 9, background: "#C45D74", color: "white", fontSize: 10.5, fontWeight: 900, display: "flex", alignItems: "center", justifyContent: "center" }}>{unreadNoteCount}</span>
-                )}
               </button>;
             })}
           </div>
@@ -6381,8 +6385,12 @@ function GlowUpTracker() {
           </div>
         )}
 
-        {dashboard === "more" && (
-          <div style={{ marginBottom: 18, display: "grid", gap: 8 }}>
+        {profileOpen && (
+          <ToolPanel title="Profile" onClose={() => setProfileOpen(false)}>
+          <div style={{ display: "grid", gap: 8 }}>
+            <button type="button" onClick={() => { setProfileOpen(false); goToDashboard("guardian"); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #4C8FE855", background: "#FFFFFFAA", color: "#4C6E8E", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+              <span aria-hidden="true" style={{ fontSize: 18 }}>💛</span> {hasOwnGuardian ? "Guardian" : "Add a Guardian"} <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Trusted support ›</span>
+            </button>
             <button type="button" onClick={() => setSettingsOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #73B7A855", background: "#FFFFFFAA", color: "#318C79", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span aria-hidden="true" style={{ fontSize: 18 }}>⚙️</span> Settings <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Accessibility, notifications, account ›</span>
             </button>
@@ -6392,7 +6400,7 @@ function GlowUpTracker() {
             <button type="button" onClick={() => setHelpOpen(true)} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #D9A64C66", background: "#FFFFFFAA", color: "#A56D14", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span aria-hidden="true" style={{ fontSize: 18 }}>❓</span> Help & FAQ <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>How this app works ›</span>
             </button>
-            <button type="button" onClick={goToFeedback} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #4C8FE855", background: "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
+            <button type="button" onClick={() => { setProfileOpen(false); goToFeedback(); }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "13px 14px", borderRadius: 14, border: "1px solid #4C8FE855", background: "#FFFFFFAA", color: "#4C8FE8", fontWeight: 800, fontSize: 13.5, cursor: "pointer", textAlign: "left" }}>
               <span aria-hidden="true" style={{ fontSize: 18 }}>💌</span> Send feedback <span style={{ marginLeft: "auto", fontSize: 12, color: "#9A86A7" }}>Report a bug or suggest something ›</span>
             </button>
             {isAdminUser && (
@@ -6406,6 +6414,7 @@ function GlowUpTracker() {
               </div>
             )}
           </div>
+          </ToolPanel>
         )}
 
         {checkInViewerDate && (() => {
@@ -6568,7 +6577,7 @@ function GlowUpTracker() {
               <div><strong>DAILY:</strong> shows today’s everyday tasks and today’s schedule.</div>
               <div><strong>MON–SUN:</strong> lets you preview or change a particular day.</div>
               <div><strong>Required:</strong> counts toward your main score. <strong>Bonus:</strong> is optional and never lowers it.</div>
-              <div><strong>Guardian tab:</strong> is where you invite, pause, or remove a trusted guardian, and where you view anyone you support.</div>
+              <div><strong>Guardian (in Profile):</strong> is where you invite, pause, or remove a trusted guardian, and where you view anyone you support.</div>
               <div><strong>People I Support:</strong> read-only. You can encourage, but you can't check off or change someone else's tasks, and their private reflections are never shown to you.</div>
               <div><strong>Private reflection:</strong> belongs only to you and stays with the date you wrote it on.</div>
             </div>
@@ -8191,28 +8200,19 @@ function GlowUpTracker() {
         </>}
 
         {dashboard === "week" && <>
-        <div style={{ marginBottom: 12, padding: "11px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
-          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
-            {!weeklyIntentionEditing && <button type="button" onClick={() => { setWeeklyIntentionDraft(weeklyIntentionText); setWeeklyIntentionEditing(true); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{weeklyIntentionText ? "Edit" : "Add one"}</button>}
+        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center" }}>
+          <button type="button" aria-label="Previous view" onClick={() => setWeekCardIndex((index) => (index + 3) % 4)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
+          <div role="tablist" aria-label="Calendar view" style={{ flex: 1, display: "flex", gap: 4, padding: 4, borderRadius: 12, background: "#F0E4F7" }}>
+            {[
+              [0, "📅 Month"],
+              [1, "🗓️ Week"],
+              [2, "📆 Day"],
+              [3, "📋 Agenda"],
+            ].map(([index, cardLabel]) => (
+              <button key={index} type="button" role="tab" aria-selected={weekCardIndex === index} onClick={() => setWeekCardIndex(index)} style={{ flex: 1, minWidth: 0, padding: "7px 4px", borderRadius: 9, border: "none", background: weekCardIndex === index ? "white" : "transparent", color: weekCardIndex === index ? "#7E3D99" : "#8C6B9E", fontWeight: 800, fontSize: 11.5, cursor: "pointer", boxShadow: weekCardIndex === index ? "0 1px 4px rgba(126,61,153,.18)" : "none" }}>{cardLabel}</button>
+            ))}
           </div>
-          {weeklyIntentionEditing ? <>
-            <textarea value={weeklyIntentionDraft} onChange={(event) => setWeeklyIntentionDraft(event.target.value)} maxLength={2000} placeholder="Example: Be a little gentler with myself this week." style={{ width: "100%", boxSizing: "border-box", minHeight: 70, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
-            <div style={{ display: "flex", gap: 7, marginTop: 7 }}><button type="button" onClick={saveWeeklyIntentionEdit} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button><button type="button" onClick={() => setWeeklyIntentionEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button></div>
-          </> : <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.45, color: weeklyIntentionText ? "#6B5A7D" : "#9A86A7" }}>{weeklyIntentionText || "Optional—a simple direction for the week, not another task."}</div>}
-        </div>
-        <div style={{ display: "flex", gap: 6, marginBottom: 8, alignItems: "center", flexWrap: "wrap" }}>
-          <button type="button" aria-label="Previous card" onClick={() => setWeekCardIndex((index) => (index + 4) % 5)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>‹</button>
-          {[
-            [0, "✨ Whole-week"],
-            [1, "📅 Month"],
-            [2, "🗓️ Week"],
-            [3, "📆 Day"],
-            [4, "📋 Agenda"],
-          ].map(([index, cardLabel]) => (
-            <button key={index} type="button" onClick={() => setWeekCardIndex(index)} style={{ flex: "1 1 28%", minWidth: 0, padding: "7px 6px", borderRadius: 10, border: weekCardIndex === index ? "2px solid #A65DC1" : "1px solid #E6D4F2", background: weekCardIndex === index ? "#F2E3FA" : "#FFFFFFAA", color: weekCardIndex === index ? "#A65DC1" : "#8C6B9E", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>{cardLabel}</button>
-          ))}
-          <button type="button" aria-label="Next card" onClick={() => setWeekCardIndex((index) => (index + 1) % 5)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
+          <button type="button" aria-label="Next view" onClick={() => setWeekCardIndex((index) => (index + 1) % 4)} style={{ padding: "7px 9px", borderRadius: 10, border: "1px solid #E6D4F2", background: "#FFFFFFAA", color: "#A65DC1", fontWeight: 900, cursor: "pointer", flexShrink: 0 }}>›</button>
         </div>
         <div
           onTouchStart={(event) => { event.stopPropagation(); weekSwipeStartX.current = event.touches[0]?.clientX ?? null; weekSwipeStartY.current = event.touches[0]?.clientY ?? null; }}
@@ -8228,11 +8228,345 @@ function GlowUpTracker() {
             const deltaX = endX - startX;
             const deltaY = endY - startY;
             if (Math.abs(deltaX) < 45 || Math.abs(deltaX) < Math.abs(deltaY) * 1.5) return;
-            setWeekCardIndex((index) => (index + (deltaX < 0 ? 1 : 4)) % 5);
+            setWeekCardIndex((index) => (index + (deltaX < 0 ? 1 : 3)) % 4);
           }}
           style={{ touchAction: "pan-y" }}>
         {weekCardIndex === 0 && <>
-        {/* Weekly progress */}
+        <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+            <div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📅 PROGRESS CALENDAR</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Darker means more completed that day. A purple dot means you saved a private reflection — tap a past day to open it.</div>
+            </div>
+            <div style={{ display: "flex", gap: 5 }}>
+              <button type="button" aria-label="Previous month" onClick={() => {
+                const previous = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() - 1, 1));
+                setReflectionCalendarMonth(previous.toISOString().slice(0, 7));
+              }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
+              <button type="button" aria-label="Next month" disabled={reflectionCalendarMonth >= period.date.slice(0, 7)} onClick={() => {
+                const next = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() + 1, 1));
+                setReflectionCalendarMonth(next.toISOString().slice(0, 7));
+              }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: reflectionCalendarMonth >= period.date.slice(0, 7) ? "not-allowed" : "pointer", opacity: reflectionCalendarMonth >= period.date.slice(0, 7) ? 0.4 : 1 }}>→</button>
+            </div>
+          </div>
+
+          <div style={{ marginTop: 10, textAlign: "center", color: "#5B4B6B", fontSize: 14, fontWeight: 900 }}>
+            {reflectionMonthDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}
+          </div>
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 4, marginTop: 9 }}>
+            {["M", "T", "W", "T", "F", "S", "S"].map((label, index) => <div key={index} style={{ textAlign: "center", fontSize: 10, fontWeight: 900, color: "#9A86A7" }}>{label}</div>)}
+            {Array.from({ length: reflectionMonthStart }).map((_, index) => <div key={"blank-" + index} />)}
+            {Array.from({ length: reflectionMonthDays }, (_, index) => {
+              const number = index + 1;
+              const date = reflectionCalendarMonth + "-" + String(number).padStart(2, "0");
+              const hasReflection = reflectionDateSet.has(date);
+              const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === date) || null;
+              const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
+              const moodEmoji = moodOption?.[1] || null;
+              const isRestDay = restDatesSet.has(date);
+              const isFutureDate = date > period.date;
+              const isSelectedDate = date === selectedProgressDate;
+              const pct = dayCompletionPct(date);
+              const bg = isSelectedDate ? "#F4E8FA" : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+              const textColor = isFutureDate ? "#C7BBCF" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
+              const calendarTitle = [isRestDay ? "Resting" : pct === null ? null : `${pct}% complete`, moodOption ? `Feeling ${moodOption[2]}` : null, checkIn?.energy ? `${checkIn.energy} energy` : null, checkIn?.day_type ? `${checkIn.day_type} day` : null].filter(Boolean).join(" · ");
+              return <button key={date} type="button" disabled={isFutureDate} title={calendarTitle || undefined} aria-label={calendarTitle ? `${number}: ${calendarTitle}` : String(number)} onClick={() => {
+                if (isFutureDate) return;
+                setSelectedProgressDate(date);
+                if (date === period.date) setActive("daily");
+                if (hasReflection && !checkIn) setReflectionViewerDate(date);
+                if (checkIn) setCheckInViewerDate(date);
+              }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : "1px solid #E9DDEC", background: bg, color: textColor, fontWeight: 800, cursor: isFutureDate ? "not-allowed" : "pointer", opacity: isFutureDate ? 0.5 : 1 }}>
+                {isRestDay ? "🌴" : number}{moodEmoji && <span aria-label={`Feeling ${moodOption[2]}`} style={{ position: "absolute", left: 3, bottom: 1, fontSize: 11 }}>{moodEmoji}</span>}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
+              </button>;
+            })}
+          </div>
+          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E", flexWrap: "wrap" }}>
+            Less
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
+            More
+            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8FD4B8", display: "inline-block", marginLeft: 8 }} /> 🌴 Resting
+          </div>
+        </div>
+        </>}
+
+        {weekCardIndex === 1 && (() => {
+          const viewedWeekStart = offsetDate(period.weekStart, calendarWeekOffset * 7);
+          const viewedWeekDates = Array.from({ length: 7 }, (_, index) => offsetDate(viewedWeekStart, index));
+          return (
+            <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div>
+                  <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>🗓️ WEEK VIEW</div>
+                  <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Past days show what actually happened. Days ahead show what's planned — tap one to preview it.</div>
+                </div>
+                <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
+                  <button type="button" aria-label="Previous week" onClick={() => setCalendarWeekOffset((offset) => offset - 1)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
+                  <button type="button" aria-label="Next week" onClick={() => setCalendarWeekOffset((offset) => offset + 1)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>→</button>
+                </div>
+              </div>
+              <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
+                <div style={{ fontSize: 13, fontWeight: 900, color: "#5B4B6B" }}>
+                  {calendarWeekOffset === 0 ? "This week" : new Date(`${viewedWeekStart}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " – " + new Date(`${offsetDate(viewedWeekStart, 6)}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
+                </div>
+                {calendarWeekOffset !== 0 && <button type="button" onClick={() => setCalendarWeekOffset(0)} style={{ padding: "5px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Today</button>}
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, marginTop: 10 }}>
+                {viewedWeekDates.map((date) => {
+                  const isFuture = date > period.date;
+                  const isRestDay = restDatesSet.has(date);
+                  const pct = isFuture ? null : dayCompletionPct(date);
+                  const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === date) || null;
+                  const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
+                  const moodEmoji = moodOption?.[1] || null;
+                  const hasReflection = reflectionDateSet.has(date);
+                  const isSelected = date === (isFuture ? calendarWeekPreviewDate : selectedProgressDate);
+                  const plannedCount = isFuture ? trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, date)).length : null;
+                  const bg = isFuture ? (isSelected ? "#F4E8FA" : "#FBF7FD") : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
+                  const textColor = isFuture ? "#8E4EAA" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
+                  const dayLabel = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short" });
+                  const dayNumber = Number(date.slice(8, 10));
+                  return (
+                    <button
+                      key={date}
+                      type="button"
+                      onClick={() => {
+                        if (isFuture) { setCalendarWeekPreviewDate(isSelected ? null : date); return; }
+                        setSelectedProgressDate(date);
+                        if (date === period.date) setActive("daily");
+                        if (hasReflection && !checkIn) setReflectionViewerDate(date);
+                        if (checkIn) setCheckInViewerDate(date);
+                      }}
+                      style={{ position: "relative", minHeight: 52, padding: "6px 2px", borderRadius: 10, border: isSelected ? "2px solid #A65DC1" : isFuture ? "1px dashed #DCC9E8" : "1px solid #E9DDEC", background: bg, color: textColor, cursor: "pointer" }}
+                    >
+                      <div style={{ fontSize: 9.5, fontWeight: 900, opacity: 0.85 }}>{dayLabel}</div>
+                      <div style={{ marginTop: 2, fontSize: 14, fontWeight: 900 }}>{isRestDay && !isFuture ? "🌴" : dayNumber}</div>
+                      {isFuture ? (plannedCount > 0 && <div style={{ marginTop: 2, fontSize: 9 }}>{plannedCount} planned</div>) : null}
+                      {moodEmoji && <span aria-label={`Feeling ${moodOption[2]}`} style={{ position: "absolute", left: 3, bottom: 2, fontSize: 10 }}>{moodEmoji}</span>}
+                      {hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 11 }}>•</span>}
+                    </button>
+                  );
+                })}
+              </div>
+              {calendarWeekPreviewDate && viewedWeekDates.includes(calendarWeekPreviewDate) && (() => {
+                const previewTasks = trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, calendarWeekPreviewDate));
+                return (
+                  <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 12, background: "#FBF7FD", border: "1px solid #E3C9EC" }}>
+                    <div style={{ fontSize: 11.5, fontWeight: 900, color: "#7A3D93" }}>{new Date(`${calendarWeekPreviewDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
+                    {previewTasks.length === 0 ? (
+                      <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled yet for that day.</div>
+                    ) : (
+                      <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
+                        {previewTasks.map((task) => (
+                          <div key={task.task_key} style={{ padding: "6px 9px", borderRadius: 8, background: "white", border: "1px solid #EADDE2", fontSize: 11.5, color: "#5B4B6B" }}>
+                            {taskIsOptional(task) ? "⭐ " : ""}{task.task}
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                );
+              })()}
+            </div>
+          );
+        })()}
+
+        {weekCardIndex === 2 && (() => {
+          const isFuture = dayViewDate > period.date;
+          const isRestDay = restDatesSet.has(dayViewDate);
+          const pct = isFuture ? null : dayCompletionPct(dayViewDate);
+          const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === dayViewDate) || null;
+          const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
+          const previewTasks = trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, dayViewDate));
+          const timeBucket = (task) => {
+            if (!task.reminder_time) return "Anytime";
+            const hour = Number(String(task.reminder_time).slice(0, 2));
+            if (!Number.isFinite(hour)) return "Anytime";
+            if (hour < 12) return "Morning";
+            if (hour < 17) return "Afternoon";
+            return "Evening";
+          };
+          const groupedTasks = ["Morning", "Afternoon", "Evening", "Anytime"]
+            .map((group) => ({ group, tasks: previewTasks.filter((task) => timeBucket(task) === group) }))
+            .filter((entry) => entry.tasks.length > 0);
+          return (
+            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📆 DAY VIEW</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Jump to any date — past days show what actually happened, future days show what's planned.</div>
+              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
+                <button type="button" aria-label="Previous day" onClick={() => { const next = offsetDate(dayViewDate, -1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
+                <input type="date" value={dayViewDate} max={offsetDate(period.date, 365)} onChange={(event) => { const next = event.target.value || period.date; setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #DCC9E8", fontSize: 12.5 }} />
+                <button type="button" aria-label="Next day" onClick={() => { const next = offsetDate(dayViewDate, 1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>→</button>
+                {dayViewDate !== period.date && <button type="button" onClick={() => { setDayViewDate(period.date); setSelectedProgressDate(period.date); setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Today</button>}
+              </div>
+              <div style={{ marginTop: 10, fontSize: 14, fontWeight: 900, color: "#5B4B6B" }}>
+                {new Date(`${dayViewDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
+                {isRestDay && !isFuture ? " · 🌴 Resting" : pct !== null ? ` · ${pct}% complete` : isFuture ? " · Planned" : ""}
+              </div>
+              {checkIn && <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>{moodOption ? `Feeling ${moodOption[2]}` : ""}</div>}
+              <div style={{ marginTop: 10, display: "grid", gap: 10 }}>
+                {groupedTasks.length === 0 ? (
+                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled for this day.</div>
+                ) : groupedTasks.map(({ group, tasks }) => (
+                  <div key={group}>
+                    <div style={{ fontSize: 10, fontWeight: 900, letterSpacing: "0.08em", color: "#9A86A7", marginBottom: 4 }}>{group.toUpperCase()}</div>
+                    <div style={{ display: "grid", gap: 5 }}>
+                      {tasks.map((task) => {
+                        const isToday = dayViewDate === period.date;
+                        const isDone = !isFuture && (isToday ? !!done[task.task_key] : (longHistoryByDate.get(dayViewDate) || new Set()).has(task.task_key));
+                        const paused = isTaskPausedOnDate(task, dayViewDate);
+                        // Today's incomplete items stay unmarked - repeating "not
+                        // done" beside every open task on the one day you can
+                        // still act on is just noise. Past incomplete days get a
+                        // quiet "Missed" label since there's nothing left to do
+                        // about it; future ones say "Planned".
+                        const label = paused ? "⏸ Paused" : isFuture ? "Planned" : isDone ? "✓ Done" : isToday ? "" : "Missed";
+                        return (
+                          <div key={task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                            <span>{taskIsOptional(task) ? "⭐ " : ""}{task.task}</span>
+                            {label && <span style={{ fontSize: 10.5, fontWeight: 800, color: paused ? "#9A6918" : isDone ? "#318C79" : "#B0576B" }}>{label}</span>}
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
+
+        {weekCardIndex === 3 && (() => {
+          const agendaDates = agendaShowHistory
+            ? Array.from({ length: 15 }, (_, index) => offsetDate(period.date, index - 7))
+            : Array.from({ length: 15 }, (_, index) => offsetDate(period.date, index));
+          const entries = [];
+          agendaDates.forEach((date) => {
+            const isFuture = date > period.date;
+            const completed = date === period.date ? completedKeysForToday : (longHistoryByDate.get(date) || new Set());
+            trackerTasks
+              .filter((task) => !task.archived_at && taskIsScheduledForDate(task, date))
+              .forEach((task) => {
+                const paused = isTaskPausedOnDate(task, date);
+                const isDone = !isFuture && completed.has(task.task_key);
+                const status = paused ? "paused" : isFuture ? "planned" : isDone ? "done" : "open";
+                if (agendaFilter !== "all" && agendaFilter !== status) return;
+                entries.push({ date, task, status });
+              });
+          });
+          const statusLabel = { paused: "⏸ Paused", planned: "Planned", done: "✓ Done", open: "Open" };
+          const statusColor = { paused: "#9A6918", planned: "#8C6B9E", done: "#318C79", open: "#B0576B" };
+          return (
+            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📋 AGENDA</div>
+              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>{agendaShowHistory ? "The last week and the next two weeks." : "Today and what's coming up next."}</div>
+              <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
+                {[["all", "All"], ["open", "Not done"], ["done", "Done"], ["planned", "Planned"], ["paused", "Paused"]].map(([value, label]) => (
+                  <button key={value} type="button" aria-pressed={agendaFilter === value} onClick={() => setAgendaFilter(value)} style={{ padding: "5px 9px", borderRadius: 999, border: agendaFilter === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: agendaFilter === value ? "#F2E3FA" : "white", color: agendaFilter === value ? "#7E3D99" : "#6B5A7D", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{label}</button>
+                ))}
+                <button type="button" aria-pressed={agendaShowHistory} onClick={() => setAgendaShowHistory((value) => !value)} style={{ padding: "5px 9px", borderRadius: 999, border: agendaShowHistory ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: agendaShowHistory ? "#F2E3FA" : "white", color: agendaShowHistory ? "#7E3D99" : "#6B5A7D", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>🕰️ History</button>
+              </div>
+              <div style={{ marginTop: 12, display: "grid", gap: 4, maxHeight: 420, overflowY: "auto" }}>
+                {entries.length === 0 ? (
+                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing matches that filter in this window.</div>
+                ) : entries.map((entry, index) => {
+                  const showDateHeader = index === 0 || entries[index - 1].date !== entry.date;
+                  return (
+                    <React.Fragment key={`${entry.date}-${entry.task.task_key}`}>
+                      {showDateHeader && (
+                        <div style={{ marginTop: index === 0 ? 0 : 8, fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", color: entry.date === period.date ? "#A65DC1" : "#8C6B9E" }}>
+                          {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}{entry.date === period.date ? " · TODAY" : ""}
+                        </div>
+                      )}
+                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                        <span>{taskIsOptional(entry.task) ? "⭐ " : ""}{entry.task.task}</span>
+                        <span style={{ fontSize: 10.5, fontWeight: 800, color: statusColor[entry.status] }}>{statusLabel[entry.status]}</span>
+                      </div>
+                    </React.Fragment>
+                  );
+                })}
+              </div>
+            </div>
+          );
+        })()}
+        </div>
+
+        {!isHistoricalView && habitTasks.length > 0 && (
+          <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#F2FFF8CC", border: "1px solid #BFE5D2" }}>
+            <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#318C79" }}>🌱 HABIT GARDEN & REWARDS</div>
+            <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.5, color: "#5E766F" }}>
+              Good habits grow here, and habits you are reducing count as caring wins too. A reset never takes away a badge you already earned.
+            </div>
+            <div style={{ display: "grid", gap: 8, marginTop: 11 }}>
+              {habitTasks.map((habit) => {
+                const nextCount = habit.stats.nextReward?.count;
+                const progressPct = nextCount ? Math.min(100, Math.round((habit.stats.total / nextCount) * 100)) : 100;
+                const remaining = nextCount ? Math.max(0, nextCount - habit.stats.total) : 0;
+                return (
+                <div key={habit.task_key} style={{ padding: "10px 11px", borderRadius: 12, background: "#FFFFFFB8", border: "1px solid #D7EEE2" }}>
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
+                    <div style={{ fontSize: 13.5, fontWeight: 900, color: "#4F405C" }}>
+                      {habit.habitType === "build" ? "🌱" : "🛡️"} {habit.task}
+                    </div>
+                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
+                      <span style={{ padding: "3px 7px", borderRadius: 999, background: habit.habitType === "build" ? "#EAF4FF" : "#FFF3E4", color: habit.habitType === "build" ? "#4C8FE8" : "#B4761D", fontSize: 9.5, fontWeight: 800 }}>
+                        {habit.habitType === "build" ? "Building" : "Reducing"}
+                      </span>
+                      {habit.stats.current > 0 && (
+                        <div title={`Best ever: ${habit.stats.best}`} style={{ padding: "4px 7px", borderRadius: 999, background: "#FFF3E4", color: "#B4761D", fontSize: 10.5, fontWeight: 900 }}>
+                          🔥 {habit.stats.current}-day streak
+                        </div>
+                      )}
+                      <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
+                        {habit.stats.total} total
+                      </div>
+                    </div>
+                  </div>
+                  {habit.stats.best > 0 && (
+                    <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>
+                      {habit.stats.current === habit.stats.best && habit.stats.current > 0
+                        ? "🏆 This is your longest streak yet!"
+                        : `Best streak: ${habit.stats.best} ${habit.stats.best === 1 ? "day" : "days"}`}
+                    </div>
+                  )}
+                  {habit.stats.earnedReward && (
+                    <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
+                      Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Every check-in keeps your progress
+                    </div>
+                  )}
+                  {habit.stats.nextReward && (
+                    <>
+                      <div style={{ marginTop: 6, fontSize: 11.5, color: "#6B7E78" }}>
+                        Next: {habit.stats.nextReward.badge} {habit.stats.nextReward.label} — {remaining === 0 ? "almost there!" : `${remaining} more ${remaining === 1 ? "check-in" : "check-ins"} to go`}
+                      </div>
+                      <div style={{ height: 6, background: "#E2F3EA", borderRadius: 4, marginTop: 5, overflow: "hidden" }}>
+                        <div style={{ height: "100%", width: `${progressPct}%`, background: habit.habitType === "build" ? "#4C8FE8" : "#D4A017", borderRadius: 4, transition: "width .4s ease" }} />
+                      </div>
+                    </>
+                  )}
+                </div>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        </>}
+
+        {dashboard === "progress" && <>
+        <div style={{ marginBottom: 12, padding: "11px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.1em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
+            {!weeklyIntentionEditing && <button type="button" onClick={() => { setWeeklyIntentionDraft(weeklyIntentionText); setWeeklyIntentionEditing(true); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{weeklyIntentionText ? "Edit" : "Add one"}</button>}
+          </div>
+          {weeklyIntentionEditing ? <>
+            <textarea value={weeklyIntentionDraft} onChange={(event) => setWeeklyIntentionDraft(event.target.value)} maxLength={2000} placeholder="Example: Be a little gentler with myself this week." style={{ width: "100%", boxSizing: "border-box", minHeight: 70, marginTop: 8, padding: 10, borderRadius: 10, border: "1px solid #D9B8E8", resize: "vertical" }} />
+            <div style={{ display: "flex", gap: 7, marginTop: 7 }}><button type="button" onClick={saveWeeklyIntentionEdit} style={{ padding: "7px 11px", borderRadius: 9, border: 0, background: "#A65DC1", color: "white", fontWeight: 900, cursor: "pointer" }}>Save</button><button type="button" onClick={() => setWeeklyIntentionEditing(false)} style={{ padding: "7px 11px", borderRadius: 9, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>Cancel</button></div>
+          </> : <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.45, color: weeklyIntentionText ? "#6B5A7D" : "#9A86A7" }}>{weeklyIntentionText || "Optional—a simple direction for the week, not another task."}</div>}
+        </div>
         <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
           <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", gap: 12 }}>
             <div>
@@ -8344,362 +8678,7 @@ function GlowUpTracker() {
           )}
           <button type="button" onClick={goWriteWeeklyIntention} style={{ marginTop: 9, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📝 Set next week's intention</button>
           <button type="button" onClick={() => setShareCardOpen(true)} style={{ marginTop: 8, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#A65DC1", fontWeight: 800, fontSize: 12.5, cursor: "pointer" }}>📸 Share my week</button>
-          <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #E9DAF2" }}>
-            <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>FORGOT SOMETHING? CHOOSE A DAY TO CORRECT IT</div>
-            <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-              {datesThroughToday(period).map((date) => {
-                const selected = date === selectedProgressDate;
-                const label = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
-                return (
-                  <button key={date} onClick={() => { setSelectedProgressDate(date); if (date === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 9, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F4E8FA" : "#FFFFFFAA", color: selected ? "#8E4EAA" : "#7C688A", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>
-                    {label}{date === period.date ? " · Today" : ""}
-                  </button>
-                );
-              })}
-            </div>
-            {isHistoricalView && <div style={{ marginTop: 8, fontSize: 11.5, color: "#A65DC1", fontWeight: 700 }}>Editing this past day. Checkmarks below update that date and your whole-week score. ✨</div>}
-          </div>
         </div>
-
-        {(() => {
-          const end = offsetDate(period.weekStart, 6);
-          const upcomingDates = [];
-          for (let cursor = offsetDate(period.date, 1); cursor <= end; cursor = offsetDate(cursor, 1)) {
-            upcomingDates.push(cursor);
-          }
-          if (upcomingDates.length === 0) return null;
-          const previewTasks = upcomingPreviewDate
-            ? trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, upcomingPreviewDate))
-            : [];
-          return (
-            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-              <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>📆 COMING UP THIS WEEK</div>
-              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                {upcomingDates.map((date) => {
-                  const selected = date === upcomingPreviewDate;
-                  const label = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
-                  return (
-                    <button key={date} type="button" aria-pressed={selected} onClick={() => setUpcomingPreviewDate(selected ? null : date)} style={{ padding: "6px 9px", borderRadius: 9, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F4E8FA" : "#FFFFFFAA", color: selected ? "#8E4EAA" : "#7C688A", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>
-                      {label}
-                    </button>
-                  );
-                })}
-              </div>
-              {upcomingPreviewDate && (
-                <div style={{ marginTop: 10 }}>
-                  {previewTasks.length === 0 ? (
-                    <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled yet for that day.</div>
-                  ) : (
-                    <div style={{ display: "grid", gap: 5 }}>
-                      {previewTasks.map((task) => (
-                        <div key={task.task_key} style={{ padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
-                          {taskIsOptional(task) ? "⭐ " : ""}{task.task}
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              )}
-            </div>
-          );
-        })()}
-        </>}
-
-        {weekCardIndex === 1 && <>
-        <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
-          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-            <div>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>📅 PROGRESS CALENDAR</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Darker means more completed that day. A purple dot means you saved a private reflection — tap a past day to open it.</div>
-            </div>
-            <div style={{ display: "flex", gap: 5 }}>
-              <button type="button" aria-label="Previous month" onClick={() => {
-                const previous = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() - 1, 1));
-                setReflectionCalendarMonth(previous.toISOString().slice(0, 7));
-              }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
-              <button type="button" aria-label="Next month" disabled={reflectionCalendarMonth >= period.date.slice(0, 7)} onClick={() => {
-                const next = new Date(Date.UTC(reflectionMonthDate.getUTCFullYear(), reflectionMonthDate.getUTCMonth() + 1, 1));
-                setReflectionCalendarMonth(next.toISOString().slice(0, 7));
-              }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: reflectionCalendarMonth >= period.date.slice(0, 7) ? "not-allowed" : "pointer", opacity: reflectionCalendarMonth >= period.date.slice(0, 7) ? 0.4 : 1 }}>→</button>
-            </div>
-          </div>
-
-          <div style={{ marginTop: 10, textAlign: "center", color: "#5B4B6B", fontSize: 14, fontWeight: 900 }}>
-            {reflectionMonthDate.toLocaleDateString("en-US", { month: "long", year: "numeric", timeZone: "UTC" })}
-          </div>
-          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 4, marginTop: 9 }}>
-            {["M", "T", "W", "T", "F", "S", "S"].map((label, index) => <div key={index} style={{ textAlign: "center", fontSize: 10, fontWeight: 900, color: "#9A86A7" }}>{label}</div>)}
-            {Array.from({ length: reflectionMonthStart }).map((_, index) => <div key={"blank-" + index} />)}
-            {Array.from({ length: reflectionMonthDays }, (_, index) => {
-              const number = index + 1;
-              const date = reflectionCalendarMonth + "-" + String(number).padStart(2, "0");
-              const hasReflection = reflectionDateSet.has(date);
-              const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === date) || null;
-              const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
-              const moodEmoji = moodOption?.[1] || null;
-              const isRestDay = restDatesSet.has(date);
-              const isFutureDate = date > period.date;
-              const isSelectedDate = date === selectedProgressDate;
-              const pct = dayCompletionPct(date);
-              const bg = isSelectedDate ? "#F4E8FA" : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
-              const textColor = isFutureDate ? "#C7BBCF" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
-              const calendarTitle = [isRestDay ? "Resting" : pct === null ? null : `${pct}% complete`, moodOption ? `Feeling ${moodOption[2]}` : null, checkIn?.energy ? `${checkIn.energy} energy` : null, checkIn?.day_type ? `${checkIn.day_type} day` : null].filter(Boolean).join(" · ");
-              return <button key={date} type="button" disabled={isFutureDate} title={calendarTitle || undefined} aria-label={calendarTitle ? `${number}: ${calendarTitle}` : String(number)} onClick={() => {
-                if (isFutureDate) return;
-                setSelectedProgressDate(date);
-                if (date === period.date) setActive("daily");
-                if (hasReflection && !checkIn) setReflectionViewerDate(date);
-                if (checkIn) setCheckInViewerDate(date);
-              }} style={{ position: "relative", minHeight: 34, borderRadius: 9, border: isSelectedDate ? "2px solid #A65DC1" : "1px solid #E9DDEC", background: bg, color: textColor, fontWeight: 800, cursor: isFutureDate ? "not-allowed" : "pointer", opacity: isFutureDate ? 0.5 : 1 }}>
-                {isRestDay ? "🌴" : number}{moodEmoji && <span aria-label={`Feeling ${moodOption[2]}`} style={{ position: "absolute", left: 3, bottom: 1, fontSize: 11 }}>{moodEmoji}</span>}{hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 12 }}>•</span>}
-              </button>;
-            })}
-          </div>
-          <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 10, fontSize: 10.5, color: "#8C6B9E", flexWrap: "wrap" }}>
-            Less
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#F7EFFA", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#E4C6EE", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#C77DD6", display: "inline-block" }} />
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8E4EAA", display: "inline-block" }} />
-            More
-            <span style={{ width: 12, height: 12, borderRadius: 3, background: "#8FD4B8", display: "inline-block", marginLeft: 8 }} /> 🌴 Resting
-          </div>
-        </div>
-        </>}
-
-        {weekCardIndex === 2 && (() => {
-          const viewedWeekStart = offsetDate(period.weekStart, calendarWeekOffset * 7);
-          const viewedWeekDates = Array.from({ length: 7 }, (_, index) => offsetDate(viewedWeekStart, index));
-          return (
-            <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#FFFFFF99", border: "1px solid #D9C8EA" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div>
-                  <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#8E4EAA" }}>🗓️ WEEK VIEW</div>
-                  <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Past days show what actually happened. Days ahead show what's planned — tap one to preview it.</div>
-                </div>
-                <div style={{ display: "flex", gap: 5, flexShrink: 0 }}>
-                  <button type="button" aria-label="Previous week" onClick={() => setCalendarWeekOffset((offset) => offset - 1)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
-                  <button type="button" aria-label="Next week" onClick={() => setCalendarWeekOffset((offset) => offset + 1)} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>→</button>
-                </div>
-              </div>
-              <div style={{ marginTop: 10, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8 }}>
-                <div style={{ fontSize: 13, fontWeight: 900, color: "#5B4B6B" }}>
-                  {calendarWeekOffset === 0 ? "This week" : new Date(`${viewedWeekStart}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" }) + " – " + new Date(`${offsetDate(viewedWeekStart, 6)}T12:00:00`).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                </div>
-                {calendarWeekOffset !== 0 && <button type="button" onClick={() => setCalendarWeekOffset(0)} style={{ padding: "5px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Today</button>}
-              </div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(7, minmax(0, 1fr))", gap: 5, marginTop: 10 }}>
-                {viewedWeekDates.map((date) => {
-                  const isFuture = date > period.date;
-                  const isRestDay = restDatesSet.has(date);
-                  const pct = isFuture ? null : dayCompletionPct(date);
-                  const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === date) || null;
-                  const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
-                  const moodEmoji = moodOption?.[1] || null;
-                  const hasReflection = reflectionDateSet.has(date);
-                  const isSelected = date === (isFuture ? calendarWeekPreviewDate : selectedProgressDate);
-                  const plannedCount = isFuture ? trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, date)).length : null;
-                  const bg = isFuture ? (isSelected ? "#F4E8FA" : "#FBF7FD") : isRestDay ? "#8FD4B8" : pct === null ? "rgba(255,255,255,0.82)" : pct === 0 ? "#F7EFFA" : pct < 50 ? "#E4C6EE" : pct < 100 ? "#C77DD6" : "#8E4EAA";
-                  const textColor = isFuture ? "#8E4EAA" : isRestDay || pct >= 50 ? "#FFFFFF" : "#6D5A7C";
-                  const dayLabel = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short" });
-                  const dayNumber = Number(date.slice(8, 10));
-                  return (
-                    <button
-                      key={date}
-                      type="button"
-                      onClick={() => {
-                        if (isFuture) { setCalendarWeekPreviewDate(isSelected ? null : date); return; }
-                        setSelectedProgressDate(date);
-                        if (date === period.date) setActive("daily");
-                        if (hasReflection && !checkIn) setReflectionViewerDate(date);
-                        if (checkIn) setCheckInViewerDate(date);
-                      }}
-                      style={{ position: "relative", minHeight: 52, padding: "6px 2px", borderRadius: 10, border: isSelected ? "2px solid #A65DC1" : isFuture ? "1px dashed #DCC9E8" : "1px solid #E9DDEC", background: bg, color: textColor, cursor: "pointer" }}
-                    >
-                      <div style={{ fontSize: 9.5, fontWeight: 900, opacity: 0.85 }}>{dayLabel}</div>
-                      <div style={{ marginTop: 2, fontSize: 14, fontWeight: 900 }}>{isRestDay && !isFuture ? "🌴" : dayNumber}</div>
-                      {isFuture ? (plannedCount > 0 && <div style={{ marginTop: 2, fontSize: 9 }}>{plannedCount} planned</div>) : null}
-                      {moodEmoji && <span aria-label={`Feeling ${moodOption[2]}`} style={{ position: "absolute", left: 3, bottom: 2, fontSize: 10 }}>{moodEmoji}</span>}
-                      {hasReflection && <span aria-label="Reflection saved" style={{ position: "absolute", right: 4, bottom: 2, color: textColor === "#FFFFFF" ? "#FFFFFF" : "#A65DC1", fontSize: 11 }}>•</span>}
-                    </button>
-                  );
-                })}
-              </div>
-              {calendarWeekPreviewDate && viewedWeekDates.includes(calendarWeekPreviewDate) && (() => {
-                const previewTasks = trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, calendarWeekPreviewDate));
-                return (
-                  <div style={{ marginTop: 10, padding: "10px 12px", borderRadius: 12, background: "#FBF7FD", border: "1px solid #E3C9EC" }}>
-                    <div style={{ fontSize: 11.5, fontWeight: 900, color: "#7A3D93" }}>{new Date(`${calendarWeekPreviewDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}</div>
-                    {previewTasks.length === 0 ? (
-                      <div style={{ marginTop: 6, fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled yet for that day.</div>
-                    ) : (
-                      <div style={{ display: "grid", gap: 5, marginTop: 8 }}>
-                        {previewTasks.map((task) => (
-                          <div key={task.task_key} style={{ padding: "6px 9px", borderRadius: 8, background: "white", border: "1px solid #EADDE2", fontSize: 11.5, color: "#5B4B6B" }}>
-                            {taskIsOptional(task) ? "⭐ " : ""}{task.task}
-                          </div>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                );
-              })()}
-            </div>
-          );
-        })()}
-
-        {weekCardIndex === 3 && (() => {
-          const isFuture = dayViewDate > period.date;
-          const isRestDay = restDatesSet.has(dayViewDate);
-          const pct = isFuture ? null : dayCompletionPct(dayViewDate);
-          const checkIn = dailyCheckInHistory.find((entry) => entry.check_date === dayViewDate) || null;
-          const moodOption = CHECKIN_MOODS.find(([value]) => value === checkIn?.mood);
-          const previewTasks = trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, dayViewDate));
-          return (
-            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📆 DAY VIEW</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>Jump to any date — past days show what actually happened, future days show what's planned.</div>
-              <div style={{ display: "flex", alignItems: "center", gap: 6, marginTop: 12, flexWrap: "wrap" }}>
-                <button type="button" aria-label="Previous day" onClick={() => { const next = offsetDate(dayViewDate, -1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>←</button>
-                <input type="date" value={dayViewDate} max={offsetDate(period.date, 365)} onChange={(event) => { const next = event.target.value || period.date; setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 8px", borderRadius: 8, border: "1px solid #DCC9E8", fontSize: 12.5 }} />
-                <button type="button" aria-label="Next day" onClick={() => { const next = offsetDate(dayViewDate, 1); setDayViewDate(next); setSelectedProgressDate(next); if (next === period.date) setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", cursor: "pointer" }}>→</button>
-                {dayViewDate !== period.date && <button type="button" onClick={() => { setDayViewDate(period.date); setSelectedProgressDate(period.date); setActive("daily"); }} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #DCC9E8", background: "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>Today</button>}
-              </div>
-              <div style={{ marginTop: 10, fontSize: 14, fontWeight: 900, color: "#5B4B6B" }}>
-                {new Date(`${dayViewDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
-                {isRestDay && !isFuture ? " · 🌴 Resting" : pct !== null ? ` · ${pct}% complete` : isFuture ? " · Planned" : ""}
-              </div>
-              {checkIn && <div style={{ marginTop: 6, fontSize: 12, color: "#8C6B9E" }}>{moodOption ? `Feeling ${moodOption[2]}` : ""}</div>}
-              <div style={{ marginTop: 10, display: "grid", gap: 5 }}>
-                {previewTasks.length === 0 ? (
-                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled for this day.</div>
-                ) : previewTasks.map((task) => {
-                  const isDone = !isFuture && (dayViewDate === period.date ? !!done[task.task_key] : (longHistoryByDate.get(dayViewDate) || new Set()).has(task.task_key));
-                  const paused = isTaskPausedOnDate(task, dayViewDate);
-                  return (
-                    <div key={task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
-                      <span>{taskIsOptional(task) ? "⭐ " : ""}{task.task}</span>
-                      <span style={{ fontSize: 10.5, fontWeight: 800, color: paused ? "#9A6918" : isDone ? "#318C79" : isFuture ? "#8C6B9E" : "#B0576B" }}>{paused ? "⏸ Paused" : isFuture ? "Planned" : isDone ? "✓ Done" : "Not done"}</span>
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-
-        {weekCardIndex === 4 && (() => {
-          const agendaDates = Array.from({ length: 15 }, (_, index) => offsetDate(period.date, index - 7));
-          const entries = [];
-          agendaDates.forEach((date) => {
-            const isFuture = date > period.date;
-            const completed = date === period.date ? completedKeysForToday : (longHistoryByDate.get(date) || new Set());
-            trackerTasks
-              .filter((task) => !task.archived_at && taskIsScheduledForDate(task, date))
-              .forEach((task) => {
-                const paused = isTaskPausedOnDate(task, date);
-                const isDone = !isFuture && completed.has(task.task_key);
-                const status = paused ? "paused" : isFuture ? "planned" : isDone ? "done" : "open";
-                if (agendaFilter !== "all" && agendaFilter !== status) return;
-                entries.push({ date, task, status });
-              });
-          });
-          const statusLabel = { paused: "⏸ Paused", planned: "Planned", done: "✓ Done", open: "Not done yet" };
-          const statusColor = { paused: "#9A6918", planned: "#8C6B9E", done: "#318C79", open: "#B0576B" };
-          return (
-            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#A65DC1", fontWeight: 800 }}>📋 AGENDA</div>
-              <div style={{ marginTop: 4, fontSize: 11.5, color: "#8C6B9E" }}>The last week and the next week, in one scrollable list.</div>
-              <div style={{ display: "flex", gap: 5, marginTop: 10, flexWrap: "wrap" }}>
-                {[["all", "All"], ["open", "Not done"], ["done", "Done"], ["planned", "Planned"], ["paused", "Paused"]].map(([value, label]) => (
-                  <button key={value} type="button" aria-pressed={agendaFilter === value} onClick={() => setAgendaFilter(value)} style={{ padding: "5px 9px", borderRadius: 999, border: agendaFilter === value ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: agendaFilter === value ? "#F2E3FA" : "white", color: agendaFilter === value ? "#7E3D99" : "#6B5A7D", fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>{label}</button>
-                ))}
-              </div>
-              <div style={{ marginTop: 12, display: "grid", gap: 4, maxHeight: 420, overflowY: "auto" }}>
-                {entries.length === 0 ? (
-                  <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing matches that filter in this window.</div>
-                ) : entries.map((entry, index) => {
-                  const showDateHeader = index === 0 || entries[index - 1].date !== entry.date;
-                  return (
-                    <React.Fragment key={`${entry.date}-${entry.task.task_key}`}>
-                      {showDateHeader && (
-                        <div style={{ marginTop: index === 0 ? 0 : 8, fontSize: 10.5, fontWeight: 900, letterSpacing: "0.08em", color: entry.date === period.date ? "#A65DC1" : "#8C6B9E" }}>
-                          {new Date(`${entry.date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" }).toUpperCase()}{entry.date === period.date ? " · TODAY" : ""}
-                        </div>
-                      )}
-                      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 10px", borderRadius: 8, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
-                        <span>{taskIsOptional(entry.task) ? "⭐ " : ""}{entry.task.task}</span>
-                        <span style={{ fontSize: 10.5, fontWeight: 800, color: statusColor[entry.status] }}>{statusLabel[entry.status]}</span>
-                      </div>
-                    </React.Fragment>
-                  );
-                })}
-              </div>
-            </div>
-          );
-        })()}
-        </div>
-
-        {!isHistoricalView && habitTasks.length > 0 && (
-          <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#F2FFF8CC", border: "1px solid #BFE5D2" }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#318C79" }}>🌱 HABIT GARDEN & REWARDS</div>
-            <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.5, color: "#5E766F" }}>
-              Good habits grow here, and habits you are reducing count as caring wins too. A reset never takes away a badge you already earned.
-            </div>
-            <div style={{ display: "grid", gap: 8, marginTop: 11 }}>
-              {habitTasks.map((habit) => {
-                const nextCount = habit.stats.nextReward?.count;
-                const progressPct = nextCount ? Math.min(100, Math.round((habit.stats.total / nextCount) * 100)) : 100;
-                const remaining = nextCount ? Math.max(0, nextCount - habit.stats.total) : 0;
-                return (
-                <div key={habit.task_key} style={{ padding: "10px 11px", borderRadius: 12, background: "#FFFFFFB8", border: "1px solid #D7EEE2" }}>
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
-                    <div style={{ fontSize: 13.5, fontWeight: 900, color: "#4F405C" }}>
-                      {habit.habitType === "build" ? "🌱" : "🛡️"} {habit.task}
-                    </div>
-                    <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
-                      <span style={{ padding: "3px 7px", borderRadius: 999, background: habit.habitType === "build" ? "#EAF4FF" : "#FFF3E4", color: habit.habitType === "build" ? "#4C8FE8" : "#B4761D", fontSize: 9.5, fontWeight: 800 }}>
-                        {habit.habitType === "build" ? "Building" : "Reducing"}
-                      </span>
-                      {habit.stats.current > 0 && (
-                        <div title={`Best ever: ${habit.stats.best}`} style={{ padding: "4px 7px", borderRadius: 999, background: "#FFF3E4", color: "#B4761D", fontSize: 10.5, fontWeight: 900 }}>
-                          🔥 {habit.stats.current}-day streak
-                        </div>
-                      )}
-                      <div style={{ padding: "4px 7px", borderRadius: 999, background: "#E7F7EF", color: "#318C79", fontSize: 10.5, fontWeight: 900 }}>
-                        {habit.stats.total} total
-                      </div>
-                    </div>
-                  </div>
-                  {habit.stats.best > 0 && (
-                    <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>
-                      {habit.stats.current === habit.stats.best && habit.stats.current > 0
-                        ? "🏆 This is your longest streak yet!"
-                        : `Best streak: ${habit.stats.best} ${habit.stats.best === 1 ? "day" : "days"}`}
-                    </div>
-                  )}
-                  {habit.stats.earnedReward && (
-                    <div style={{ marginTop: 5, fontSize: 11.5, color: "#6B7E78" }}>
-                      Earned: {habit.stats.earnedReward.badge} {habit.stats.earnedReward.label} · Every check-in keeps your progress
-                    </div>
-                  )}
-                  {habit.stats.nextReward && (
-                    <>
-                      <div style={{ marginTop: 6, fontSize: 11.5, color: "#6B7E78" }}>
-                        Next: {habit.stats.nextReward.badge} {habit.stats.nextReward.label} — {remaining === 0 ? "almost there!" : `${remaining} more ${remaining === 1 ? "check-in" : "check-ins"} to go`}
-                      </div>
-                      <div style={{ height: 6, background: "#E2F3EA", borderRadius: 4, marginTop: 5, overflow: "hidden" }}>
-                        <div style={{ height: "100%", width: `${progressPct}%`, background: habit.habitType === "build" ? "#4C8FE8" : "#D4A017", borderRadius: 4, transition: "width .4s ease" }} />
-                      </div>
-                    </>
-                  )}
-                </div>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
         </>}
 
         </>
