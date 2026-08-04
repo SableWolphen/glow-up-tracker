@@ -1418,6 +1418,7 @@ function GlowUpTracker() {
   const [todayCardIndex, setTodayCardIndex] = useState(0);
   const [taskListCollapsed, setTaskListCollapsed] = useState(true);
   const [weekCardIndex, setWeekCardIndex] = useState(0);
+  const [upcomingPreviewDate, setUpcomingPreviewDate] = useState(null);
   const [done, setDone] = useState({});
   const [openRow, setOpenRow] = useState(null);
   const [focusModeShowAll, setFocusModeShowAll] = useState(false);
@@ -8207,6 +8208,49 @@ function GlowUpTracker() {
             {isHistoricalView && <div style={{ marginTop: 8, fontSize: 11.5, color: "#A65DC1", fontWeight: 700 }}>Editing this past day. Checkmarks below update that date and your whole-week score. ✨</div>}
           </div>
         </div>
+
+        {(() => {
+          const end = offsetDate(period.weekStart, 6);
+          const upcomingDates = [];
+          for (let cursor = offsetDate(period.date, 1); cursor <= end; cursor = offsetDate(cursor, 1)) {
+            upcomingDates.push(cursor);
+          }
+          if (upcomingDates.length === 0) return null;
+          const previewTasks = upcomingPreviewDate
+            ? trackerTasks.filter((task) => !task.archived_at && taskIsScheduledForDate(task, upcomingPreviewDate))
+            : [];
+          return (
+            <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.5)", border: "1px solid #E6D4F2", boxShadow: "0 8px 24px rgba(183,143,224,0.10)" }}>
+              <div style={{ fontSize: 11, fontWeight: 800, color: "#8C6B9E", marginBottom: 7 }}>📆 COMING UP THIS WEEK</div>
+              <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
+                {upcomingDates.map((date) => {
+                  const selected = date === upcomingPreviewDate;
+                  const label = new Date(`${date}T12:00:00`).toLocaleDateString("en-US", { weekday: "short", month: "numeric", day: "numeric" });
+                  return (
+                    <button key={date} type="button" aria-pressed={selected} onClick={() => setUpcomingPreviewDate(selected ? null : date)} style={{ padding: "6px 9px", borderRadius: 9, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F4E8FA" : "#FFFFFFAA", color: selected ? "#8E4EAA" : "#7C688A", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>
+                      {label}
+                    </button>
+                  );
+                })}
+              </div>
+              {upcomingPreviewDate && (
+                <div style={{ marginTop: 10 }}>
+                  {previewTasks.length === 0 ? (
+                    <div style={{ fontSize: 11.5, color: "#8C6B9E" }}>Nothing scheduled yet for that day.</div>
+                  ) : (
+                    <div style={{ display: "grid", gap: 5 }}>
+                      {previewTasks.map((task) => (
+                        <div key={task.task_key} style={{ padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
+                          {taskIsOptional(task) ? "⭐ " : ""}{task.task}
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </div>
+          );
+        })()}
         </>}
 
         {weekCardIndex === 1 && <>
