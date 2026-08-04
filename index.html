@@ -8121,6 +8121,11 @@ function GlowUpTracker() {
                           {checked ? "✓" : ""}
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
+                          {r.sourceTask && habitTypeForTask(r.sourceTask) !== "regular" && (
+                            <span aria-hidden="true" title={habitTypeForTask(r.sourceTask) === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 5 }}>
+                              {habitTypeForTask(r.sourceTask) === "build" ? "🌱" : "🛡️"}
+                            </span>
+                          )}
                           {r.label}
                           {r.sourceTask && isTaskPausedOnDate(r.sourceTask, period.date) && <span style={{ marginLeft: 6, padding: "1px 6px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 9.5, fontWeight: 900, textDecoration: "none" }}>PAUSED</span>}
                           {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" ? "Tiny" : r.dayType === "recovery" ? "Recovery" : "Soft"} version of {r.originalLabel}</span>}
@@ -8480,7 +8485,14 @@ function GlowUpTracker() {
                         const label = paused ? "⏸ Paused" : isFuture ? "Planned" : isDone ? "✓ Done" : isToday ? "" : "Missed";
                         return (
                           <div key={task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
-                            <span>{taskIsOptional(task) ? "⭐ " : ""}{task.task}</span>
+                            <span>
+                              {habitTypeForTask(task) !== "regular" && (
+                                <span aria-hidden="true" title={habitTypeForTask(task) === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 4 }}>
+                                  {habitTypeForTask(task) === "build" ? "🌱" : "🛡️"}
+                                </span>
+                              )}
+                              {taskIsOptional(task) ? "⭐ " : ""}{task.task}
+                            </span>
                             {label && <span style={{ fontSize: 10.5, fontWeight: 800, color: paused ? "#9A6918" : isDone ? "#318C79" : "#B0576B" }}>{label}</span>}
                           </div>
                         );
