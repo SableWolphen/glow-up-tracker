@@ -563,11 +563,11 @@ const TEMPLATE_PACKS = [
 
 const ALL = [DAILY, ...DAYS];
 const DASHBOARDS = [
-  { id: "today", label: "Today", icon: "☀️", accent: "#C77DD6" },
+  { id: "today", label: "PlushHome", icon: "☀️", accent: "#C77DD6" },
   { id: "week", label: "PlushCalendar", icon: "📅", accent: "#4C8FE8" },
   { id: "care", label: "Care", icon: "♥", accent: "#318C79" },
   { id: "guardian", label: "Guardian", icon: "💛", accent: "#4C8FE8" },
-  { id: "more", label: "More", icon: "•••", accent: "#8D5CA5" },
+  { id: "more", label: "PlushProfile", icon: "•••", accent: "#8D5CA5" },
 ];
 
 const CHECKIN_MOODS = [
@@ -746,6 +746,33 @@ function makeSoundscapeNoiseBuffer(ctx) {
   return buffer;
 }
 
+// Plain filtered white noise reads as exactly that - noise - no matter which
+// single filter shapes it, which is why "Rain" and "White Noise" sounded
+// like near-identical hiss with a different tint. Real rain has a steady
+// hiss bed *plus* irregular droplet transients layered on top; an 8-second
+// buffer (vs. the 2-second shared noise buffer) keeps that randomness from
+// reading as an obviously repeating pattern.
+function makeRainNoiseBuffer(ctx) {
+  const bufferSize = 8 * ctx.sampleRate;
+  const buffer = ctx.createBuffer(1, bufferSize, ctx.sampleRate);
+  const data = buffer.getChannelData(0);
+  for (let i = 0; i < bufferSize; i++) data[i] = (Math.random() * 2 - 1) * 0.35;
+  let cursor = 0;
+  while (cursor < bufferSize) {
+    cursor += Math.floor((0.01 + Math.random() * 0.05) * ctx.sampleRate);
+    const burstLength = Math.floor((0.01 + Math.random() * 0.02) * ctx.sampleRate);
+    const amplitude = 0.4 + Math.random() * 0.5;
+    for (let j = 0; j < burstLength && cursor + j < bufferSize; j++) {
+      const decay = Math.exp(-j / (burstLength * 0.3));
+      data[cursor + j] += (Math.random() * 2 - 1) * amplitude * decay;
+    }
+  }
+  let peak = 0;
+  for (let i = 0; i < bufferSize; i++) peak = Math.max(peak, Math.abs(data[i]));
+  if (peak > 1) for (let i = 0; i < bufferSize; i++) data[i] /= peak;
+  return buffer;
+}
+
 function stopSoundscape() {
   if (!soundscapeNodes) return;
   const { source, filter, gain, extraOscillators } = soundscapeNodes;
@@ -790,13 +817,13 @@ function startSoundscape(id, volume) {
   }
 
   const source = ctx.createBufferSource();
-  source.buffer = makeSoundscapeNoiseBuffer(ctx);
+  source.buffer = id === "rain" ? makeRainNoiseBuffer(ctx) : makeSoundscapeNoiseBuffer(ctx);
   source.loop = true;
   const filter = ctx.createBiquadFilter();
   const extraOscillators = [];
   if (id === "rain") {
     filter.type = "highpass";
-    filter.frequency.value = 1200;
+    filter.frequency.value = 900;
   } else if (id === "ocean") {
     filter.type = "lowpass";
     filter.frequency.value = 400;
@@ -5338,7 +5365,7 @@ function GlowUpTracker() {
     { id: "full_week_scheduled", badge: "📅", name: "Full Week Scheduled", hint: "Set up a schedule for all 7 days.", check: () => personalSchedules.length >= 7 },
     { id: "personalizer", badge: "🎨", name: "Personalizer", hint: "Try Baby Mode or Dino Theme.", check: () => babyMode || dinoTheme },
     { id: "reminder_ready", badge: "🔔", name: "Reminder Ready", hint: "Turn on push notifications.", check: () => !!preferences.notifications_enabled },
-    { id: "focused", badge: "🎯", name: "Focused", hint: "Try Focus Mode.", check: () => !!preferences.focus_mode },
+    { id: "focused", badge: "🎯", name: "Focused", hint: "Try PlushFocus.", check: () => !!preferences.focus_mode },
     { id: "perfect_week", badge: "✨", name: "Whole Week Glow", hint: "Reach 100% for one whole week.", check: () => weeklyOverallPct === 100 },
     { id: "bonus_lover", badge: "🌈", name: "Bonus Lover", hint: "Complete 5 bonus items in one week.", check: () => weeklyBonusDone >= 5 },
     { id: "founding_cozy", badge: "🌟", name: "Founding Cozy", hint: "Join PlushLife during its early access period.", check: () => !!user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z") },
@@ -6224,7 +6251,7 @@ function GlowUpTracker() {
             </div>
 
             <div role="tablist" aria-label="Care library" style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 7, padding: 6, borderRadius: 15, background: "#FFFFFF99", border: "1px solid #E6D4F2" }}>
-              {[["quick", "🌿", "PlushCare"], ["paths", "🗺️", "PlushPath"], ["sleep", "🌙", "PlushSleep"]].map(([value, icon, label]) => (
+              {[["quick", "🌿", "PlushCalm"], ["paths", "🗺️", "PlushPaths"], ["sleep", "🌙", "PlushSleep"]].map(([value, icon, label]) => (
                 <button key={value} type="button" role="tab" aria-selected={careSection === value} onClick={() => setCareSection(value)} style={{ minWidth: 0, padding: "9px 6px", borderRadius: 11, border: careSection === value ? "2px solid #A65DC1" : "1px solid transparent", background: careSection === value ? "#F7ECFB" : "transparent", color: careSection === value ? "#75428C" : "#7B6888", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{icon} {label}</button>
               ))}
             </div>
@@ -6349,7 +6376,7 @@ function GlowUpTracker() {
           const dayType = DAY_TYPES.find(([value]) => value === entry.day_type);
           const support = SUPPORT_PREFERENCES.find(([value]) => value === entry.support_preference);
           const capacity = { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[entry.capacity];
-          return <ToolPanel title="Daily check-in" onClose={() => setCheckInViewerDate(null)}>
+          return <ToolPanel title="PlushMood" onClose={() => setCheckInViewerDate(null)}>
             <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#FFF9FD,#F2FFFB)", border: "1px solid #E3C9EC" }}>
               <div style={{ fontSize: 11, letterSpacing: ".13em", fontWeight: 900, color: "#A65DC1" }}>{new Date(`${checkInViewerDate}T12:00:00`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" }).toUpperCase()}</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 11 }}>
@@ -6518,7 +6545,7 @@ function GlowUpTracker() {
                 ["What are Full, Soft, Tiny, and Recovery Days?", "They are four ways to size today around your real capacity. Full shows your usual versions, Soft uses gentler versions and hides bonuses, Tiny keeps the smallest essentials, and Recovery helps you restart without a backlog."],
                 ["How do mood and energy patterns work?", "Your check-ins stay private and appear in your Progress calendar. With pattern suggestions on, PlushLife may notice a repeated day-of-week pattern and offer a small routine change. It never diagnoses you, assumes a cause, or changes anything without your approval."],
                 ["Is PlushCare free?", "Yes. PlushCare, PlushPaths, PlushSleep, mood and energy tracking, adaptive habits, accessibility tools, and Guardian support are all free right now."],
-                ["What is Focus Mode?", "Instead of your full checklist, Focus Mode shows just your next task, one at a time — good for when a long list feels like too many decisions."],
+                ["What is PlushFocus?", "Instead of your full checklist, PlushFocus shows just your next task, one at a time — good for when a long list feels like too many decisions."],
                 ["Who can see my private reflections?", "Only you, always. They're never shown to a Guardian, never included in any shared summary, and stored separately from anything else."],
                 ["Can I get my data, or delete my account?", "Yes to both, anytime — Settings → Your Data has a full export, and Settings → Account has the Delete account button. Deletion is permanent and requires confirmation."],
                 ["How do badges and the Mascot Closet work?", "Badges and outfits unlock from all kinds of care — showing up, reflecting, building or reducing a habit, connecting a Guardian. Once unlocked, nothing is ever taken away."],
@@ -6674,7 +6701,7 @@ function GlowUpTracker() {
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #CFE8E1" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🔔 NOTIFICATIONS</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>🔔 PLUSHREMINDERS</div>
             <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Push notifications work even while PlushLife is closed. Tap below to turn them on for this device.</div>
             <button onClick={enableNotifications} style={{ marginTop: 9, padding: "10px 14px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>🔔 Enable push notifications</button>
 
@@ -6729,7 +6756,7 @@ function GlowUpTracker() {
             <div style={{ fontSize: 12, fontWeight: 900, color: "#318C79" }}>⚙️ EXPERIENCE</div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontSize: 14, fontWeight: 900, color: "#318C79", cursor: "pointer" }}>
               <input type="checkbox" checked={!!preferences.focus_mode} onChange={(event) => updatePreference({ focus_mode: event.target.checked })} />
-              🎯 Focus Mode — show one task at a time
+              🎯 PlushFocus — show one task at a time
             </label>
             <div style={{ marginTop: 5, marginBottom: 4, fontSize: 11, lineHeight: 1.45, color: "#7B6888" }}>
               Shows just your next task on Today instead of the full list — good when a long list feels like too many decisions at once.
@@ -6740,7 +6767,7 @@ function GlowUpTracker() {
               ["reduced_motion", "Reduce animation"],
               ["high_contrast", "Higher contrast"],
               ["simple_mode", "Simpler, quieter layout"],
-              ["pattern_insights_enabled", "Show private mood and energy pattern suggestions"],
+              ["pattern_insights_enabled", "Show PlushInsights (private mood and energy pattern suggestions)"],
               ["colorblind_mode", "Colorblind-friendly colors"],
             ].map(([key, label]) => (
               <label key={key} style={{ display: "flex", alignItems: "center", gap: 8, marginTop: 9, fontSize: 12.5, fontWeight: 700 }}>
@@ -6760,7 +6787,7 @@ function GlowUpTracker() {
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 18, background: "rgba(255,255,255,0.82)", border: "1px solid #B9DCF6" }}>
-            <div style={{ fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>📦 YOUR DATA</div>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>📦 PLUSHPRIVACY · YOUR DATA</div>
             <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>Your tasks, schedules, reflections, and progress are yours. Download a copy anytime.</div>
             <div style={{ marginTop: 9, padding: "10px 12px", borderRadius: 11, background: "#F7FBFF", border: "1px solid #D9ECFA" }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: "#2D6BB5" }}>🔒 We will never sell your data. Ever.</div>
@@ -7028,9 +7055,9 @@ function GlowUpTracker() {
         )}
 
         {reflectionViewerDate && (
-          <ToolPanel title="Private reflection" onClose={() => setReflectionViewerDate(null)}>
+          <ToolPanel title="PlushJournal" onClose={() => setReflectionViewerDate(null)}>
             <div style={{ padding: 4 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A65DC1" }}>📝 PRIVATE REFLECTION</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A65DC1" }}>📝 PLUSHJOURNAL</div>
               <div style={{ marginTop: 6, fontSize: 14, fontWeight: 900, color: "#5B4B6B" }}>
                 {new Date(reflectionViewerDate + "T12:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}
               </div>
@@ -8075,7 +8102,7 @@ function GlowUpTracker() {
         {!isFutureView && (
           <div style={{ marginBottom: 18, padding: "15px 16px", borderRadius: 16, background: "rgba(255,255,255,0.28)", border: "1px solid #E6D4F2" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A65DC1" }}>📝 PRIVATE REFLECTION</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#A65DC1" }}>📝 PLUSHJOURNAL</div>
               {!privateNoteEditing && <button type="button" onClick={() => { setPrivateNoteDraft(privateNote); setPrivateNoteEditing(true); }} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #D9B8E8", background: "white", color: "#8E4EAA", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>{privateNote ? "Edit" : "Add one"}</button>}
             </div>
             <div style={{ marginTop: 6, fontStyle: "italic", lineHeight: 1.5, fontSize: 12.5, color: "#8C6B9E" }}>{reflectionPrompt}</div>
@@ -8216,6 +8243,7 @@ function GlowUpTracker() {
             const card = patternInsightCards[insightCardIndex % patternInsightCards.length];
             return (
               <div key={card.key} style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: card.background, border: `1px solid ${card.border}`, fontSize: 11.5, lineHeight: 1.5, color: card.color }}>
+                <div style={{ fontSize: 9.5, letterSpacing: "0.12em", fontWeight: 900, marginBottom: 4, opacity: 0.75 }}>💡 PLUSHINSIGHTS</div>
                 {card.node}
                 {patternInsightCards.length > 1 && (
                   <button type="button" onClick={() => setInsightCardIndex((index) => index + 1)} style={{ marginTop: 8, padding: "5px 9px", borderRadius: 8, border: `1px solid ${card.border}`, background: "white", color: card.color, fontWeight: 800, fontSize: 10.5, cursor: "pointer" }}>
