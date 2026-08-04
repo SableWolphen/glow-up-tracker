@@ -10,6 +10,13 @@ safe to do casually.
 Do not rename anything based on this doc without re-checking the current
 codebase first; line numbers and internal names drift as the app changes.
 
+Covers the full name list from `docs/plushlife-product-vision.md`. Where a
+named feature (PlushCalendar's day/week/agenda views, a unified PlushPause,
+PlushSafety) doesn't exist in the app yet, that's called out as a feature
+gap rather than a naming question — see `docs/plushlife-vision-audit.md`
+for the fuller picture of what's missing versus what just needs a label
+change.
+
 ## How to use this
 
 1. Before renaming a feature in the UI, find its row below.
@@ -41,6 +48,15 @@ codebase first; line numbers and internal names drift as the app changes.
 | Data export (existing local export feature) | PlushCloudBackup / PlushSync | `index.html` export UI | Do not rename yet (naming/reality mismatch) | The current feature is a local, on-device export — there's no cloud backup or cross-device sync today. Calling it "PlushCloudBackup" before that's actually built would be misleading. Keep the current name until the feature underneath it changes; the `plushCloudBackup` / `plushCrossDeviceSync` entitlement flags in `assets/entitlements.js` are named for the *future* feature, not the current export. |
 | PlushPlus subscription (future) | PlushPlus | `assets/entitlements.js` `PLUSH_PLANS.PLUSHPLUS` | Already on-brand | Already named correctly at the architecture level; no live pricing/paywall UI exists yet (see `docs/plushplus-billing-plan.md`). |
 | PlushFamily plan (future) | PlushFamily | `assets/entitlements.js` `PLUSH_PLANS.PLUSHFAMILY` | Already on-brand | Same as above. |
+| Focus Mode (`preferences.focus_mode`, one-task-at-a-time layout) | PlushFocus | `index.html` `focus_mode` preference, `adminStats.using_focus_mode` | Needs care | The *display copy* ("Focus Mode") is a safe rename. The preference key `focus_mode` and the admin analytics field name are persisted/queried by name — leave those alone, rename the label only, same rule as the Guardian/Habit rows above. Note this "Focus Mode" is a display-density toggle, not the timer-based PlushFocus sessions the vision doc describes (start/pause/link-to-habit) — those don't exist yet; this is the closest existing thing to the *name*, not a full match to the *feature*. |
+| Pattern insight cards (`patternInsightCards`, `pattern_insights_enabled` preference) | PlushInsights | `index.html` weekly-progress card | Safe (display-only) | Already close in spirit (gentle, cautious-language pattern callouts on the Progress tab) — just needs the visible label, if any is shown, updated. `pattern_insights_enabled` preference key stays as-is. |
+| "More" tab (`DASHBOARDS` id `"more"`: Settings, Help & FAQ, Send feedback, Admin) | PlushProfile | `index.html` `DASHBOARDS`, `dashboard === "more"` | Safe (display-only) | Label and icon can change freely; `id: "more"` should stay, same reasoning as the Today/PlushHome row. |
+| Progress calendar (month-view heatmap inside the Progress tab) | Not a rename — this is a fragment of the future PlushCalendar | `index.html` `weekCardIndex === 1` block | Do not rename yet | This is one view (a month heatmap) of what the vision doc describes as a full PlushCalendar (day/week/month/agenda, with reschedule and per-occurrence status). Calling this existing fragment "PlushCalendar" would misrepresent scope to users who'd expect day/week/agenda views and rescheduling that don't exist yet. Keep as "Progress calendar" (or similar) until the real PlushCalendar is built; see `docs/plushlife-vision-audit.md`. |
+| — (no unified pause mechanism exists) | PlushPause | n/a — feature gap, not a naming question | Does not exist yet | Rest Days / Vacation Mode (`index.html`, Settings) covers pausing the *whole* daily plan for a date range, which is close. There's no way today to pause a single habit, routine, or Path independently the way the vision describes, or to keep paused days visually distinct from missed days in Progress. Worth reusing the "Rest Days" naming/UI as the seed for PlushPause rather than building a second, separate pause system. |
+| — (no crisis/emergency resources exist) | PlushSafety | n/a — feature gap, not a naming question | Does not exist yet | Confirmed via search: no crisis-line, emergency-resources, or "this app is not a substitute for professional care" content exists anywhere in the app today. This is a real feature gap, not a rename — see the vision doc's PlushSafety section for what it should contain (always free, always easy to reach). |
+| Settings → "Your Data" / "Account" (export, delete account) | PlushPrivacy | `index.html` Settings panel | Safe (display-only), verify none of the "must never require payment" items get touched | The vision doc requires data export, account deletion, and privacy controls to always remain free — they already are (no `SUPPORTER_FEATURES_ENABLED`/entitlement gating touches these). Grouping/labeling them under a "PlushPrivacy" heading in Settings is a safe display change. |
+| Reminder/notification settings (`preferences.notifications_enabled`, per-task `reminder_time`, quiet hours) | PlushReminders | `index.html` Settings panel, task edit modal | Safe (display-only) | Preference keys and per-task fields stay as-is; only the section heading/label in Settings would change. |
+| Data export destination concept (local export today; no real sync yet) | PlushSync (future) | `index.html` export UI, future cross-device sync | Do not rename yet | Same reality mismatch already noted under the Data export row above — PlushSync per the vision doc means secure cloud backup *and* cross-device sync with conflict handling, neither of which exists today. Don't apply this name to the current local-only export. |
 
 ## General rule for "Needs care" / "Do not rename" rows
 
