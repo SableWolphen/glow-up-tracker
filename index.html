@@ -52,6 +52,7 @@
 <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js"></script>
 <script src="./assets/care-upgrades.js"></script>
+<script src="./assets/entitlements.js"></script>
 <script>
 // Native-shell integration for the Capacitor Android build. window.Capacitor
 // only exists inside the packaged native app, so this is a complete no-op on
@@ -959,17 +960,21 @@ const FREE_GUARDIAN_LIMIT = 1;
 // ACCESS_STATE is "beta". This just gives future billing code one place to
 // check instead of scattering feature flags through the app. See the
 // entitlements table (database/entitlements.sql) for the provider-neutral
-// purchase-record shape this will eventually read from.
+// purchase-record shape this will eventually read from, and
+// assets/entitlements.js for the actual plan/feature-flag definitions —
+// PLUSH_ENFORCE_ENTITLEMENTS below is the one switch that would ever pass
+// enforced: true to hasPlushFeature(); it stays false in every real build.
 const ACCESS_STATE = "beta"; // "beta" | "free" | "plus"
 const ALL_FEATURES_UNLOCKED = true;
 const BILLING_ENABLED = false;
 const PAYWALLS_ENABLED = false;
+const PLUSH_ENFORCE_ENTITLEMENTS = false;
 
 // ————— Provider-neutral billing architecture (groundwork only, inert) —————
 // Never called from any UI while BILLING_ENABLED is false. Both product IDs
 // below are placeholders pending your approval (see original project spec,
 // section 33) - do not invent real ones or wire this to a purchase screen.
-const BILLING_PRODUCT_IDS = { monthly: "plushlife_monthly", yearly: "plushlife_yearly" };
+const BILLING_PRODUCT_IDS = { monthly: "plushplus_monthly", yearly: "plushplus_yearly" };
 
 // A BillingProvider is any object implementing this shape. The central app
 // code should only ever call through this interface, never a
@@ -4096,6 +4101,11 @@ function GlowUpTracker() {
   };
 
   const [adminOpen, setAdminOpen] = useState(false);
+  // Admin-only, session-local simulation of a future PlushPlus plan — never
+  // persisted, never read by any real feature check (PLUSH_ENFORCE_ENTITLEMENTS
+  // stays false), purely so the preview panel below can show what
+  // hasPlushFeature() would return under each plan once billing is real.
+  const [devPreviewPlan, setDevPreviewPlan] = useState(null);
   const [adminFeedback, setAdminFeedback] = useState([]);
   const [adminErrors, setAdminErrors] = useState([]);
   const [adminStats, setAdminStats] = useState(null);
@@ -6915,6 +6925,55 @@ function GlowUpTracker() {
                 ))}
               </div>
             )}
+          </div>
+
+          <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
+            <div style={{ fontSize: 12, fontWeight: 900, color: "#8D5CA5" }}>🔮 PLUSHPLUS PREVIEW (dev only)</div>
+            <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>
+              Simulates a future plan for this admin session only — nothing here touches your account, anyone else's account, or real billing.
+              Every real user gets full access regardless of this toggle (PLUSH_ENFORCE_ENTITLEMENTS is {String(PLUSH_ENFORCE_ENTITLEMENTS)}).
+            </div>
+            <div style={{ display: "flex", gap: 6, flexWrap: "wrap", marginTop: 10 }}>
+              {[
+                { key: null, label: "Full access (real state)" },
+                { key: window.PlushLifeEntitlements.PLUSH_PLANS.FREE, label: "Preview: Free" },
+                { key: window.PlushLifeEntitlements.PLUSH_PLANS.PLUSHPLUS, label: "Preview: PlushPlus" },
+                { key: window.PlushLifeEntitlements.PLUSH_PLANS.PLUSHFAMILY, label: "Preview: PlushFamily" },
+              ].map((option) => (
+                <button
+                  key={String(option.key)}
+                  type="button"
+                  onClick={() => setDevPreviewPlan(option.key)}
+                  style={{
+                    padding: "6px 10px",
+                    borderRadius: 8,
+                    border: devPreviewPlan === option.key ? "1px solid #8D5CA5" : "1px solid #E4D3EA",
+                    background: devPreviewPlan === option.key ? "#8D5CA5" : "#FBF7FD",
+                    color: devPreviewPlan === option.key ? "#fff" : "#8D5CA5",
+                    fontWeight: 800,
+                    fontSize: 11,
+                    cursor: "pointer",
+                  }}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <div style={{ display: "grid", gap: 4, marginTop: 12 }}>
+              {window.PlushLifeEntitlements.PLUSH_FEATURE_FLAGS.map((flag) => {
+                const wouldHaveAccess = window.PlushLifeEntitlements.hasPlushFeature(flag, {
+                  enforced: true,
+                  plan: window.PlushLifeEntitlements.PLUSH_PLANS.FREE,
+                  devPreviewPlan,
+                });
+                return (
+                  <div key={flag} style={{ display: "flex", justifyContent: "space-between", padding: "5px 8px", borderRadius: 7, background: "#FBF7FD", fontSize: 11 }}>
+                    <span style={{ color: "#6B5A7D" }}>{flag}</span>
+                    <span style={{ fontWeight: 800, color: wouldHaveAccess ? "#318C79" : "#B0576B" }}>{wouldHaveAccess ? "included" : "not included"}</span>
+                  </div>
+                );
+              })}
+            </div>
           </div>
           </ToolPanel>
         )}
