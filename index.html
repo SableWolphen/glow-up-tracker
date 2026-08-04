@@ -1123,6 +1123,16 @@ function habitTypeForTask(task) {
   return (task?.detail || "").match(HABIT_META_PATTERN)?.[1] || "regular";
 }
 
+function HabitTypeIcon({ task }) {
+  const habitType = habitTypeForTask(task);
+  if (habitType === "regular") return null;
+  return (
+    <span aria-hidden="true" title={habitType === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 5 }}>
+      {habitType === "build" ? "🌱" : "🛡️"}
+    </span>
+  );
+}
+
 function cleanTaskDetail(detail = "") {
   return detail.replace(HABIT_META_PATTERN, "").trim();
 }
@@ -4801,6 +4811,7 @@ function GlowUpTracker() {
       label: task.task,
       how: cleanTaskDetail(task.detail || "") || null,
       why: task.why_note || null,
+      sourceTask: task,
     }));
   const focusedEssential = focusChoices.find((choice) => choice.key === focusSuggestionKey) || null;
   const pickRandomFocusTask = () => {
@@ -5923,7 +5934,7 @@ function GlowUpTracker() {
                     saveDailyCheckIn({ custom_essentials: next });
                   }} style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 12px", borderRadius: 12, border: selected ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: selected ? "#F7ECFB" : "white", textAlign: "left", cursor: "pointer" }}>
                     <span style={{ width: 20, height: 20, borderRadius: 6, border: selected ? "none" : "2px solid #D9B8E8", background: selected ? "#A65DC1" : "transparent", color: "white", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 12, fontWeight: 900, flexShrink: 0 }}>{selected ? "✓" : ""}</span>
-                    <span style={{ fontSize: 13.5, color: "#5B4B6B" }}>{r.label}</span>
+                    <span style={{ fontSize: 13.5, color: "#5B4B6B" }}>{r.sourceTask && <HabitTypeIcon task={r.sourceTask} />}{r.label}</span>
                   </button>
                 );
               })}
@@ -7402,7 +7413,7 @@ function GlowUpTracker() {
                     .map((task) => (
                         <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: isTaskPausedOnDate(task, period.date) ? "1px solid #E9C96E" : "1px solid #DDEBE7" }}>
                           <div style={{ flex: "1 1 190px", minWidth: 0 }}>
-                            <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}{isTaskPausedOnDate(task, period.date) && <span style={{ marginLeft: 6, padding: "2px 7px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 10, fontWeight: 900 }}>⏸ PAUSED{task.paused_until ? ` UNTIL ${task.paused_until}` : ""}</span>}</div>
+                            <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}><HabitTypeIcon task={task} />{task.task}{isTaskPausedOnDate(task, period.date) && <span style={{ marginLeft: 6, padding: "2px 7px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 10, fontWeight: 900 }}>⏸ PAUSED{task.paused_until ? ` UNTIL ${task.paused_until}` : ""}</span>}</div>
                             <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{scheduleLabelForTask(task)} · {task.section || "My tasks"}</div>
                           </div>
                           <button type="button" onClick={() => startEditingTask(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
@@ -7865,7 +7876,7 @@ function GlowUpTracker() {
             <FeatureTip id="one_next_step" text="This is your One Next Step — just the single most useful thing to do right now, so you don't have to look at everything at once." />
             <div style={{ marginBottom: 14, padding: "13px 14px", borderRadius: 15, background: `${day.accent}10`, border: `1px solid ${day.accent}88` }}>
               <div style={{ fontSize: 10.5, letterSpacing: "0.12em", fontWeight: 900, color: day.accent }}>🎯 NEXT STEP</div>
-              <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.label}</div>
+              <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.sourceTask && <HabitTypeIcon task={nextStepTask.sourceTask} />}{nextStepTask.label}</div>
               {nextStepHint?.key === nextStepTask.key && (
                 <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", fontSize: 12.5, color: "#6B5A7D" }}>
                   🌱 {nextStepHint.text}
@@ -8004,7 +8015,10 @@ function GlowUpTracker() {
                       role="checkbox" aria-checked={false} aria-label={r.label} tabIndex={isFutureView ? -1 : 0}
                       onKeyDown={(e) => { if (isFutureView) return; if (e.key === "Enter" || e.key === " ") { e.preventDefault(); toggle(r.key); } }}
                       style={{ width: 18, height: 18, minWidth: 18, borderRadius: 6, border: "2px solid #E3B8D8", cursor: isFutureView ? "not-allowed" : "pointer" }} />
-                    <span style={{ fontSize: 13, color: "#5B4B6B", fontWeight: 500 }}>{r.label}</span>
+                    <span style={{ fontSize: 13, color: "#5B4B6B", fontWeight: 500 }}>
+                      {r.sourceTask && <HabitTypeIcon task={r.sourceTask} />}
+                      {r.label}
+                    </span>
                   </div>
                 ))}
               </div>
@@ -8035,7 +8049,7 @@ function GlowUpTracker() {
                 </div>
                 {focusedEssential ? (
                   <>
-                    <div style={{ marginTop: 9, fontSize: 17, fontWeight: 900, color: "#4F405C" }}>{focusedEssential.label}</div>
+                    <div style={{ marginTop: 9, fontSize: 17, fontWeight: 900, color: "#4F405C" }}>{focusedEssential.sourceTask && <HabitTypeIcon task={focusedEssential.sourceTask} />}{focusedEssential.label}</div>
                     {focusedEssential.how && <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.5, color: "#6B5A7D" }}>{focusedEssential.how}</div>}
                     {focusedEssential.why && <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.5, fontStyle: "italic", color: "#318C79" }}>💛 Why: {focusedEssential.why}</div>}
                     <div style={{ marginTop: 10, display: "flex", gap: 7, flexWrap: "wrap" }}>
@@ -8108,7 +8122,7 @@ function GlowUpTracker() {
                           color: "white", fontWeight: 900, fontSize: 22, animation: celebrateKey === focusNextTask.key ? "checkPop 0.5s ease" : "none" }}>
                         {checked ? "✓" : ""}
                       </button>
-                      <span style={{ flex: 1, fontSize: 19, fontWeight: 700, color: "#5B4B6B" }}>{focusNextTask.label}</span>
+                      <span style={{ flex: 1, fontSize: 19, fontWeight: 700, color: "#5B4B6B" }}>{focusNextTask.sourceTask && <HabitTypeIcon task={focusNextTask.sourceTask} />}{focusNextTask.label}</span>
                       {focusNextTask.sourceTask && !isFutureView && (
                         <button
                           type="button"
@@ -8204,11 +8218,7 @@ function GlowUpTracker() {
                           {checked ? "✓" : ""}
                         </span>
                         <span style={{ flex: 1, fontSize: 14, fontWeight: 500, color: checked ? "#B08AC7" : "#5B4B6B", textDecoration: checked ? "line-through" : "none" }}>
-                          {r.sourceTask && habitTypeForTask(r.sourceTask) !== "regular" && (
-                            <span aria-hidden="true" title={habitTypeForTask(r.sourceTask) === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 5 }}>
-                              {habitTypeForTask(r.sourceTask) === "build" ? "🌱" : "🛡️"}
-                            </span>
-                          )}
+                          {r.sourceTask && <HabitTypeIcon task={r.sourceTask} />}
                           {r.label}
                           {r.sourceTask && isTaskPausedOnDate(r.sourceTask, period.date) && <span style={{ marginLeft: 6, padding: "1px 6px", borderRadius: 999, background: "#FFFBF2", color: "#A56D14", fontSize: 9.5, fontWeight: 900, textDecoration: "none" }}>PAUSED</span>}
                           {r.label !== r.originalLabel && <span style={{ display: "block", marginTop: 2, fontSize: 10.5, color: "#9A86A7", textDecoration: "none" }}>{r.dayType === "tiny" ? "Tiny" : r.dayType === "recovery" ? "Recovery" : "Soft"} version of {r.originalLabel}</span>}
@@ -8569,11 +8579,7 @@ function GlowUpTracker() {
                         return (
                           <div key={task.task_key} style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "7px 10px", borderRadius: 9, background: "#FFFFFFAA", border: "1px solid #EADDE2", fontSize: 12, color: "#5B4B6B" }}>
                             <span>
-                              {habitTypeForTask(task) !== "regular" && (
-                                <span aria-hidden="true" title={habitTypeForTask(task) === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 4 }}>
-                                  {habitTypeForTask(task) === "build" ? "🌱" : "🛡️"}
-                                </span>
-                              )}
+                              <HabitTypeIcon task={task} />
                               {taskIsOptional(task) ? "⭐ " : ""}{task.task}
                             </span>
                             {label && <span style={{ fontSize: 10.5, fontWeight: 800, color: paused ? "#9A6918" : isDone ? "#318C79" : "#B0576B" }}>{label}</span>}
@@ -8763,7 +8769,7 @@ function GlowUpTracker() {
             <div style={{ marginTop: 9, padding: "11px 12px", borderRadius: 12, background: "#FFF9FD", border: "1px solid #F0D5E8", fontSize: 11.5, lineHeight: 1.6, color: "#6B5A7D" }}>
               <strong>🌟 This week's highlights:</strong>
               {weeklyHighlights.mostConsistent && (
-                <div style={{ marginTop: 4 }}>Most consistent routine: <strong>{weeklyHighlights.mostConsistent.task.task}</strong> ({weeklyHighlights.mostConsistent.count} of {datesThroughToday(period).length} days)</div>
+                <div style={{ marginTop: 4 }}>Most consistent routine: <strong><HabitTypeIcon task={weeklyHighlights.mostConsistent.task} />{weeklyHighlights.mostConsistent.task.task}</strong> ({weeklyHighlights.mostConsistent.count} of {datesThroughToday(period).length} days)</div>
               )}
               {weeklyHighlights.topTool && (
                 <div style={{ marginTop: 4 }}>Most helpful comfort tool: <strong>{weeklyHighlights.topTool.icon} {weeklyHighlights.topTool.name || weeklyHighlights.topTool.title}</strong></div>
@@ -8836,7 +8842,7 @@ function GlowUpTracker() {
           </div>
           {monthlyMostConsistent && (
             <div style={{ marginTop: 12, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
-              Most consistent this month: <strong>{monthlyMostConsistent.task.task}</strong> ({monthlyMostConsistent.count} of {currentMonthDates.length} days)
+              Most consistent this month: <strong><HabitTypeIcon task={monthlyMostConsistent.task} />{monthlyMostConsistent.task.task}</strong> ({monthlyMostConsistent.count} of {currentMonthDates.length} days)
             </div>
           )}
         </div>
