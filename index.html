@@ -457,6 +457,24 @@ const DAYS = [
   { id: "sun", label: "SUN", title: "Sunday", accent: "#C77DD6", reflect: "Wins of the week — write down three." },
 ];
 
+// Quick-select presets for a task's schedule_days — distinct from a task's
+// day_id === "daily" (which has no schedule_days at all). Both make a task
+// occur every day, but before this they were indistinguishable anywhere in
+// the UI; scheduleLabelForTask below is what actually tells them apart.
+const WEEKDAY_PRESET_IDS = ["mon", "tue", "wed", "thu", "fri"];
+const WEEKEND_PRESET_IDS = ["sat", "sun"];
+
+function scheduleLabelForTask(task) {
+  const days = Array.isArray(task.schedule_days) ? task.schedule_days.filter((id) => DAYS.some((day) => day.id === id)) : [];
+  if (days.length) {
+    if (days.length === 7) return "Every day";
+    if (days.length === WEEKDAY_PRESET_IDS.length && WEEKDAY_PRESET_IDS.every((id) => days.includes(id))) return "Weekdays";
+    if (days.length === WEEKEND_PRESET_IDS.length && WEEKEND_PRESET_IDS.every((id) => days.includes(id))) return "Weekend";
+    return DAYS.filter((day) => days.includes(day.id)).map((day) => day.label[0] + day.label.slice(1).toLowerCase()).join(", ");
+  }
+  return task.day_id === "daily" ? "Every day" : (DAYS.find((day) => day.id === task.day_id)?.title || task.day_id);
+}
+
 const REFLECTION_PROMPT_ROTATIONS = {
   mon: ["What is one small thing that supported you today?", "What felt a little easier than expected?", "What is one kind thing you did for yourself?", "What do you want to remember from today?"],
   tue: ["What helped you keep going today?", "What is one feeling you want to name without judging it?", "What would make tonight feel a little softer?", "What is one small win from today?"],
@@ -3352,16 +3370,6 @@ function GlowUpTracker() {
     });
   };
 
-  const openTaskEditor = (task) => {
-    startEditingTask(task);
-    setActive(task.day_id);
-    setSelectedProgressDate(dateForDayId(task.day_id, period));
-    setManageTasks(false);
-    window.setTimeout(() => {
-      document.getElementById(`task-${task.task_key}`)?.scrollIntoView({ behavior: "smooth", block: "center" });
-    }, 80);
-  };
-
   const saveEditedTask = async () => {
     const editedSection = editTaskDraft?.section === "__custom__"
       ? (editTaskDraft.custom_section || "").trim()
@@ -5796,9 +5804,115 @@ function GlowUpTracker() {
               <strong>{pendingTaskDelete.label}</strong> will be removed from <strong>{pendingTaskDelete.section}</strong>. Other tasks in that group will stay.
             </div>
             <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
-              <button type="button" onClick={() => setPendingTaskDelete(null)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "white", color: "#76558A", fontWeight: 900 }}>Keep task</button>
+  <button type="button" onClick={() => setPendingTaskDelete(null)} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "white", color: "#76558A", fontWeight: 900 }}>Keep task</button>
               <button type="button" onClick={() => deleteTrackerTask(pendingTaskDelete.key, pendingTaskDelete.label)} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#C45D74", color: "white", fontWeight: 900 }}>Delete task</button>
             </div>
+          </div>
+        </div>
+      )}
+      {editingTaskKey && editTaskDraft && (
+        <div role="dialog" aria-modal="true" aria-labelledby="edit-task-title" style={{ position: "fixed", inset: 0, zIndex: 65, display: "grid", placeItems: "center", padding: 18, background: "rgba(45,32,56,.45)", backdropFilter: "blur(4px)" }}>
+          <div style={{ width: "min(100%, 460px)", maxHeight: "calc(100dvh - 36px)", overflowY: "auto", padding: 20, borderRadius: 22, background: "#FFFDFE", border: "1px solid #E3C9EC", boxShadow: "0 24px 70px rgba(45,32,56,.25)" }}>
+            <div id="edit-task-title" style={{ fontSize: 19, fontWeight: 900, color: "#5B4B6B" }}>Edit task</div>
+
+            <label style={{ display: "grid", gap: 4, marginTop: 12, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              TASK NAME
+              <input value={editTaskDraft.task} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, task: event.target.value }))} maxLength={240} aria-label="Task name" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+            </label>
+
+            <div style={{ marginTop: 10 }}>
+              <div style={{ fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>LIST</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(4,minmax(0,1fr))", gap: 6, marginTop: 6 }}>
+                {[{ id: "daily", label: "Every day" }, ...DAYS].map((item) => {
+                  const selected = editTaskDraft.day_id === item.id;
+                  return (
+                    <button key={item.id} type="button" aria-pressed={selected} onClick={() => setEditTaskDraft((draft) => ({ ...draft, day_id: item.id, section: taskSectionsForDay(item.id)[0] || draft.section }))} style={{ minWidth: 0, padding: "7px 4px", borderRadius: 9, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F2DEFA" : "white", color: selected ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: item.id === "daily" ? 10 : 11, cursor: "pointer" }}>
+                      {item.label}
+                    </button>
+                  );
+                })}
+              </div>
+            </div>
+
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              GROUP
+              <select value={editTaskDraft.section} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, section: event.target.value }))} aria-label="Choose section" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
+                {editTaskSectionOptions.map((section) => <option key={section} value={section}>{section}</option>)}
+                {editTaskDraft.section !== "__custom__" && !editTaskSectionOptions.includes(editTaskDraft.section) && <option value={editTaskDraft.section}>{editTaskDraft.section}</option>}
+                <option value="__custom__">＋ Create a custom section…</option>
+              </select>
+            </label>
+            {editTaskDraft.section === "__custom__" && (
+              <input value={editTaskDraft.custom_section} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, custom_section: event.target.value }))} maxLength={120} aria-label="New section name" placeholder="Name your new section" style={{ width: "100%", boxSizing: "border-box", marginTop: 7, padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+            )}
+
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              HOW OFTEN SHOULD IT COME BACK?
+              <select value={editTaskDraft.schedule_type || "weekly"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, schedule_type: event.target.value }))} aria-label="Choose repeating schedule" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
+                <option value="weekly">Every week</option>
+                <option value="range">Only between two dates</option>
+                <option value="once">Only one time</option>
+              </select>
+            </label>
+
+            {(editTaskDraft.schedule_type || "weekly") === "weekly" && (
+              <div style={{ padding: 9, borderRadius: 10, background: "#FAF7FC", border: "1px solid #E3C9EC", marginTop: 8 }}>
+                <div style={{ fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>SPECIFIC DAYS · OPTIONAL</div>
+                <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
+                  {[["Weekdays", WEEKDAY_PRESET_IDS], ["Weekend", WEEKEND_PRESET_IDS]].map(([presetLabel, presetDays]) => {
+                    const currentDays = Array.isArray(editTaskDraft.schedule_days) ? editTaskDraft.schedule_days : [];
+                    const active = presetDays.length === currentDays.length && presetDays.every((id) => currentDays.includes(id));
+                    return <button key={presetLabel} type="button" aria-pressed={active} onClick={() => setEditTaskDraft((draft) => ({ ...draft, schedule_days: active ? [] : presetDays }))} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: active ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: active ? "#F2DEFA" : "white", color: active ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>{presetLabel}</button>;
+                  })}
+                </div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 5, marginTop: 7 }}>
+                  {DAYS.map((item) => {
+                    const currentDays = Array.isArray(editTaskDraft.schedule_days) ? editTaskDraft.schedule_days : [];
+                    const selected = currentDays.includes(item.id);
+                    return <button key={item.id} type="button" aria-pressed={selected} onClick={() => setEditTaskDraft((draft) => { const days = Array.isArray(draft.schedule_days) ? draft.schedule_days : []; return { ...draft, schedule_days: selected ? days.filter((id) => id !== item.id) : [...days, item.id] }; })} style={{ minWidth: 0, padding: "7px 2px", borderRadius: 8, border: selected ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: selected ? "#F2DEFA" : "white", color: selected ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: 10, cursor: "pointer" }}>{item.label.slice(0, 3)}</button>;
+                  })}
+                </div>
+                <div style={{ marginTop: 5, fontSize: 10.5, color: "#8C6B9E" }}>{(editTaskDraft.schedule_days || []).length ? "Only appears on the selected days." : `No days selected: uses "${editTaskDraft.day_id === "daily" ? "Every day" : DAYS.find((d) => d.id === editTaskDraft.day_id)?.label}".`}</div>
+              </div>
+            )}
+            {editTaskDraft.schedule_type === "range" && (
+              <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 8 }}>
+                <label style={{ fontSize: 11.5, fontWeight: 800 }}>Starts<input type="date" value={editTaskDraft.start_date || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, start_date: event.target.value }))} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC" }} /></label>
+                <label style={{ fontSize: 11.5, fontWeight: 800 }}>Ends<input type="date" value={editTaskDraft.end_date || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, end_date: event.target.value }))} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC" }} /></label>
+              </div>
+            )}
+            {editTaskDraft.schedule_type === "once" && (
+              <label style={{ display: "block", fontSize: 11.5, fontWeight: 800, marginTop: 8 }}>Task date<input type="date" value={editTaskDraft.one_time_date || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, one_time_date: event.target.value }))} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #E3C9EC" }} /></label>
+            )}
+
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              TASK REMINDER TIME · OPTIONAL
+              <input type="time" value={editTaskDraft.reminder_time || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, reminder_time: event.target.value }))} aria-label="Task reminder time" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+            </label>
+
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              WHAT KIND OF TASK IS THIS?
+              <select value={editTaskDraft.habit_type || "regular"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, habit_type: event.target.value }))} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
+                <option value="regular">Regular task</option>
+                <option value="build">🌱 Build a good habit</option>
+                <option value="reduce">🛡️ Reduce a habit</option>
+              </select>
+            </label>
+
+            <label style={{ display: "flex", gap: 7, alignItems: "center", fontSize: 11.5, color: "#6B5A7D", marginTop: 10 }}>
+              <input type="checkbox" checked={!!editTaskDraft.is_bonus} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, is_bonus: event.target.checked }))} /> Optional / bonus task
+            </label>
+
+            <label style={{ display: "grid", gap: 4, marginTop: 10, fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>
+              WHY DOES THIS MATTER TO YOU? · OPTIONAL
+              <input value={editTaskDraft.why_note || ""} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, why_note: event.target.value }))} maxLength={300} aria-label="Why this task matters" style={{ width: "100%", boxSizing: "border-box", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC" }} />
+            </label>
+
+            <div style={{ display: "flex", justifyContent: "flex-end", gap: 8, marginTop: 16 }}>
+              <button type="button" onClick={() => { setEditingTaskKey(null); setEditTaskDraft(null); }} style={{ padding: "8px 12px", borderRadius: 10, border: "1px solid #D8C8E2", background: "white", color: "#76558A", fontWeight: 900 }}>Cancel</button>
+              <button type="button" onClick={saveEditedTask} style={{ padding: "8px 12px", borderRadius: 10, border: 0, background: "#A65DC1", color: "white", fontWeight: 900 }}>Save changes</button>
+            </div>
+            {taskMessage && <div role="status" aria-live="polite" style={{ marginTop: 10, fontSize: 12, color: "#8C6B9E" }}>{taskMessage}</div>}
           </div>
         </div>
       )}
@@ -6924,6 +7038,12 @@ function GlowUpTracker() {
                 {newTaskScheduleType === "weekly" && (
                   <div style={{ padding: 9, borderRadius: 10, background: "#FAF7FC", border: "1px solid #E3C9EC" }}>
                     <div style={{ fontSize: 10.5, fontWeight: 900, color: "#7D668C" }}>SPECIFIC DAYS · OPTIONAL</div>
+                    <div style={{ display: "flex", gap: 5, marginTop: 7 }}>
+                      {[["Weekdays", WEEKDAY_PRESET_IDS], ["Weekend", WEEKEND_PRESET_IDS]].map(([presetLabel, presetDays]) => {
+                        const active = presetDays.length === newTaskScheduleDays.length && presetDays.every((id) => newTaskScheduleDays.includes(id));
+                        return <button key={presetLabel} type="button" aria-pressed={active} onClick={() => setNewTaskScheduleDays(active ? [] : presetDays)} style={{ flex: 1, padding: "6px 4px", borderRadius: 8, border: active ? "2px solid #A65DC1" : "1px solid #DCC9E8", background: active ? "#F2DEFA" : "white", color: active ? "#7E3D99" : "#6B5A7D", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>{presetLabel}</button>;
+                      })}
+                    </div>
                     <div style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 5, marginTop: 7 }}>
                       {DAYS.map((item) => {
                         const selected = newTaskScheduleDays.includes(item.id);
@@ -6976,9 +7096,9 @@ function GlowUpTracker() {
                         <div key={task.task_key} style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap", padding: "9px 10px", borderRadius: 11, background: "#FFFFFFD9", border: "1px solid #DDEBE7" }}>
                           <div style={{ flex: "1 1 190px", minWidth: 0 }}>
                             <div style={{ fontSize: 12.5, fontWeight: 900, color: "#5B4B6B", overflowWrap: "anywhere" }}>{task.task}</div>
-                            <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{isSearching ? `${task.day_id === "daily" ? "Every day" : DAYS.find((d) => d.id === task.day_id)?.label || task.day_id} · ` : ""}{task.section || "My tasks"}</div>
+                            <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>{scheduleLabelForTask(task)} · {task.section || "My tasks"}</div>
                           </div>
-                          <button type="button" onClick={() => openTaskEditor(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
+                          <button type="button" onClick={() => startEditingTask(task)} aria-label={`Edit ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #B9DCF6", background: "#F7FBFF", color: "#4C8FE8", fontWeight: 900, cursor: "pointer" }}>✏️ Edit</button>
                           <button type="button" onClick={() => archiveTrackerTask(task.task_key)} aria-label={`Archive ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 900, cursor: "pointer" }}>📦 Archive</button>
                           <button type="button" onClick={() => setPendingTaskDelete({ key: task.task_key, label: task.task, section: task.section })} aria-label={`Delete ${task.task}`} style={{ padding: "6px 9px", borderRadius: 8, border: "1px solid #F0B8C4", background: "#FFF7F9", color: "#C45D74", fontWeight: 900, cursor: "pointer" }}>🗑️ Delete</button>
                         </div>
