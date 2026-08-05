@@ -1656,6 +1656,7 @@ function GlowUpTracker() {
     notification_nudge_dismissed_at: null,
     dark_mode: false,
     seen_features: [],
+    smart_reminder_hint_dismissed_at: null,
   });
   const [settingsMessage, setSettingsMessage] = useState("");
   const [nativeBuildInfo, setNativeBuildInfo] = useState(null);
@@ -2145,7 +2146,7 @@ function GlowUpTracker() {
     let active = true;
     supabase
       .from("daily_progress")
-      .select("progress_date, completed_keys")
+      .select("progress_date, completed_keys, updated_at")
       .eq("user_id", user.id)
       .lte("progress_date", period.date)
       .order("progress_date")
@@ -3814,6 +3815,7 @@ function GlowUpTracker() {
       gentle_streaks: !!nextPreferences.gentle_streaks,
       colorblind_mode: !!nextPreferences.colorblind_mode,
       notification_nudge_dismissed_at: nextPreferences.notification_nudge_dismissed_at || null,
+      smart_reminder_hint_dismissed_at: nextPreferences.smart_reminder_hint_dismissed_at || null,
       dark_mode: !!nextPreferences.dark_mode,
       seen_features: nextPreferences.seen_features || [],
       dino_theme: !!nextPreferences.dino_theme,
@@ -5098,6 +5100,39 @@ function GlowUpTracker() {
     const lowerPct = Math.round(average(lowerEnergyPcts) * 100);
     if (Math.abs(higherPct - lowerPct) < 15) return null;
     return { higherPct, lowerPct, sampleSize: higherEnergyPcts.length + lowerEnergyPcts.length };
+  })();
+
+  // Suggests a reminder time based on when this account actually tends to
+  // update its progress (daily_progress.updated_at), rather than guessing.
+  // Never applied automatically - see soft_weekdays' own comment in the
+  // database schema for why an insight like this should only ever be
+  // something the user opts into.
+  const smartReminderSuggestion = (() => {
+    if (!preferences.notifications_enabled) return null;
+    if (preferences.smart_reminder_hint_dismissed_at) {
+      const dismissedDaysAgo = daysBetweenDates(preferences.smart_reminder_hint_dismissed_at.slice(0, 10), period.date);
+      if (dismissedDaysAgo === null || dismissedDaysAgo < 30) return null;
+    }
+    const hourCounts = new Array(24).fill(0);
+    let sampleSize = 0;
+    habitHistory.forEach((entry) => {
+      if (!entry.updated_at) return;
+      const localHour = Number(new Date(entry.updated_at).toLocaleString("en-US", { hour: "numeric", hour12: false, timeZone: preferences.timezone || "America/Chicago" }));
+      if (!Number.isFinite(localHour)) return;
+      hourCounts[localHour % 24] += 1;
+      sampleSize += 1;
+    });
+    if (sampleSize < 10) return null;
+    const busiestHour = hourCounts.indexOf(Math.max(...hourCounts));
+    if (hourCounts[busiestHour] / sampleSize < 0.3) return null;
+    const alreadyCovered = (preferences.reminder_times || []).some((time) => {
+      const reminderHour = Number(time.slice(0, 2));
+      const diff = Math.abs(reminderHour - busiestHour);
+      return Math.min(diff, 24 - diff) <= 1;
+    });
+    if (alreadyCovered) return null;
+    const suggestedTime = `${String(busiestHour).padStart(2, "0")}:00`;
+    return { suggestedTime, label: formatTime12(suggestedTime) };
   })();
 
   // Shown one at a time (with a Next control) rather than stacked, so having
@@ -6883,6 +6918,15 @@ function GlowUpTracker() {
             </div>
             {preferences.reminder_times.length < 8 && (
               <button type="button" onClick={() => updatePreference({ reminder_times: [...preferences.reminder_times, "12:00"] })} style={{ marginTop: 8, padding: "6px 10px", borderRadius: 9, border: "1px solid #CFE8E1", background: "white", color: "#318C79", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>＋ Add another reminder time</button>
+            )}
+            {smartReminderSuggestion && preferences.reminder_times.length < 8 && (
+              <div style={{ marginTop: 9, padding: "9px 10px", borderRadius: 10, background: "#F1FFF9", border: "1px solid #BFE5D2", fontSize: 11.5, lineHeight: 1.5, color: "#2F6E48" }}>
+                💡 You tend to check in around <strong>{smartReminderSuggestion.label}</strong> — want a reminder around then?
+                <div style={{ display: "flex", gap: 7, marginTop: 8 }}>
+                  <button type="button" onClick={() => updatePreference({ reminder_times: [...preferences.reminder_times, smartReminderSuggestion.suggestedTime] })} style={{ padding: "6px 10px", borderRadius: 8, border: 0, background: "#318C79", color: "white", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Add it</button>
+                  <button type="button" onClick={() => updatePreference({ smart_reminder_hint_dismissed_at: new Date().toISOString() })} style={{ padding: "6px 10px", borderRadius: 8, border: "1px solid #A9DFC4", background: "white", color: "#2F6E48", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>No thanks</button>
+                </div>
+              </div>
             )}
             <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 7, marginTop: 7 }}>
               <label style={{ fontSize: 11.5, fontWeight: 800 }}>Quiet starts<input type="time" value={preferences.quiet_start} onChange={(event) => updatePreference({ quiet_start: event.target.value })} style={{ width: "100%", boxSizing: "border-box", marginTop: 4, padding: 8, borderRadius: 9, border: "1px solid #CFE8E1" }} /></label>
