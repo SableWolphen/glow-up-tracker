@@ -931,10 +931,20 @@ function legacyScheduleToEntries(schedule) {
 }
 
 const HABIT_META_PATTERN = /^\[\[plushlist-habit:(build|reduce)\]\]\s*/;
+// A little honest variety in how a badge unlock gets announced, so the same
+// milestone doesn't read as a rote, identical toast every single time. The
+// badge itself and when it's earned are never randomized - only which of
+// these equally-true phrasings introduces it.
+const BADGE_CELEBRATION_INTROS = [
+  "🎉 New badge earned:",
+  "✨ You just unlocked:",
+  "🌟 Nice work — you earned:",
+  "🎊 Look at that:",
+];
 const THEME_VOICE = {
   warm: {
     dayComplete: "Day complete — nice work today.",
-    celebrationTitle: "100% complete! ✨",
+    celebrationTitles: ["100% complete! ✨", "Every required task, done. 🌟", "You showed up for yourself today. ✨"],
     nurturingSome: (count) => `You've already finished ${count} ${count === 1 ? "thing" : "things"} today — good progress.`,
     nurturingNone: "A soft start still counts. Pick one small thing when you're ready.",
     welcomeBack: (days) => `It's been ${days} days — no pressure. Just pick one small thing to restart with, whenever you're ready.`,
@@ -944,7 +954,7 @@ const THEME_VOICE = {
   },
   baby_motherly: {
     dayComplete: "All done, baby — Mama's so proud of you! 🍼✨",
-    celebrationTitle: "You did it, sweet one! Mama's so proud! 🎉",
+    celebrationTitles: ["You did it, sweet one! Mama's so proud! 🎉", "Every little task, all done! Mama's beaming! 🍼", "Look at you go, baby! Mama's so happy! ✨"],
     nurturingSome: (count) => `You already did ${count} ${count === 1 ? "thing" : "things"} today, baby! Mama's proud of you! 🧸`,
     nurturingNone: "It's okay to go slow, sweetheart. Just one little thing when you're ready — Mama's not going anywhere. 🍼",
     welcomeBack: (days) => `It's been ${days} sleeps, baby. No worries at all — Mama's just glad you're back. Come do one little thing whenever you want. 🧸`,
@@ -954,7 +964,7 @@ const THEME_VOICE = {
   },
   baby_fatherly: {
     dayComplete: "All done, kiddo — Dad's proud of you! 🍼✨",
-    celebrationTitle: "Atta kid! You did it! Dad's so proud! 🎉",
+    celebrationTitles: ["Atta kid! You did it! Dad's so proud! 🎉", "Every task, all done! Dad's beaming! 🍼", "Look at you go, kiddo! Dad's so happy! ✨"],
     nurturingSome: (count) => `You already did ${count} ${count === 1 ? "thing" : "things"} today, kiddo! Dad's proud of you! 🧸`,
     nurturingNone: "It's okay to go slow, buddy. Just one little thing when you're ready — Dad's right here. 🍼",
     welcomeBack: (days) => `It's been ${days} sleeps, kiddo. No worries at all — Dad's just glad you're back. Come do one little thing whenever you want. 🧸`,
@@ -964,7 +974,7 @@ const THEME_VOICE = {
   },
   dino: {
     dayComplete: "RAWR! Day complete — you're dino-mite! 🦕",
-    celebrationTitle: "Stomp! 100% complete! 🦖✨",
+    celebrationTitles: ["Stomp! 100% complete! 🦖✨", "RAWR! Every task, done! 🦕", "You're dino-mite today! 🦖✨"],
     nurturingSome: (count) => `You already stomped through ${count} ${count === 1 ? "thing" : "things"} today! Roar-some! 🦕`,
     nurturingNone: "Even a tiny dino takes small steps. Pick one thing when you're ready. 🦖",
     welcomeBack: (days) => `It's been ${days} days since your last stomp! No pressure, just pick one thing to get back on track. 🦕`,
@@ -1813,6 +1823,8 @@ function GlowUpTracker() {
     lastCelebratedDate: "",
   });
   const [celebrationOpen, setCelebrationOpen] = useState(false);
+  const [celebrationTitleText, setCelebrationTitleText] = useState("");
+  const [badgeCelebration, setBadgeCelebration] = useState(null);
   const [celebrateKey, setCelebrateKey] = useState(null);
   const [recentlyCompletedKeys, setRecentlyCompletedKeys] = useState([]);
   const flushPendingQueue = async () => {
@@ -5377,6 +5389,7 @@ function GlowUpTracker() {
     };
     saveMascotCollection(next);
     setCelebrationOpen(true);
+    setCelebrationTitleText(voice.celebrationTitles[Math.floor(Math.random() * voice.celebrationTitles.length)]);
     if (mascotCollection.celebrationSound && !isQuietTime(preferences)) playCelebrationChime();
     window.setTimeout(() => tryOpenNotificationNudge(0.3), 6000);
   }, [
@@ -5562,20 +5575,32 @@ function GlowUpTracker() {
   useEffect(() => {
     if (!user || collectionLoadedFor !== user.id) return;
     const currentBadgeIds = mascotCollection.earnedBadgeIds || [];
-    const badgesChanged = newlyEarnedBadgeIds.some((id) => !currentBadgeIds.includes(id));
-    if (!badgesChanged) return;
+    const justEarnedIds = newlyEarnedBadgeIds.filter((id) => !currentBadgeIds.includes(id));
+    if (justEarnedIds.length === 0) return;
     saveMascotCollection({
       ...mascotCollection,
       bestStreak: Math.max(mascotCollection.bestStreak, currentUnlockProgress),
       unlockedIds: [...unlockedIdSet],
       earnedBadgeIds: [...earnedBadgeIdSet],
     });
+    const justEarnedDefs = BADGE_DEFS.filter((item) => justEarnedIds.includes(item.id));
+    setBadgeCelebration({
+      intro: BADGE_CELEBRATION_INTROS[Math.floor(Math.random() * BADGE_CELEBRATION_INTROS.length)],
+      badges: justEarnedDefs,
+    });
+    if (mascotCollection.celebrationSound && !isQuietTime(preferences)) playCelebrationChime();
   }, [
     user?.id,
     collectionLoadedFor,
     newlyEarnedBadgeIds.join("|"),
     (mascotCollection.earnedBadgeIds || []).join("|"),
   ]);
+
+  useEffect(() => {
+    if (!badgeCelebration) return undefined;
+    const timer = window.setTimeout(() => setBadgeCelebration(null), 6000);
+    return () => window.clearTimeout(timer);
+  }, [badgeCelebration]);
 
   useEffect(() => {
     if (!user) return;
@@ -6004,7 +6029,7 @@ function GlowUpTracker() {
           ))}
           <div onClick={(event) => event.stopPropagation()} style={{ position: "relative", zIndex: 62, width: "min(100%, 390px)", padding: "22px 20px", borderRadius: 26, textAlign: "center", background: "linear-gradient(160deg,#FFFDFE,#FFF0FA 58%,#EBFBFF)", border: "2px solid #D994E7", boxShadow: "0 24px 80px rgba(61,35,78,.3)" }}>
             <PlushMascot outfit={selectedOutfit} size={170} celebrating={!preferences.reduced_motion} mood="excited" activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
-            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{voice.celebrationTitle}</div>
+            <div id="day-complete-title" style={{ marginTop: -5, fontSize: 24, fontWeight: 900, color: "#75428C" }}>{celebrationTitleText || voice.celebrationTitles[0]}</div>
             <div style={{ marginTop: 7, fontSize: 13.5, lineHeight: 1.55, color: "#6B5A7D" }}>
               You cared for every required task today. Bonus items are still optional—this day already counts.
             </div>
@@ -8915,6 +8940,14 @@ function GlowUpTracker() {
         <div style={{ position: "fixed", left: "50%", bottom: 20, transform: "translateX(-50%)", zIndex: 60, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "#3B2E46", color: "white", boxShadow: "0 10px 30px rgba(0,0,0,0.25)", maxWidth: "92vw" }}>
           <span style={{ fontSize: 12.5 }}>🗑️ "{recentlyDeletedTask.label}" removed</span>
           <button type="button" onClick={undoDeleteTask} style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.4)", background: "transparent", color: "#F2D9FF", fontWeight: 900, cursor: "pointer", fontSize: 12.5, whiteSpace: "nowrap" }}>Undo</button>
+        </div>
+      )}
+      {badgeCelebration && (
+        <div role="status" style={{ position: "fixed", left: "50%", bottom: 20, transform: "translateX(-50%)", zIndex: 61, display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderRadius: 12, background: "#3B2E46", color: "white", boxShadow: "0 10px 30px rgba(0,0,0,0.25)", maxWidth: "92vw" }}>
+          <span style={{ fontSize: 12.5 }}>
+            {badgeCelebration.intro} {badgeCelebration.badges.map((item) => `${item.badge} ${item.name}`).join(", ")}
+          </span>
+          <button type="button" onClick={() => setBadgeCelebration(null)} aria-label="Dismiss" style={{ padding: "5px 10px", borderRadius: 8, border: "1px solid rgba(255,255,255,0.4)", background: "transparent", color: "#F2D9FF", fontWeight: 900, cursor: "pointer", fontSize: 12.5, whiteSpace: "nowrap" }}>✕</button>
         </div>
       )}
     </div>
