@@ -4,7 +4,7 @@
   "private": true,
   "description": "PlushLife — a gentle, private daily routine, habit, self-care, and workout tracker with optional Guardian support.",
   "scripts": {
-    "test": "node scripts/test-care-upgrades.js && node scripts/test-entitlements.js && node scripts/validate-app-source.js",
+    "test": "node scripts/test-care-upgrades.js && node scripts/test-entitlements.js && node scripts/validate-app-source.js && node scripts/validate-ui-assets.js",
     "web:sync": "node scripts/sync-www.js",
     "android:sync": "npm run web:sync && npx cap sync android",
     "android:open": "npx cap open android"
