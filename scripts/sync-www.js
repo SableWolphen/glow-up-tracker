@@ -46,6 +46,7 @@ const CDN_REPLACEMENTS = [
 const GENERATED_INDEX_SCRIPTS = [
   '<script src="./assets/cloudflare-primary.js"></script>',
   '<script src="./assets/plush-guide.js"></script>',
+  '<script src="./assets/plush-tools-fix.js"></script>',
 ];
 
 function rimraf(target) {
@@ -63,7 +64,7 @@ function prepareHtml(file, source) {
   for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
 
   // Cloudflare and Android use the generated www/ build. Inject hosting
-  // compatibility and the non-destructive feature guide there while leaving
+  // compatibility and the non-destructive feature helpers there while leaving
   // the GitHub Pages source untouched as an independently deployable backup.
   if (file === "index.html") {
     for (const script of GENERATED_INDEX_SCRIPTS) {
