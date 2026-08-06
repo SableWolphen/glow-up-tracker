@@ -23,6 +23,7 @@ const REQUIRED_FILES = [
   "assets/gentle-discovery-ui.js",
   "assets/plushlife-completion.js",
   "assets/cloudflare-primary.js",
+  "assets/plush-guide.js",
   "capacitor.config.json",
   "wrangler.jsonc",
 ];
@@ -40,10 +41,10 @@ function read(relativePath) {
 
 if (fs.existsSync(path.join(ROOT, "service-worker.js"))) {
   const serviceWorker = read("service-worker.js");
-  if (!serviceWorker.includes('const CACHE_NAME = "plushlife-v32"')) {
-    failures.push("Service worker cache is not set to plushlife-v32.");
+  if (!serviceWorker.includes('const CACHE_NAME = "plushlife-v34"')) {
+    failures.push("Service worker cache is not set to plushlife-v34.");
   }
-  for (const shellFile of ["login.html", "oauth.html", "support.html", "account-deletion.html", "assets/cloudflare-primary.js"]) {
+  for (const shellFile of ["login.html", "oauth.html", "support.html", "account-deletion.html", "assets/cloudflare-primary.js", "assets/plush-guide.js"]) {
     if (!serviceWorker.includes(`./${shellFile}`)) failures.push(`Service worker app shell does not include ${shellFile}.`);
   }
 }
@@ -80,6 +81,16 @@ if (fs.existsSync(path.join(ROOT, "login.html"))) {
   const login = read("login.html");
   if (!login.includes("pvitdhixycegmcovapyh.supabase.co")) failures.push("Login page no longer references the production Supabase project.");
   if (!login.includes("signInWithOtp") || !login.includes("signInWithPassword")) failures.push("Login page is missing an expected authentication method.");
+}
+
+if (fs.existsSync(path.join(ROOT, "assets/plush-guide.js"))) {
+  const guide = read("assets/plush-guide.js");
+  if (!guide.includes("your tasks, history, profile, and preferences stay exactly as you saved them")) {
+    failures.push("PlushGuide no longer includes its data-preservation assurance.");
+  }
+  if (!guide.includes("PlushRescue") || !guide.includes("PlushProgress") || !guide.includes("PlushGuardian")) {
+    failures.push("PlushGuide is missing core existing-feature routes.");
+  }
 }
 
 if (failures.length) {
