@@ -43,6 +43,8 @@ const CDN_REPLACEMENTS = [
   ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js", "./vendor/supabase.min.js"],
 ];
 
+const GENERATED_INDEX_SCRIPT = '<script src="./assets/cloudflare-primary.js"></script>';
+
 function rimraf(target) {
   if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
 }
@@ -51,6 +53,20 @@ function copyDirectory(source, destination) {
   if (!fs.existsSync(source)) return false;
   fs.cpSync(source, destination, { recursive: true });
   return true;
+}
+
+function prepareHtml(file, source) {
+  let content = source;
+  for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
+
+  // Cloudflare and Android use the generated www/ build. Inject hosting
+  // compatibility there while leaving the GitHub Pages source untouched as
+  // an independently deployable backup.
+  if (file === "index.html" && !content.includes(GENERATED_INDEX_SCRIPT)) {
+    content = content.replace("</body>", `  ${GENERATED_INDEX_SCRIPT}\n</body>`);
+  }
+
+  return content;
 }
 
 function main() {
@@ -64,8 +80,7 @@ function main() {
     const destination = path.join(WWW, file);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     if (/\.html$/.test(file)) {
-      let content = fs.readFileSync(src, "utf8");
-      for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
+      const content = prepareHtml(file, fs.readFileSync(src, "utf8"));
       fs.writeFileSync(destination, content);
     } else {
       fs.copyFileSync(src, destination);
