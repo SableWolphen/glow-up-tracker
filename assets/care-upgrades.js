@@ -4,16 +4,20 @@
   if (root) {
     root.PlushLifeCare = api;
     api.installSupabaseReadDeduper(root);
+    if (root.document && !root.__plushlifeGentleUiScriptLoading) {
+      root.__plushlifeGentleUiScriptLoading = true;
+      const script = root.document.createElement("script");
+      script.src = "./assets/gentle-discovery-ui.js";
+      script.defer = true;
+      root.document.head.appendChild(script);
+    }
   }
 })(typeof window !== "undefined" ? window : globalThis, function () {
   const DAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   const DAY_ALIASES = {
-    sunday: "sun", sun: "sun",
-    monday: "mon", mon: "mon",
-    tuesday: "tue", tue: "tue", tues: "tue",
-    wednesday: "wed", wed: "wed",
-    thursday: "thu", thu: "thu", thurs: "thu",
-    friday: "fri", fri: "fri",
+    sunday: "sun", sun: "sun", monday: "mon", mon: "mon",
+    tuesday: "tue", tue: "tue", tues: "tue", wednesday: "wed", wed: "wed",
+    thursday: "thu", thu: "thu", thurs: "thu", friday: "fri", fri: "fri",
     saturday: "sat", sat: "sat",
   };
 
@@ -42,87 +46,51 @@
     const text = source.toLowerCase().replace(/[,.]/g, " ").replace(/\s+/g, " ").trim();
     const now = referenceDate instanceof Date ? new Date(referenceDate) : new Date();
     if (!text) return { recognized: false, summary: "Type a schedule such as “weekdays at 8 AM”." };
-
-    const timeMatch = text.match(/(?:\bat\s*)?\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/) ||
-      text.match(/(?:\bat\s*)\b([01]?\d|2[0-3]):([0-5]\d)\b/);
+    const timeMatch = text.match(/(?:\bat\s*)?\b(\d{1,2})(?::(\d{2}))?\s*(am|pm)\b/) || text.match(/(?:\bat\s*)\b([01]?\d|2[0-3]):([0-5]\d)\b/);
     const time = timeMatch ? normalizeTime(timeMatch[1], timeMatch[2], timeMatch[3]) : null;
-
     let scheduleDays = [];
     let dayId = "daily";
     let scheduleType = "weekly";
     let oneTimeDate = null;
-
     if (/\btomorrow\b/.test(text)) {
-      const tomorrow = new Date(now);
-      tomorrow.setDate(tomorrow.getDate() + 1);
-      scheduleType = "once";
-      oneTimeDate = localDateString(tomorrow);
+      const tomorrow = new Date(now); tomorrow.setDate(tomorrow.getDate() + 1);
+      scheduleType = "once"; oneTimeDate = localDateString(tomorrow);
     } else if (/\btoday\b/.test(text)) {
-      scheduleType = "once";
-      oneTimeDate = localDateString(now);
+      scheduleType = "once"; oneTimeDate = localDateString(now);
     } else if (/\bweekdays?\b|\bmonday through friday\b/.test(text)) {
       scheduleDays = ["mon", "tue", "wed", "thu", "fri"];
     } else if (/\bweekends?\b/.test(text)) {
       scheduleDays = ["sat", "sun"];
-    } else if (/\bevery day\b|\bdaily\b|\beach day\b/.test(text)) {
-      scheduleDays = [];
-    } else {
-      scheduleDays = Object.entries(DAY_ALIASES)
-        .filter(([label]) => new RegExp(`\\b${label}\\b`).test(text))
-        .map(([, value]) => value)
-        .filter((value, index, values) => values.indexOf(value) === index);
+    } else if (!/\bevery day\b|\bdaily\b|\beach day\b/.test(text)) {
+      scheduleDays = Object.entries(DAY_ALIASES).filter(([label]) => new RegExp(`\\b${label}\\b`).test(text)).map(([, value]) => value).filter((value, index, values) => values.indexOf(value) === index);
       if (scheduleDays.length === 1) dayId = scheduleDays[0];
     }
-
     const recognized = scheduleType === "once" || scheduleDays.length > 0 || /\bevery day\b|\bdaily\b|\beach day\b/.test(text) || !!time;
     if (!recognized) return { recognized: false, summary: "I couldn't confidently read that schedule. You can still use the regular controls." };
-
     const daySummary = scheduleType === "once"
       ? new Date(`${oneTimeDate}T12:00:00`).toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" })
-      : scheduleDays.length === 0
-        ? "Every day"
-        : scheduleDays.length === 5 && scheduleDays.join(",") === "mon,tue,wed,thu,fri"
-          ? "Weekdays"
-          : scheduleDays.length === 2 && scheduleDays.includes("sat") && scheduleDays.includes("sun")
-            ? "Weekends"
-            : scheduleDays.map((id) => id.charAt(0).toUpperCase() + id.slice(1)).join(", ");
-    return {
-      recognized: true,
-      day_id: dayId,
-      schedule_days: scheduleDays,
-      schedule_type: scheduleType,
-      one_time_date: oneTimeDate,
-      reminder_time: time,
-      summary: `${daySummary}${time ? ` at ${time}` : ""}`,
-    };
+      : scheduleDays.length === 0 ? "Every day"
+      : scheduleDays.length === 5 && scheduleDays.join(",") === "mon,tue,wed,thu,fri" ? "Weekdays"
+      : scheduleDays.length === 2 && scheduleDays.includes("sat") && scheduleDays.includes("sun") ? "Weekends"
+      : scheduleDays.map((id) => id.charAt(0).toUpperCase() + id.slice(1)).join(", ");
+    return { recognized: true, day_id: dayId, schedule_days: scheduleDays, schedule_type: scheduleType, one_time_date: oneTimeDate, reminder_time: time, summary: `${daySummary}${time ? ` at ${time}` : ""}` };
   }
 
   function cleanBulkTaskLine(line) {
-    return String(line || "")
-      .replace(/^\s*(?:[-*•‣▪◦]|\d+[.)]|\[[ xX]\])\s*/, "")
-      .replace(/\s+/g, " ")
-      .trim();
+    return String(line || "").replace(/^\s*(?:[-*•‣▪◦]|\d+[.)]|\[[ xX]\])\s*/, "").replace(/\s+/g, " ").trim();
   }
 
   function parseBulkTasks(input, options) {
     const maxTasks = Math.max(1, Math.min(200, Number(options?.maxTasks) || 50));
     const seen = new Set();
-    const tasks = [];
-    const duplicates = [];
-    const ignored = [];
+    const tasks = [], duplicates = [], ignored = [];
     String(input || "").split(/\r?\n/).forEach((rawLine) => {
       const task = cleanBulkTaskLine(rawLine).slice(0, 140);
       if (!task) return;
       const key = task.toLocaleLowerCase();
-      if (seen.has(key)) {
-        duplicates.push(task);
-        return;
-      }
+      if (seen.has(key)) { duplicates.push(task); return; }
       seen.add(key);
-      if (tasks.length >= maxTasks) {
-        ignored.push(task);
-        return;
-      }
+      if (tasks.length >= maxTasks) { ignored.push(task); return; }
       tasks.push(task);
     });
     return { tasks, duplicates, ignored, maxTasks };
@@ -131,19 +99,14 @@
   function gentleDiscoverySuggestions(context) {
     const taskCount = Math.max(0, Number(context?.taskCount) || 0);
     const daysUsed = Math.max(0, Number(context?.daysUsed) || 0);
-    const hasReminder = !!context?.hasReminder;
-    const hasSoftVersion = !!context?.hasSoftVersion;
-    const hasGuardian = !!context?.hasGuardian;
     const seen = new Set(Array.isArray(context?.seen) ? context.seen : []);
     const suggestions = [];
-    const add = (id, title, body, action) => {
-      if (!seen.has(id)) suggestions.push({ id, title, body, action });
-    };
+    const add = (id, title, body, action) => { if (!seen.has(id)) suggestions.push({ id, title, body, action }); };
     if (taskCount >= 4) add("bulk-organize", "Make the list easier to scan", "Group tasks into Morning, Afternoon, Evening, or your own sections.", "organize");
-    if (taskCount >= 6 && !hasSoftVersion) add("tiny-versions", "Prepare for lower-energy days", "Add a softer or tiny version to important tasks without deleting the full version.", "soft_versions");
-    if (taskCount >= 1 && !hasReminder) add("gentle-reminders", "Want a gentle reminder?", "Choose reminders only for the tasks that truly need a nudge.", "reminders");
+    if (taskCount >= 6 && !context?.hasSoftVersion) add("tiny-versions", "Prepare for lower-energy days", "Add a softer or tiny version to important tasks without deleting the full version.", "soft_versions");
+    if (taskCount >= 1 && !context?.hasReminder) add("gentle-reminders", "Want a gentle reminder?", "Choose reminders only for the tasks that truly need a nudge.", "reminders");
     if (daysUsed >= 3) add("progress", "Your PlushProgress is ready", "See patterns and completed care without turning your life into a score.", "progress");
-    if (daysUsed >= 2 && !hasGuardian) add("guardian", "Support is optional", "Connect a trusted Guardian only when sharing would genuinely help.", "guardian");
+    if (daysUsed >= 2 && !context?.hasGuardian) add("guardian", "Support is optional", "Connect a trusted Guardian only when sharing would genuinely help.", "guardian");
     return suggestions.slice(0, 2);
   }
 
@@ -154,16 +117,13 @@
     const essential = active.filter((task) => task.essential_on_low_capacity);
     const short = active.filter((task) => !task.essential_on_low_capacity && Number(task.estimated_minutes || 999) <= 10);
     const remaining = active.filter((task) => !essential.includes(task) && !short.includes(task));
-    const selected = [...essential, ...short, ...remaining].slice(0, maxVisible).map((task) => ({
-      ...task,
-      rescue_label: task.tiny_label || task.soft_label || task.task,
-    }));
+    const selected = [...essential, ...short, ...remaining].slice(0, maxVisible).map((task) => ({ ...task, rescue_label: task.tiny_label || task.soft_label || task.task }));
     return {
       day_type: "recovery",
       visible_tasks: selected,
       hidden_count: Math.max(0, active.length - selected.length),
       grounding_prompt: options?.groundingPrompt || "Take one slow breath. One caring step is enough.",
-      guardian_prompt: !!options?.hasGuardian ? "Would a no-pressure Guardian check-in help?" : null,
+      guardian_prompt: options?.hasGuardian ? "Would a no-pressure Guardian check-in help?" : null,
     };
   }
 
@@ -184,10 +144,7 @@
   function notificationId(seed, offset) {
     let hash = 2166136261;
     const value = String(seed || "plushlife");
-    for (let index = 0; index < value.length; index += 1) {
-      hash ^= value.charCodeAt(index);
-      hash = Math.imul(hash, 16777619);
-    }
+    for (let index = 0; index < value.length; index += 1) { hash ^= value.charCodeAt(index); hash = Math.imul(hash, 16777619); }
     return Math.abs((hash + Number(offset || 0)) | 0) || 1;
   }
 
@@ -195,106 +152,55 @@
     const host = target || (typeof globalThis !== "undefined" ? globalThis : null);
     if (!host || typeof host.fetch !== "function") return false;
     if (host.__plushlifeSupabaseReadDeduper) return true;
-
-    const settings = options || {};
-    const ttlMs = Math.max(0, Number(settings.ttlMs ?? 1000));
-    const maxEntries = Math.max(10, Number(settings.maxEntries ?? 100));
+    const ttlMs = Math.max(0, Number(options?.ttlMs ?? 1000));
+    const maxEntries = Math.max(10, Number(options?.maxEntries ?? 100));
     const originalFetch = host.fetch.bind(host);
-    const inFlight = new Map();
-    const recent = new Map();
+    const inFlight = new Map(), recent = new Map();
     const stats = { sharedInflight: 0, sharedRecent: 0, networkReads: 0 };
-
     const headerValue = (headers, name) => {
       if (!headers) return "";
       if (typeof headers.get === "function") return headers.get(name) || "";
       const key = Object.keys(headers).find((item) => item.toLowerCase() === name.toLowerCase());
       return key ? String(headers[key]) : "";
     };
-
     const requestDetails = (input, init) => {
       const request = input && typeof input === "object" ? input : null;
-      const url = String(request?.url || input || "");
-      const method = String(init?.method || request?.method || "GET").toUpperCase();
-      const headers = init?.headers || request?.headers || null;
-      const signal = init?.signal || request?.signal || null;
-      return { url, method, headers, signal };
+      return {
+        url: String(request?.url || input || ""),
+        method: String(init?.method || request?.method || "GET").toUpperCase(),
+        headers: init?.headers || request?.headers || null,
+        signal: init?.signal || request?.signal || null,
+      };
     };
-
-    const buildKey = ({ url, method, headers }) => [
-      method,
-      url,
-      headerValue(headers, "authorization"),
-      headerValue(headers, "apikey"),
-      headerValue(headers, "accept-profile"),
-      headerValue(headers, "range"),
-    ].join("\n");
-
-    const isSafeRead = ({ url, method, signal }) =>
-      !signal &&
-      (method === "GET" || method === "HEAD") &&
-      /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
-
+    const buildKey = ({ url, method, headers }) => [method, url, headerValue(headers, "authorization"), headerValue(headers, "apikey"), headerValue(headers, "accept-profile"), headerValue(headers, "range")].join("\n");
+    const isSafeRead = ({ url, method, signal }) => !signal && (method === "GET" || method === "HEAD") && /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
     const trimRecent = (now) => {
-      for (const [key, entry] of recent) {
-        if (now - entry.savedAt > ttlMs) recent.delete(key);
-      }
+      for (const [key, entry] of recent) if (now - entry.savedAt > ttlMs) recent.delete(key);
       while (recent.size > maxEntries) recent.delete(recent.keys().next().value);
     };
-
     host.fetch = function plushLifeFetch(input, init) {
       const details = requestDetails(input, init);
       if (!isSafeRead(details)) return originalFetch(input, init);
-
-      const key = buildKey(details);
-      const now = Date.now();
+      const key = buildKey(details), now = Date.now();
       trimRecent(now);
-
-      if (inFlight.has(key)) {
-        stats.sharedInflight += 1;
-        return inFlight.get(key).then((response) => response.clone());
-      }
-
+      if (inFlight.has(key)) { stats.sharedInflight += 1; return inFlight.get(key).then((response) => response.clone()); }
       const cached = recent.get(key);
-      if (cached && now - cached.savedAt <= ttlMs) {
-        stats.sharedRecent += 1;
-        return Promise.resolve(cached.response.clone());
-      }
-
+      if (cached && now - cached.savedAt <= ttlMs) { stats.sharedRecent += 1; return Promise.resolve(cached.response.clone()); }
       stats.networkReads += 1;
       const shared = originalFetch(input, init).then((response) => {
-        if (response && response.ok && ttlMs > 0) {
-          recent.set(key, { response: response.clone(), savedAt: Date.now() });
-          trimRecent(Date.now());
-        }
+        if (response?.ok && ttlMs > 0) { recent.set(key, { response: response.clone(), savedAt: Date.now() }); trimRecent(Date.now()); }
         return response;
-      }).finally(() => {
-        inFlight.delete(key);
-      });
+      }).finally(() => inFlight.delete(key));
       inFlight.set(key, shared);
       return shared.then((response) => response.clone());
     };
-
     host.__plushlifeSupabaseReadDeduper = {
       stats,
       clear() { inFlight.clear(); recent.clear(); },
-      restore() {
-        host.fetch = originalFetch;
-        delete host.__plushlifeSupabaseReadDeduper;
-      },
+      restore() { host.fetch = originalFetch; delete host.__plushlifeSupabaseReadDeduper; },
     };
     return true;
   }
 
-  return {
-    DAY_IDS,
-    parseNaturalSchedule,
-    parseBulkTasks,
-    gentleDiscoverySuggestions,
-    buildRescuePlan,
-    taskTargetsDate,
-    isSnoozed,
-    notificationId,
-    localDateString,
-    installSupabaseReadDeduper,
-  };
+  return { DAY_IDS, parseNaturalSchedule, parseBulkTasks, gentleDiscoverySuggestions, buildRescuePlan, taskTargetsDate, isSnoozed, notificationId, localDateString, installSupabaseReadDeduper };
 });
