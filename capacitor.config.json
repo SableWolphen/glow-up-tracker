@@ -4,7 +4,7 @@
   "webDir": "www",
   "backgroundColor": "#fff8fc",
   "server": {
-    "url": "https://sablewolphen.github.io/plushlist/",
+    "url": "https://plushlife.plushlife-app.workers.dev/",
     "androidScheme": "https"
   },
   "android": {
