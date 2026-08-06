@@ -1,4 +1,4 @@
-name: One-time Google Play upload test 25
+name: One-time Google Play closed testing upload 26
 
 on:
   push:
@@ -40,11 +40,11 @@ jobs:
       - name: Build www and sync Android
         run: npm run android:sync
 
-      - name: Set release version 25
+      - name: Set release version 26
         working-directory: android/app
         run: |
-          sed -i "s/versionCode 1/versionCode 25/" build.gradle
-          sed -i 's/versionName "1.0"/versionName "1.0.25"/' build.gradle
+          sed -i "s/versionCode 1/versionCode 26/" build.gradle
+          sed -i 's/versionName "1.0"/versionName "1.0.26"/' build.gradle
 
       - name: Decode signing keystore
         run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
@@ -69,17 +69,17 @@ jobs:
       - name: Upload AAB artifact
         uses: actions/upload-artifact@v7
         with:
-          name: app-release-25
+          name: app-release-26
           path: android/app/build/outputs/bundle/release/app-release.aab
           retention-days: 30
 
-      - name: Publish to Google Play internal testing
+      - name: Publish to Google Play closed testing
         uses: r0adkll/upload-google-play@v1
         with:
           serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
           packageName: com.PlushLife
           releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
-          track: internal
+          track: alpha
           status: completed
 
       - name: Remove decoded keystore
