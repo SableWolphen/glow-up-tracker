@@ -68,3 +68,5 @@ jobs:
       - name: Remove decoded keystore
         if: always()
         run: rm -f android/app/release.keystore
+
+# Retry trigger after GitHub Actions queue recovery.
