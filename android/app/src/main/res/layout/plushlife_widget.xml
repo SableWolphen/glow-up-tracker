@@ -63,20 +63,13 @@
         android:textSize="13sp"
         android:visibility="gone" />
 
-    <View
-        android:layout_width="match_parent"
-        android:layout_height="0dp"
-        android:layout_weight="1"
-        android:minHeight="4dp" />
-
-    <!-- Today's and this week's progress side by side instead of stacked —
-         two separate label+bar rows needed enough vertical space that on
-         anything but a tall widget placement, Android clipped them off the
-         bottom entirely rather than shrinking them to fit. -->
+    <!-- RemoteViews only supports a restricted set of widget classes.
+         Do not add a plain <View> spacer here: Samsung One UI rejects the
+         entire widget while inflating its preview/initial layout. -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_marginTop="6dp"
+        android:layout_marginTop="10dp"
         android:orientation="horizontal">
 
         <LinearLayout
