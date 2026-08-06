@@ -20,6 +20,35 @@ assert.equal(care.taskTargetsDate({ day_id: "daily", schedule_days: ["tue", "fri
 assert.equal(care.isSnoozed({ snoozed_until: "2026-08-01T13:00:00" }, reference), true);
 assert.equal(care.notificationId("drink-water"), care.notificationId("drink-water"));
 
+const bulk = care.parseBulkTasks("- Brush teeth\n2. Take meds\n[ ] Drink water\n• Brush teeth\n\nCall doctor", { maxTasks: 3 });
+assert.deepEqual(bulk.tasks, ["Brush teeth", "Take meds", "Drink water"]);
+assert.deepEqual(bulk.duplicates, ["Brush teeth"]);
+assert.deepEqual(bulk.ignored, ["Call doctor"]);
+
+const discovery = care.gentleDiscoverySuggestions({
+  taskCount: 8,
+  daysUsed: 4,
+  hasReminder: false,
+  hasSoftVersion: false,
+  hasGuardian: false,
+  seen: ["bulk-organize"],
+});
+assert.equal(discovery.length, 2);
+assert.equal(discovery[0].id, "tiny-versions");
+assert.equal(discovery[1].id, "gentle-reminders");
+
+const rescue = care.buildRescuePlan([
+  { task_key: "meds", task: "Take medicine", essential_on_low_capacity: true, estimated_minutes: 2 },
+  { task_key: "shower", task: "Take a shower", soft_label: "Wash face", tiny_label: "Use a wipe", estimated_minutes: 20 },
+  { task_key: "water", task: "Drink water", estimated_minutes: 1 },
+  { task_key: "laundry", task: "Do laundry", estimated_minutes: 45 },
+], ["water"], { maxVisible: 2, hasGuardian: true });
+assert.equal(rescue.day_type, "recovery");
+assert.deepEqual(rescue.visible_tasks.map((task) => task.task_key), ["meds", "shower"]);
+assert.equal(rescue.visible_tasks[1].rescue_label, "Use a wipe");
+assert.equal(rescue.hidden_count, 1);
+assert.ok(rescue.guardian_prompt);
+
 async function testReadDeduper() {
   let networkCalls = 0;
   const host = {
