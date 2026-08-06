@@ -1,6 +1,6 @@
 {
   "name": "plushlife",
-  "version": "1.0.31",
+  "version": "1.0.32",
   "private": true,
   "description": "PlushLife — a gentle, private daily routine, habit, self-care, and workout tracker with optional Guardian support.",
   "scripts": {
