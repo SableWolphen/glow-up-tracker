@@ -3,13 +3,14 @@ name: Closed testing Version 34
 on:
   workflow_dispatch: {}
   push:
-    branches: [closed-testing-version-34]
+    branches: [main]
 
 permissions:
   contents: read
 
 jobs:
   build-and-upload:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release-34]')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -68,5 +69,3 @@ jobs:
       - name: Remove decoded keystore
         if: always()
         run: rm -f android/app/release.keystore
-
-# Retry trigger after GitHub Actions queue recovery.
