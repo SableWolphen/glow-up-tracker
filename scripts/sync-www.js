@@ -1,13 +1,6 @@
 #!/usr/bin/env node
-// Builds www/ — the Capacitor Android app's bundled web assets — from the
-// same static site that's deployed to GitHub Pages. The site itself has no
-// build step (index.html compiles its own JSX in-browser via Babel
-// Standalone), so this just copies the deployed files as-is, with one
-// change: CDN <script> tags (unpkg/jsdelivr) are rewritten to load locally
-// vendored copies instead. A packaged native app shouldn't depend on a CDN
-// being reachable to load its own UI shell — Supabase network calls for data
-// are still expected and unaffected. GitHub Pages keeps serving the
-// CDN-based root files untouched; this only affects the Android bundle.
+// Builds www/ — the Capacitor Android app and Cloudflare static deployment —
+// from the same static source files kept at the repository root.
 
 const fs = require("fs");
 const path = require("path");
@@ -21,6 +14,7 @@ const SITE_FILES = [
   "login.html",
   "oauth.html",
   "legal.html",
+  "support.html",
   "account-deletion.html",
   "service-worker.js",
   "manifest.webmanifest",
@@ -32,6 +26,8 @@ const SITE_FILES = [
   "social-preview.png",
   "social-preview.svg",
 ];
+
+const SITE_DIRECTORIES = ["assets"];
 
 const VENDOR_FILES = [
   { src: "node_modules/react/umd/react.production.min.js", dest: "react.production.min.js" },
@@ -51,33 +47,50 @@ function rimraf(target) {
   if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
 }
 
+function copyDirectory(source, destination) {
+  if (!fs.existsSync(source)) return false;
+  fs.cpSync(source, destination, { recursive: true });
+  return true;
+}
+
 function main() {
   rimraf(WWW);
   fs.mkdirSync(VENDOR, { recursive: true });
 
+  let copiedFiles = 0;
   for (const file of SITE_FILES) {
     const src = path.join(ROOT, file);
     if (!fs.existsSync(src)) continue;
-    let content = fs.readFileSync(src, "utf8").toString();
-    if (/\.(html)$/.test(file)) {
+    const destination = path.join(WWW, file);
+    fs.mkdirSync(path.dirname(destination), { recursive: true });
+    if (/\.html$/.test(file)) {
+      let content = fs.readFileSync(src, "utf8");
       for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
-      fs.writeFileSync(path.join(WWW, file), content);
+      fs.writeFileSync(destination, content);
     } else {
-      fs.copyFileSync(src, path.join(WWW, file));
+      fs.copyFileSync(src, destination);
     }
+    copiedFiles += 1;
   }
 
+  let copiedDirectories = 0;
+  for (const directory of SITE_DIRECTORIES) {
+    if (copyDirectory(path.join(ROOT, directory), path.join(WWW, directory))) copiedDirectories += 1;
+  }
+
+  let missingVendorFiles = false;
   for (const { src, dest } of VENDOR_FILES) {
     const from = path.join(ROOT, src);
     if (!fs.existsSync(from)) {
       console.error(`Missing vendor source: ${src} — run "npm install" first.`);
-      process.exitCode = 1;
+      missingVendorFiles = true;
       continue;
     }
     fs.copyFileSync(from, path.join(VENDOR, dest));
   }
 
-  console.log(`www/ synced from repo root (${SITE_FILES.length} site files, ${VENDOR_FILES.length} vendored scripts).`);
+  if (missingVendorFiles) process.exitCode = 1;
+  console.log(`www/ synced (${copiedFiles} files, ${copiedDirectories} directories, ${VENDOR_FILES.length} vendored scripts).`);
 }
 
 main();
