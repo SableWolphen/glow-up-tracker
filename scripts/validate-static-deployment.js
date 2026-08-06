@@ -22,6 +22,8 @@ const REQUIRED_FILES = [
   "assets/entitlements.js",
   "assets/gentle-discovery-ui.js",
   "assets/plushlife-completion.js",
+  "assets/cloudflare-primary.js",
+  "capacitor.config.json",
   "wrangler.jsonc",
 ];
 
@@ -38,10 +40,10 @@ function read(relativePath) {
 
 if (fs.existsSync(path.join(ROOT, "service-worker.js"))) {
   const serviceWorker = read("service-worker.js");
-  if (!serviceWorker.includes('const CACHE_NAME = "plushlife-v31"')) {
-    failures.push("Service worker cache is not set to plushlife-v31.");
+  if (!serviceWorker.includes('const CACHE_NAME = "plushlife-v32"')) {
+    failures.push("Service worker cache is not set to plushlife-v32.");
   }
-  for (const shellFile of ["login.html", "oauth.html", "support.html", "account-deletion.html"]) {
+  for (const shellFile of ["login.html", "oauth.html", "support.html", "account-deletion.html", "assets/cloudflare-primary.js"]) {
     if (!serviceWorker.includes(`./${shellFile}`)) failures.push(`Service worker app shell does not include ${shellFile}.`);
   }
 }
@@ -60,6 +62,18 @@ if (fs.existsSync(path.join(ROOT, "manifest.webmanifest"))) {
 if (fs.existsSync(path.join(ROOT, "wrangler.jsonc"))) {
   const wrangler = read("wrangler.jsonc");
   if (!wrangler.includes('"directory": "./www"')) failures.push("Cloudflare must deploy only the generated www directory.");
+}
+
+if (fs.existsSync(path.join(ROOT, "capacitor.config.json"))) {
+  try {
+    const capacitor = JSON.parse(read("capacitor.config.json"));
+    if (capacitor.appId !== "com.PlushLife") failures.push("Android package name changed unexpectedly.");
+    if (capacitor.server?.url !== "https://plushlife.plushlife-app.workers.dev/") {
+      failures.push("Android server URL is not set to the production Cloudflare host.");
+    }
+  } catch (error) {
+    failures.push(`Capacitor config is invalid JSON: ${error.message}`);
+  }
 }
 
 if (fs.existsSync(path.join(ROOT, "login.html"))) {
