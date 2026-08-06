@@ -20,4 +20,43 @@ assert.equal(care.taskTargetsDate({ day_id: "daily", schedule_days: ["tue", "fri
 assert.equal(care.isSnoozed({ snoozed_until: "2026-08-01T13:00:00" }, reference), true);
 assert.equal(care.notificationId("drink-water"), care.notificationId("drink-water"));
 
-console.log("care-upgrades tests passed");
+async function testReadDeduper() {
+  let networkCalls = 0;
+  const host = {
+    fetch: async () => {
+      networkCalls += 1;
+      await new Promise((resolve) => setTimeout(resolve, 10));
+      return new Response(JSON.stringify({ ok: true }), {
+        status: 200,
+        headers: { "content-type": "application/json" },
+      });
+    },
+  };
+
+  assert.equal(care.installSupabaseReadDeduper(host, { ttlMs: 40 }), true);
+  const url = "https://example.supabase.co/rest/v1/tracker_tasks?select=*";
+  const [first, second] = await Promise.all([host.fetch(url), host.fetch(url)]);
+  assert.equal(networkCalls, 1, "identical in-flight reads should share one network request");
+  assert.deepEqual(await first.json(), { ok: true });
+  assert.deepEqual(await second.json(), { ok: true });
+
+  const cached = await host.fetch(url);
+  assert.equal(networkCalls, 1, "an immediate repeat read should use the short cache");
+  assert.deepEqual(await cached.json(), { ok: true });
+
+  await host.fetch(url, { method: "POST" });
+  assert.equal(networkCalls, 2, "writes must never be deduplicated or cached");
+
+  await new Promise((resolve) => setTimeout(resolve, 50));
+  await host.fetch(url);
+  assert.equal(networkCalls, 3, "reads must refresh after the short cache expires");
+  assert.equal(host.__plushlifeSupabaseReadDeduper.stats.sharedInflight, 1);
+  assert.equal(host.__plushlifeSupabaseReadDeduper.stats.sharedRecent, 1);
+}
+
+testReadDeduper()
+  .then(() => console.log("care-upgrades tests passed"))
+  .catch((error) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
