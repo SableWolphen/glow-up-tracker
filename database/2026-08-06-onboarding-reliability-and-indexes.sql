@@ -1,11 +1,72 @@
--- PlushLife onboarding reliability and low-risk performance fixes.
--- This file is staged for review; apply through a Supabase migration after testing.
+-- PlushLife onboarding reliability, auth safety net, and low-risk performance fixes.
 
 begin;
 
--- Atomically creates or repairs the two records every signed-in account needs.
--- Existing profile choices are preserved unless the caller explicitly supplies
--- a non-empty replacement value. Repeated calls are safe.
+-- Guarantee that every Auth account has the two base rows the app expects.
+-- The rows begin incomplete, so the normal Cozy/Guardian onboarding UI still
+-- controls account type, display name, preferences, and completion state.
+create or replace function public.ensure_new_user_base_rows()
+returns trigger
+language plpgsql
+security definer
+set search_path = public
+as $$
+begin
+  insert into public.tracker_profiles (
+    user_id,
+    display_name,
+    account_type,
+    guardian_read_only,
+    created_at,
+    updated_at
+  ) values (
+    new.id,
+    '',
+    'little',
+    true,
+    now(),
+    now()
+  ) on conflict (user_id) do nothing;
+
+  insert into public.app_preferences (
+    user_id,
+    onboarding_complete,
+    updated_at
+  ) values (
+    new.id,
+    false,
+    now()
+  ) on conflict (user_id) do nothing;
+
+  return new;
+end;
+$$;
+
+revoke all on function public.ensure_new_user_base_rows() from public, anon, authenticated;
+
+drop trigger if exists plushlife_ensure_new_user_base_rows on auth.users;
+create trigger plushlife_ensure_new_user_base_rows
+after insert on auth.users
+for each row execute function public.ensure_new_user_base_rows();
+
+-- Repair already-created Auth accounts that are missing either required row.
+insert into public.tracker_profiles (user_id, display_name, account_type, guardian_read_only, created_at, updated_at)
+select u.id, '', 'little', true, now(), now()
+from auth.users u
+left join public.tracker_profiles p on p.user_id = u.id
+where p.user_id is null
+on conflict (user_id) do nothing;
+
+insert into public.app_preferences (user_id, onboarding_complete, updated_at)
+select u.id, false, now()
+from auth.users u
+left join public.app_preferences p on p.user_id = u.id
+where p.user_id is null
+on conflict (user_id) do nothing;
+
+-- Atomically completes or repairs the two records every signed-in account needs.
+-- Repeated calls are safe, and a caller can only modify their own rows because
+-- this is SECURITY INVOKER and uses auth.uid().
 create or replace function public.complete_my_onboarding(
   requested_display_name text,
   requested_account_type text,
@@ -26,6 +87,10 @@ begin
     raise exception 'authentication required';
   end if;
 
+  if clean_name = '' then
+    raise exception 'display name required';
+  end if;
+
   if clean_type not in ('little', 'caretaker') then
     raise exception 'invalid account type';
   end if;
@@ -44,10 +109,7 @@ begin
     now()
   )
   on conflict (user_id) do update
-  set display_name = case
-        when excluded.display_name <> '' then excluded.display_name
-        else public.tracker_profiles.display_name
-      end,
+  set display_name = excluded.display_name,
       account_type = excluded.account_type,
       guardian_read_only = true,
       updated_at = now();
@@ -70,17 +132,34 @@ begin
 end;
 $$;
 
-revoke all on function public.complete_my_onboarding(text, text, text) from public;
+revoke all on function public.complete_my_onboarding(text, text, text) from public, anon;
 grant execute on function public.complete_my_onboarding(text, text, text) to authenticated;
 
+-- Invitation and relationship RPCs remain client-callable, but anonymous and
+-- PUBLIC execution is explicitly removed. Their definitions already verify the
+-- signed-in email/user against the requested relationship.
+revoke all on function public.accept_support_invitation(uuid) from public, anon;
+revoke all on function public.decline_support_invitation(uuid) from public, anon;
+revoke all on function public.list_my_support_relationships() from public, anon;
+grant execute on function public.accept_support_invitation(uuid) to authenticated;
+grant execute on function public.decline_support_invitation(uuid) to authenticated;
+grant execute on function public.list_my_support_relationships() to authenticated;
+
+-- Admin RPCs retain authenticated execution because the existing admin screen
+-- calls them with a normal signed-in session. Each function performs its own
+-- strict allowlist check before reading or changing data. Anonymous/PUBLIC
+-- execution is removed explicitly.
+revoke all on function public.admin_dashboard_stats() from public, anon;
+revoke all on function public.admin_onboarding_funnel() from public, anon;
+revoke all on function public.admin_set_supporter_status(text, boolean) from public, anon;
+grant execute on function public.admin_dashboard_stats() to authenticated;
+grant execute on function public.admin_onboarding_funnel() to authenticated;
+grant execute on function public.admin_set_supporter_status(text, boolean) to authenticated;
+
 -- Cover foreign keys called out by Supabase's performance advisor.
-create index if not exists app_error_logs_user_id_idx
-  on public.app_error_logs (user_id);
-create index if not exists feedback_messages_user_id_idx
-  on public.feedback_messages (user_id);
-create index if not exists onboarding_events_user_id_idx
-  on public.onboarding_events (user_id);
-create index if not exists supporter_payments_user_id_idx
-  on public.supporter_payments (user_id);
+create index if not exists app_error_logs_user_id_idx on public.app_error_logs (user_id);
+create index if not exists feedback_messages_user_id_idx on public.feedback_messages (user_id);
+create index if not exists onboarding_events_user_id_idx on public.onboarding_events (user_id);
+create index if not exists supporter_payments_user_id_idx on public.supporter_payments (user_id);
 
 commit;
