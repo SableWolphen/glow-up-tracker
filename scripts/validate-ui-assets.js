@@ -21,13 +21,13 @@ for (const file of files) {
 const ui = fs.readFileSync("assets/gentle-discovery-ui.js", "utf8");
 for (const required of [
   "plushlife-save-status",
-  "data-plushlife-rescue-hidden",
+  "plushlife-rescue-hidden",
   "PlushInsights",
-  "PLUSHGUARDIAN QUICK REPLIES",
-  "discoveryDismissed",
+  "No document-wide MutationObserver",
 ]) {
   if (!ui.includes(required)) throw new Error(`Missing required UI integration marker: ${required}`);
 }
+if (/new MutationObserver/.test(ui)) throw new Error("Gentle UI must not install a document-wide MutationObserver");
 
 const completion = fs.readFileSync("assets/plushlife-completion.js", "utf8");
 for (const required of [
@@ -37,9 +37,11 @@ for (const required of [
   "ADMIN_EMAILS",
   "No failed requests captured",
   "send feedback",
+  "No document-wide MutationObserver",
 ]) {
   if (!completion.includes(required)) throw new Error(`Missing completion integration marker: ${required}`);
 }
+if (/new MutationObserver/.test(completion)) throw new Error("Completion layer must not install a document-wide MutationObserver");
 
 const worker = fs.readFileSync("service-worker.js", "utf8");
 if (!worker.includes("plushlife-completion.js") || !worker.includes("`${core}\\n;${completion}`")) {
