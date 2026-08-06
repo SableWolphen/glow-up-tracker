@@ -1,7 +1,10 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
-  if (root) root.PlushLifeCare = api;
+  if (root) {
+    root.PlushLifeCare = api;
+    api.installSupabaseReadDeduper(root);
+  }
 })(typeof window !== "undefined" ? window : globalThis, function () {
   const DAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   const DAY_ALIASES = {
@@ -188,6 +191,100 @@
     return Math.abs((hash + Number(offset || 0)) | 0) || 1;
   }
 
+  function installSupabaseReadDeduper(target, options) {
+    const host = target || (typeof globalThis !== "undefined" ? globalThis : null);
+    if (!host || typeof host.fetch !== "function") return false;
+    if (host.__plushlifeSupabaseReadDeduper) return true;
+
+    const settings = options || {};
+    const ttlMs = Math.max(0, Number(settings.ttlMs ?? 1000));
+    const maxEntries = Math.max(10, Number(settings.maxEntries ?? 100));
+    const originalFetch = host.fetch.bind(host);
+    const inFlight = new Map();
+    const recent = new Map();
+    const stats = { sharedInflight: 0, sharedRecent: 0, networkReads: 0 };
+
+    const headerValue = (headers, name) => {
+      if (!headers) return "";
+      if (typeof headers.get === "function") return headers.get(name) || "";
+      const key = Object.keys(headers).find((item) => item.toLowerCase() === name.toLowerCase());
+      return key ? String(headers[key]) : "";
+    };
+
+    const requestDetails = (input, init) => {
+      const request = input && typeof input === "object" ? input : null;
+      const url = String(request?.url || input || "");
+      const method = String(init?.method || request?.method || "GET").toUpperCase();
+      const headers = init?.headers || request?.headers || null;
+      const signal = init?.signal || request?.signal || null;
+      return { url, method, headers, signal };
+    };
+
+    const buildKey = ({ url, method, headers }) => [
+      method,
+      url,
+      headerValue(headers, "authorization"),
+      headerValue(headers, "apikey"),
+      headerValue(headers, "accept-profile"),
+      headerValue(headers, "range"),
+    ].join("\n");
+
+    const isSafeRead = ({ url, method, signal }) =>
+      !signal &&
+      (method === "GET" || method === "HEAD") &&
+      /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
+
+    const trimRecent = (now) => {
+      for (const [key, entry] of recent) {
+        if (now - entry.savedAt > ttlMs) recent.delete(key);
+      }
+      while (recent.size > maxEntries) recent.delete(recent.keys().next().value);
+    };
+
+    host.fetch = function plushLifeFetch(input, init) {
+      const details = requestDetails(input, init);
+      if (!isSafeRead(details)) return originalFetch(input, init);
+
+      const key = buildKey(details);
+      const now = Date.now();
+      trimRecent(now);
+
+      if (inFlight.has(key)) {
+        stats.sharedInflight += 1;
+        return inFlight.get(key).then((response) => response.clone());
+      }
+
+      const cached = recent.get(key);
+      if (cached && now - cached.savedAt <= ttlMs) {
+        stats.sharedRecent += 1;
+        return Promise.resolve(cached.response.clone());
+      }
+
+      stats.networkReads += 1;
+      const shared = originalFetch(input, init).then((response) => {
+        if (response && response.ok && ttlMs > 0) {
+          recent.set(key, { response: response.clone(), savedAt: Date.now() });
+          trimRecent(Date.now());
+        }
+        return response;
+      }).finally(() => {
+        inFlight.delete(key);
+      });
+      inFlight.set(key, shared);
+      return shared.then((response) => response.clone());
+    };
+
+    host.__plushlifeSupabaseReadDeduper = {
+      stats,
+      clear() { inFlight.clear(); recent.clear(); },
+      restore() {
+        host.fetch = originalFetch;
+        delete host.__plushlifeSupabaseReadDeduper;
+      },
+    };
+    return true;
+  }
+
   return {
     DAY_IDS,
     parseNaturalSchedule,
@@ -198,5 +295,6 @@
     isSnoozed,
     notificationId,
     localDateString,
+    installSupabaseReadDeduper,
   };
 });
