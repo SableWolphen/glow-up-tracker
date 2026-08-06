@@ -1,10 +1,7 @@
 (function (root, factory) {
   const api = factory();
   if (typeof module === "object" && module.exports) module.exports = api;
-  if (root) {
-    root.PlushLifeCare = api;
-    api.installSupabaseReadDeduper(root);
-  }
+  if (root) root.PlushLifeCare = api;
 })(typeof window !== "undefined" ? window : globalThis, function () {
   const DAY_IDS = ["sun", "mon", "tue", "wed", "thu", "fri", "sat"];
   const DAY_ALIASES = {
@@ -97,6 +94,76 @@
     };
   }
 
+  function cleanBulkTaskLine(line) {
+    return String(line || "")
+      .replace(/^\s*(?:[-*•‣▪◦]|\d+[.)]|\[[ xX]\])\s*/, "")
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  function parseBulkTasks(input, options) {
+    const maxTasks = Math.max(1, Math.min(200, Number(options?.maxTasks) || 50));
+    const seen = new Set();
+    const tasks = [];
+    const duplicates = [];
+    const ignored = [];
+    String(input || "").split(/\r?\n/).forEach((rawLine) => {
+      const task = cleanBulkTaskLine(rawLine).slice(0, 140);
+      if (!task) return;
+      const key = task.toLocaleLowerCase();
+      if (seen.has(key)) {
+        duplicates.push(task);
+        return;
+      }
+      seen.add(key);
+      if (tasks.length >= maxTasks) {
+        ignored.push(task);
+        return;
+      }
+      tasks.push(task);
+    });
+    return { tasks, duplicates, ignored, maxTasks };
+  }
+
+  function gentleDiscoverySuggestions(context) {
+    const taskCount = Math.max(0, Number(context?.taskCount) || 0);
+    const daysUsed = Math.max(0, Number(context?.daysUsed) || 0);
+    const hasReminder = !!context?.hasReminder;
+    const hasSoftVersion = !!context?.hasSoftVersion;
+    const hasGuardian = !!context?.hasGuardian;
+    const seen = new Set(Array.isArray(context?.seen) ? context.seen : []);
+    const suggestions = [];
+    const add = (id, title, body, action) => {
+      if (!seen.has(id)) suggestions.push({ id, title, body, action });
+    };
+    if (taskCount >= 4) add("bulk-organize", "Make the list easier to scan", "Group tasks into Morning, Afternoon, Evening, or your own sections.", "organize");
+    if (taskCount >= 6 && !hasSoftVersion) add("tiny-versions", "Prepare for lower-energy days", "Add a softer or tiny version to important tasks without deleting the full version.", "soft_versions");
+    if (taskCount >= 1 && !hasReminder) add("gentle-reminders", "Want a gentle reminder?", "Choose reminders only for the tasks that truly need a nudge.", "reminders");
+    if (daysUsed >= 3) add("progress", "Your PlushProgress is ready", "See patterns and completed care without turning your life into a score.", "progress");
+    if (daysUsed >= 2 && !hasGuardian) add("guardian", "Support is optional", "Connect a trusted Guardian only when sharing would genuinely help.", "guardian");
+    return suggestions.slice(0, 2);
+  }
+
+  function buildRescuePlan(tasks, completedKeys, options) {
+    const done = new Set(Array.isArray(completedKeys) ? completedKeys : []);
+    const maxVisible = Math.max(1, Math.min(5, Number(options?.maxVisible) || 3));
+    const active = (Array.isArray(tasks) ? tasks : []).filter((task) => task && !task.archived_at && !done.has(task.task_key));
+    const essential = active.filter((task) => task.essential_on_low_capacity);
+    const short = active.filter((task) => !task.essential_on_low_capacity && Number(task.estimated_minutes || 999) <= 10);
+    const remaining = active.filter((task) => !essential.includes(task) && !short.includes(task));
+    const selected = [...essential, ...short, ...remaining].slice(0, maxVisible).map((task) => ({
+      ...task,
+      rescue_label: task.tiny_label || task.soft_label || task.task,
+    }));
+    return {
+      day_type: "recovery",
+      visible_tasks: selected,
+      hidden_count: Math.max(0, active.length - selected.length),
+      grounding_prompt: options?.groundingPrompt || "Take one slow breath. One caring step is enough.",
+      guardian_prompt: !!options?.hasGuardian ? "Would a no-pressure Guardian check-in help?" : null,
+    };
+  }
+
   function taskTargetsDate(task, date, dayIdForDate) {
     if (!task || task.archived_at) return false;
     const dateDayId = dayIdForDate(date);
@@ -121,99 +188,15 @@
     return Math.abs((hash + Number(offset || 0)) | 0) || 1;
   }
 
-  function installSupabaseReadDeduper(target, options) {
-    const host = target || (typeof globalThis !== "undefined" ? globalThis : null);
-    if (!host || typeof host.fetch !== "function") return false;
-    if (host.__plushlifeSupabaseReadDeduper) return true;
-
-    const settings = options || {};
-    const ttlMs = Math.max(0, Number(settings.ttlMs ?? 1000));
-    const maxEntries = Math.max(10, Number(settings.maxEntries ?? 100));
-    const originalFetch = host.fetch.bind(host);
-    const inFlight = new Map();
-    const recent = new Map();
-    const stats = { sharedInflight: 0, sharedRecent: 0, networkReads: 0 };
-
-    const headerValue = (headers, name) => {
-      if (!headers) return "";
-      if (typeof headers.get === "function") return headers.get(name) || "";
-      const key = Object.keys(headers).find((item) => item.toLowerCase() === name.toLowerCase());
-      return key ? String(headers[key]) : "";
-    };
-
-    const requestDetails = (input, init) => {
-      const request = input && typeof input === "object" ? input : null;
-      const url = String(request?.url || input || "");
-      const method = String(init?.method || request?.method || "GET").toUpperCase();
-      const headers = init?.headers || request?.headers || null;
-      const signal = init?.signal || request?.signal || null;
-      return { url, method, headers, signal };
-    };
-
-    const buildKey = ({ url, method, headers }) => [
-      method,
-      url,
-      headerValue(headers, "authorization"),
-      headerValue(headers, "apikey"),
-      headerValue(headers, "accept-profile"),
-      headerValue(headers, "range"),
-    ].join("\n");
-
-    const isSafeRead = ({ url, method, signal }) =>
-      !signal &&
-      (method === "GET" || method === "HEAD") &&
-      /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
-
-    const trimRecent = (now) => {
-      for (const [key, entry] of recent) {
-        if (now - entry.savedAt > ttlMs) recent.delete(key);
-      }
-      while (recent.size > maxEntries) recent.delete(recent.keys().next().value);
-    };
-
-    host.fetch = function plushLifeFetch(input, init) {
-      const details = requestDetails(input, init);
-      if (!isSafeRead(details)) return originalFetch(input, init);
-
-      const key = buildKey(details);
-      const now = Date.now();
-      trimRecent(now);
-
-      if (inFlight.has(key)) {
-        stats.sharedInflight += 1;
-        return inFlight.get(key).then((response) => response.clone());
-      }
-
-      const cached = recent.get(key);
-      if (cached && now - cached.savedAt <= ttlMs) {
-        stats.sharedRecent += 1;
-        return Promise.resolve(cached.response.clone());
-      }
-
-      stats.networkReads += 1;
-      const shared = originalFetch(input, init).then((response) => {
-        if (response && response.ok && ttlMs > 0) {
-          recent.set(key, { response: response.clone(), savedAt: Date.now() });
-          trimRecent(Date.now());
-        }
-        return response;
-      }).finally(() => {
-        inFlight.delete(key);
-      });
-      inFlight.set(key, shared);
-      return shared.then((response) => response.clone());
-    };
-
-    host.__plushlifeSupabaseReadDeduper = {
-      stats,
-      clear() { inFlight.clear(); recent.clear(); },
-      restore() {
-        host.fetch = originalFetch;
-        delete host.__plushlifeSupabaseReadDeduper;
-      },
-    };
-    return true;
-  }
-
-  return { DAY_IDS, parseNaturalSchedule, taskTargetsDate, isSnoozed, notificationId, localDateString, installSupabaseReadDeduper };
+  return {
+    DAY_IDS,
+    parseNaturalSchedule,
+    parseBulkTasks,
+    gentleDiscoverySuggestions,
+    buildRescuePlan,
+    taskTargetsDate,
+    isSnoozed,
+    notificationId,
+    localDateString,
+  };
 });
