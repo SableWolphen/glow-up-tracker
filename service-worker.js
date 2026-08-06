@@ -1,5 +1,5 @@
-const CACHE_NAME = "plushlife-v22";
-const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
+const CACHE_NAME = "plushlife-v23";
+const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./assets/gentle-discovery-ui.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
 function privateTrackerUrl(candidate) {
@@ -35,10 +35,6 @@ self.addEventListener("activate", (event) => {
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
 
-  // Android's Capacitor WebView doesn't always report top-level page loads
-  // with mode "navigate" the way a normal browser tab does, so relying on
-  // that alone let stale cached HTML get served after a fix shipped —
-  // "destination: document" catches those cases too.
   if (event.request.mode === "navigate" || event.request.destination === "document") {
     event.respondWith(
       fetch(event.request, { cache: "no-store" })
@@ -50,6 +46,21 @@ self.addEventListener("fetch", (event) => {
         .catch(() => caches.match(event.request).then(
           (cached) => cached || caches.match("./")
         ))
+    );
+    return;
+  }
+
+  // App JavaScript should refresh from the network whenever possible so a
+  // newly deployed feature cannot stay hidden behind an older cached script.
+  if (event.request.destination === "script" && new URL(event.request.url).origin === self.location.origin) {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" })
+        .then((response) => {
+          const copy = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
     );
     return;
   }
