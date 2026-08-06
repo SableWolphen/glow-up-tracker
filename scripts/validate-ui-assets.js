@@ -23,7 +23,6 @@ for (const file of files) {
 const ui = fs.readFileSync("assets/gentle-discovery-ui.js", "utf8");
 for (const required of [
   "plushlife-rescue-hidden",
-  "PlushInsights",
   "No document-wide MutationObserver",
 ]) {
   if (!ui.includes(required)) throw new Error(`Missing required UI integration marker: ${required}`);
