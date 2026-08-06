@@ -1,4 +1,4 @@
-const CACHE_NAME = "plushlife-v32";
+const CACHE_NAME = "plushlife-v34";
 const APP_SHELL = [
   "./",
   "./login.html",
@@ -12,6 +12,7 @@ const APP_SHELL = [
   "./assets/gentle-discovery-ui.js",
   "./assets/plushlife-completion.js",
   "./assets/cloudflare-primary.js",
+  "./assets/plush-guide.js",
   "./icon.svg?v=2",
   "./icon-192.png",
   "./icon-512.png",
