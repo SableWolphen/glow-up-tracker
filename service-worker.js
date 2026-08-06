@@ -1,5 +1,5 @@
-const CACHE_NAME = "plushlife-v24";
-const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./assets/gentle-discovery-ui.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
+const CACHE_NAME = "plushlife-v25";
+const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./assets/gentle-discovery-ui.js", "./assets/plushlife-completion.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
 function privateTrackerUrl(candidate) {
@@ -29,6 +29,17 @@ self.addEventListener("fetch", (event) => {
       caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
       return response;
     }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./"))));
+    return;
+  }
+  if (new URL(event.request.url).pathname.endsWith("/assets/gentle-discovery-ui.js")) {
+    event.respondWith(Promise.all([
+      fetch(event.request, { cache: "no-store" }).then((response) => response.ok ? response.text() : Promise.reject(new Error("Core UI unavailable"))),
+      fetch(new URL("./assets/plushlife-completion.js", self.registration.scope), { cache: "no-store" }).then((response) => response.ok ? response.text() : ""),
+    ]).then(([core, completion]) => {
+      const response = new Response(`${core}\n;${completion}`, { headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store" } });
+      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+      return response;
+    }).catch(() => caches.match(event.request)));
     return;
   }
   if (event.request.destination === "script" && new URL(event.request.url).origin === self.location.origin) {
