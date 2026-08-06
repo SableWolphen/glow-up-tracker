@@ -1,6 +1,7 @@
 name: Closed testing PlushRescue 30
 
 on:
+  workflow_dispatch: {}
   push:
     branches: [closed-testing-plushrescue-30]
 
