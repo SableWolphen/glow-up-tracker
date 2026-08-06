@@ -1,5 +1,22 @@
-const CACHE_NAME = "plushlife-v25";
-const APP_SHELL = ["./", "./login.html", "./legal.html", "./manifest.webmanifest", "./assets/care-upgrades.js", "./assets/gentle-discovery-ui.js", "./assets/plushlife-completion.js", "./icon.svg?v=2", "./icon-192.png", "./icon-512.png", "./icon-maskable-192.png", "./icon-maskable-512.png"];
+const CACHE_NAME = "plushlife-v31";
+const APP_SHELL = [
+  "./",
+  "./login.html",
+  "./oauth.html",
+  "./legal.html",
+  "./support.html",
+  "./account-deletion.html",
+  "./manifest.webmanifest",
+  "./assets/care-upgrades.js",
+  "./assets/entitlements.js",
+  "./assets/gentle-discovery-ui.js",
+  "./assets/plushlife-completion.js",
+  "./icon.svg?v=2",
+  "./icon-192.png",
+  "./icon-512.png",
+  "./icon-maskable-192.png",
+  "./icon-maskable-512.png",
+];
 const PRIVATE_TRACKER_URL = new URL("./", self.registration.scope).href;
 
 function privateTrackerUrl(candidate) {
@@ -14,49 +31,91 @@ function privateTrackerUrl(candidate) {
 }
 
 self.addEventListener("install", (event) => {
-  event.waitUntil(caches.open(CACHE_NAME).then((cache) => cache.addAll(APP_SHELL)).then(() => self.skipWaiting()));
+  event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then((cache) => Promise.allSettled(APP_SHELL.map((url) => cache.add(url))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (event) => {
-  event.waitUntil(caches.keys().then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key)))).then(() => self.clients.claim()));
+  event.waitUntil(
+    caches.keys()
+      .then((keys) => Promise.all(keys.filter((key) => key !== CACHE_NAME).map((key) => caches.delete(key))))
+      .then(() => self.clients.claim())
+  );
+});
+
+self.addEventListener("message", (event) => {
+  if (event.data && event.data.type === "SKIP_WAITING") self.skipWaiting();
 });
 
 self.addEventListener("fetch", (event) => {
   if (event.request.method !== "GET") return;
+
+  const requestUrl = new URL(event.request.url);
+  const sameOrigin = requestUrl.origin === self.location.origin;
+
   if (event.request.mode === "navigate" || event.request.destination === "document") {
-    event.respondWith(fetch(event.request, { cache: "no-store" }).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }).catch(() => caches.match(event.request).then((cached) => cached || caches.match("./"))));
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" })
+        .then((response) => {
+          if (sameOrigin && response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request).then((cached) => cached || caches.match("./")))
+    );
     return;
   }
-  if (new URL(event.request.url).pathname.endsWith("/assets/gentle-discovery-ui.js")) {
-    event.respondWith(Promise.all([
-      fetch(event.request, { cache: "no-store" }).then((response) => response.ok ? response.text() : Promise.reject(new Error("Core UI unavailable"))),
-      fetch(new URL("./assets/plushlife-completion.js", self.registration.scope), { cache: "no-store" }).then((response) => response.ok ? response.text() : ""),
-    ]).then(([core, completion]) => {
-      const response = new Response(`${core}\n;${completion}`, { headers: { "Content-Type": "application/javascript; charset=utf-8", "Cache-Control": "no-store" } });
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
-      return response;
-    }).catch(() => caches.match(event.request)));
+
+  if (sameOrigin && requestUrl.pathname.endsWith("/assets/gentle-discovery-ui.js")) {
+    event.respondWith(
+      Promise.all([
+        fetch(event.request, { cache: "no-store" }).then((response) => response.ok ? response.text() : Promise.reject(new Error("Core UI unavailable"))),
+        fetch(new URL("./assets/plushlife-completion.js", self.registration.scope), { cache: "no-store" }).then((response) => response.ok ? response.text() : ""),
+      ])
+        .then(([core, completion]) => {
+          const response = new Response(`${core}\n;${completion}`, {
+            headers: {
+              "Content-Type": "application/javascript; charset=utf-8",
+              "Cache-Control": "no-store",
+            },
+          });
+          caches.open(CACHE_NAME).then((cache) => cache.put(event.request, response.clone()));
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
-  if (event.request.destination === "script" && new URL(event.request.url).origin === self.location.origin) {
-    event.respondWith(fetch(event.request, { cache: "no-store" }).then((response) => {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-      return response;
-    }).catch(() => caches.match(event.request)));
+
+  if (sameOrigin && event.request.destination === "script") {
+    event.respondWith(
+      fetch(event.request, { cache: "no-store" })
+        .then((response) => {
+          if (response.ok) {
+            const copy = response.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return response;
+        })
+        .catch(() => caches.match(event.request))
+    );
     return;
   }
-  event.respondWith(caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
-    if (new URL(event.request.url).origin === self.location.origin) {
-      const copy = response.clone();
-      caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
-    }
-    return response;
-  })));
+
+  event.respondWith(
+    caches.match(event.request).then((cached) => cached || fetch(event.request).then((response) => {
+      if (sameOrigin && response.ok) {
+        const copy = response.clone();
+        caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+      }
+      return response;
+    }))
+  );
 });
 
 self.addEventListener("push", (event) => {
