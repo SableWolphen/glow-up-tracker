@@ -43,7 +43,10 @@ const CDN_REPLACEMENTS = [
   ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js", "./vendor/supabase.min.js"],
 ];
 
-const GENERATED_INDEX_SCRIPT = '<script src="./assets/cloudflare-primary.js"></script>';
+const GENERATED_INDEX_SCRIPTS = [
+  '<script src="./assets/cloudflare-primary.js"></script>',
+  '<script src="./assets/plush-guide.js"></script>',
+];
 
 function rimraf(target) {
   if (fs.existsSync(target)) fs.rmSync(target, { recursive: true, force: true });
@@ -60,10 +63,12 @@ function prepareHtml(file, source) {
   for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
 
   // Cloudflare and Android use the generated www/ build. Inject hosting
-  // compatibility there while leaving the GitHub Pages source untouched as
-  // an independently deployable backup.
-  if (file === "index.html" && !content.includes(GENERATED_INDEX_SCRIPT)) {
-    content = content.replace("</body>", `  ${GENERATED_INDEX_SCRIPT}\n</body>`);
+  // compatibility and the non-destructive feature guide there while leaving
+  // the GitHub Pages source untouched as an independently deployable backup.
+  if (file === "index.html") {
+    for (const script of GENERATED_INDEX_SCRIPTS) {
+      if (!content.includes(script)) content = content.replace("</body>", `  ${script}\n</body>`);
+    }
   }
 
   return content;
