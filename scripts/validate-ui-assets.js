@@ -32,11 +32,11 @@ for (const required of [
 const completion = fs.readFileSync("assets/plushlife-completion.js", "utf8");
 for (const required of [
   "PLUSHQA · ADMIN ONLY",
-  "feedback_messages",
   "plushlife-context-feedback",
   "plushlife-offline-draft",
   "ADMIN_EMAILS",
   "No failed requests captured",
+  "send feedback",
 ]) {
   if (!completion.includes(required)) throw new Error(`Missing completion integration marker: ${required}`);
 }
