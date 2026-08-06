@@ -36,10 +36,20 @@ jobs:
       - name: Run app tests
         run: npm test
 
+      - name: Build clean Pages artifact
+        run: |
+          rm -rf _site
+          mkdir _site
+          cp index.html login.html legal.html oauth.html support.html account-deletion.html _site/
+          cp styles.css service-worker.js manifest.webmanifest _site/
+          cp icon.svg icon-192.png icon-512.png icon-maskable-192.png icon-maskable-512.png _site/
+          cp social-preview.png social-preview.svg _site/
+          cp -R assets _site/assets
+
       - name: Upload site
         uses: actions/upload-pages-artifact@v3
         with:
-          path: .
+          path: _site
 
       - name: Deploy
         id: deployment
