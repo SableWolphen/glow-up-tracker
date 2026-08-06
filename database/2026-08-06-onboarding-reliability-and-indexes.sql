@@ -1,10 +1,8 @@
 -- PlushLife onboarding reliability, auth safety net, and low-risk performance fixes.
+-- Applied to production Supabase on 2026-08-06 and retained here as source history.
 
 begin;
 
--- Guarantee that every Auth account has the two base rows the app expects.
--- The rows begin incomplete, so the normal Cozy/Guardian onboarding UI still
--- controls account type, display name, preferences, and completion state.
 create or replace function public.ensure_new_user_base_rows()
 returns trigger
 language plpgsql
@@ -49,7 +47,6 @@ create trigger plushlife_ensure_new_user_base_rows
 after insert on auth.users
 for each row execute function public.ensure_new_user_base_rows();
 
--- Repair already-created Auth accounts that are missing either required row.
 insert into public.tracker_profiles (user_id, display_name, account_type, guardian_read_only, created_at, updated_at)
 select u.id, '', 'little', true, now(), now()
 from auth.users u
@@ -64,9 +61,6 @@ left join public.app_preferences p on p.user_id = u.id
 where p.user_id is null
 on conflict (user_id) do nothing;
 
--- Atomically completes or repairs the two records every signed-in account needs.
--- Repeated calls are safe, and a caller can only modify their own rows because
--- this is SECURITY INVOKER and uses auth.uid().
 create or replace function public.complete_my_onboarding(
   requested_display_name text,
   requested_account_type text,
@@ -135,9 +129,6 @@ $$;
 revoke all on function public.complete_my_onboarding(text, text, text) from public, anon;
 grant execute on function public.complete_my_onboarding(text, text, text) to authenticated;
 
--- Invitation and relationship RPCs remain client-callable, but anonymous and
--- PUBLIC execution is explicitly removed. Their definitions already verify the
--- signed-in email/user against the requested relationship.
 revoke all on function public.accept_support_invitation(uuid) from public, anon;
 revoke all on function public.decline_support_invitation(uuid) from public, anon;
 revoke all on function public.list_my_support_relationships() from public, anon;
@@ -145,10 +136,6 @@ grant execute on function public.accept_support_invitation(uuid) to authenticate
 grant execute on function public.decline_support_invitation(uuid) to authenticated;
 grant execute on function public.list_my_support_relationships() to authenticated;
 
--- Admin RPCs retain authenticated execution because the existing admin screen
--- calls them with a normal signed-in session. Each function performs its own
--- strict allowlist check before reading or changing data. Anonymous/PUBLIC
--- execution is removed explicitly.
 revoke all on function public.admin_dashboard_stats() from public, anon;
 revoke all on function public.admin_onboarding_funnel() from public, anon;
 revoke all on function public.admin_set_supporter_status(text, boolean) from public, anon;
@@ -156,7 +143,6 @@ grant execute on function public.admin_dashboard_stats() to authenticated;
 grant execute on function public.admin_onboarding_funnel() to authenticated;
 grant execute on function public.admin_set_supporter_status(text, boolean) to authenticated;
 
--- Cover foreign keys called out by Supabase's performance advisor.
 create index if not exists app_error_logs_user_id_idx on public.app_error_logs (user_id);
 create index if not exists feedback_messages_user_id_idx on public.feedback_messages (user_id);
 create index if not exists onboarding_events_user_id_idx on public.onboarding_events (user_id);
