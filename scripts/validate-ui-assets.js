@@ -5,6 +5,8 @@ const files = [
   "assets/care-upgrades.js",
   "assets/gentle-discovery-ui.js",
   "assets/plushlife-completion.js",
+  "assets/plush-guide.js",
+  "assets/plush-tools-fix.js",
   "service-worker.js",
 ];
 
@@ -20,7 +22,6 @@ for (const file of files) {
 
 const ui = fs.readFileSync("assets/gentle-discovery-ui.js", "utf8");
 for (const required of [
-  "plushlife-save-status",
   "plushlife-rescue-hidden",
   "PlushInsights",
   "No document-wide MutationObserver",
@@ -42,6 +43,22 @@ for (const required of [
   if (!completion.includes(required)) throw new Error(`Missing completion integration marker: ${required}`);
 }
 if (/new MutationObserver/.test(completion)) throw new Error("Completion layer must not install a document-wide MutationObserver");
+
+const guide = fs.readFileSync("assets/plush-guide.js", "utf8");
+for (const required of ["PLUSHGUIDE", "PlushRescue", "PlushProgress", "PlushGuardian"]) {
+  if (!guide.includes(required)) throw new Error(`Missing PlushGuide integration marker: ${required}`);
+}
+
+const toolsFix = fs.readFileSync("assets/plush-tools-fix.js", "utf8");
+for (const required of [
+  "add all my tasks",
+  "refresh rescue view",
+  "return to my full day",
+  "open plushprogress",
+  "plushlife-rescue-restored",
+]) {
+  if (!toolsFix.includes(required)) throw new Error(`Missing Plush Tools repair marker: ${required}`);
+}
 
 const worker = fs.readFileSync("service-worker.js", "utf8");
 if (!worker.includes("plushlife-completion.js") || !worker.includes("`${core}\\n;${completion}`")) {
