@@ -1,4 +1,4 @@
-name: Inspect PlushGuide once
+name: Validate PlushGuide once
 on:
   push:
     branches: [main]
@@ -7,11 +7,17 @@ on:
 permissions:
   contents: read
 jobs:
-  inspect:
+  validate:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Locate PlushGuide source
-        run: |
-          echo '=== files containing PlushGuide-ish text ==='
-          grep -RniE 'PLUSHGUIDE|PlushGuide|Everything you already have|MAKE TODAY FIT|PlushGuide does not create|PlushFocus|Change My Tasks' . --exclude-dir=.git --exclude='package-lock.json' | head -n 200 || true
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - name: Install dependencies
+        run: npm ci
+      - name: Check PlushGuide JavaScript syntax
+        run: node --check assets/plush-guide.js
+      - name: Run project tests
+        run: npm test
