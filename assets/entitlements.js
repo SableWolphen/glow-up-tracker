@@ -69,3 +69,26 @@
 
   return { PLUSH_PLANS, PLUSH_FEATURE_FLAGS, PLAN_FEATURES, hasPlushFeature };
 });
+
+// The optional discovery layer used to cap the Home/Today list at six DOM
+// controls and hide the rest behind a generated "Show more" button. That
+// heuristic cannot reliably distinguish tracker rows from other controls and
+// caused the UI to report (for example) 0/18 while only six tasks were shown.
+// PlushRescue already owns intentional list reduction, so the normal Today
+// screen must always keep its full rendered task list visible.
+(function keepFullTodayTaskListVisible() {
+  if (typeof window === "undefined" || typeof document === "undefined") return;
+  const restoreOverflowRows = () => {
+    document.querySelectorAll('[data-plushlife-home-overflow]').forEach((node) => {
+      delete node.dataset.plushlifeHomeOverflow;
+    });
+    document.getElementById("plushlife-home-more")?.remove();
+  };
+  restoreOverflowRows();
+  window.addEventListener("load", restoreOverflowRows, { once: true });
+  // The discovery helper currently reevaluates its presentation periodically.
+  // This tiny targeted cleanup prevents only its six-row cap; it does not
+  // touch data-plushlife-rescue-hidden, so explicit PlushRescue modes still
+  // reduce the list exactly as requested by the user.
+  window.setInterval(restoreOverflowRows, 250);
+})();
