@@ -155,8 +155,8 @@
     const ttlMs = Math.max(0, Number(options?.ttlMs ?? 1000));
     const maxEntries = Math.max(10, Number(options?.maxEntries ?? 100));
     const originalFetch = host.fetch.bind(host);
-    const inFlight = new Map(), recent = new Map();
-    const stats = { sharedInflight: 0, sharedRecent: 0, networkReads: 0 };
+    const inFlight = new Map(), recent = new Map(), writeInFlight = new Map();
+    const stats = { sharedInflight: 0, sharedRecent: 0, networkReads: 0, sharedWriteInflight: 0, networkWrites: 0 };
     const headerValue = (headers, name) => {
       if (!headers) return "";
       if (typeof headers.get === "function") return headers.get(name) || "";
@@ -170,33 +170,80 @@
         method: String(init?.method || request?.method || "GET").toUpperCase(),
         headers: init?.headers || request?.headers || null,
         signal: init?.signal || request?.signal || null,
+        body: typeof init?.body === "string" ? init.body : null,
       };
     };
     const buildKey = ({ url, method, headers }) => [method, url, headerValue(headers, "authorization"), headerValue(headers, "apikey"), headerValue(headers, "accept-profile"), headerValue(headers, "range")].join("\n");
-    const isSafeRead = ({ url, method, signal }) => !signal && (method === "GET" || method === "HEAD") && /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
+    const canonicalWriteBody = ({ url, body }) => {
+      if (typeof body !== "string" || !body) return body || "";
+      try {
+        const parsed = JSON.parse(body);
+        const normalizeRow = (value) => {
+          if (!value || typeof value !== "object" || Array.isArray(value)) return value;
+          const copy = { ...value };
+          // updated_at is client-generated and can differ by a few milliseconds
+          // when the same action is accidentally fired twice.
+          delete copy.updated_at;
+          // New tracker tasks intentionally use a random key. Ignore only that
+          // generated key when deciding whether two simultaneous inserts are the
+          // same user action. The explicit Duplicate action changes task content,
+          // so it remains a separate write.
+          if (/\/rest\/v1\/tracker_tasks(?:\?|$)/.test(url)) delete copy.task_key;
+          return copy;
+        };
+        return JSON.stringify(Array.isArray(parsed) ? parsed.map(normalizeRow) : normalizeRow(parsed));
+      } catch (_) {
+        return body;
+      }
+    };
+    const buildWriteKey = (details) => [
+      details.method,
+      details.url,
+      headerValue(details.headers, "authorization"),
+      headerValue(details.headers, "apikey"),
+      headerValue(details.headers, "content-profile"),
+      headerValue(details.headers, "prefer"),
+      canonicalWriteBody(details),
+    ].join("\n");
+    const isSupabaseRest = (url) => /^https:\/\/[^/]+\.supabase\.co\/rest\/v1\//.test(url);
+    const isSafeRead = ({ url, method, signal }) => !signal && (method === "GET" || method === "HEAD") && isSupabaseRest(url);
+    const isDedupableWrite = ({ url, method, signal, body }) => !signal && isSupabaseRest(url) && ["POST", "PUT", "PATCH", "DELETE"].includes(method) && (body === null || typeof body === "string");
     const trimRecent = (now) => {
       for (const [key, entry] of recent) if (now - entry.savedAt > ttlMs) recent.delete(key);
       while (recent.size > maxEntries) recent.delete(recent.keys().next().value);
     };
     host.fetch = function plushLifeFetch(input, init) {
       const details = requestDetails(input, init);
-      if (!isSafeRead(details)) return originalFetch(input, init);
-      const key = buildKey(details), now = Date.now();
-      trimRecent(now);
-      if (inFlight.has(key)) { stats.sharedInflight += 1; return inFlight.get(key).then((response) => response.clone()); }
-      const cached = recent.get(key);
-      if (cached && now - cached.savedAt <= ttlMs) { stats.sharedRecent += 1; return Promise.resolve(cached.response.clone()); }
-      stats.networkReads += 1;
-      const shared = originalFetch(input, init).then((response) => {
-        if (response?.ok && ttlMs > 0) { recent.set(key, { response: response.clone(), savedAt: Date.now() }); trimRecent(Date.now()); }
-        return response;
-      }).finally(() => inFlight.delete(key));
-      inFlight.set(key, shared);
-      return shared.then((response) => response.clone());
+      if (isSafeRead(details)) {
+        const key = buildKey(details), now = Date.now();
+        trimRecent(now);
+        if (inFlight.has(key)) { stats.sharedInflight += 1; return inFlight.get(key).then((response) => response.clone()); }
+        const cached = recent.get(key);
+        if (cached && now - cached.savedAt <= ttlMs) { stats.sharedRecent += 1; return Promise.resolve(cached.response.clone()); }
+        stats.networkReads += 1;
+        const shared = originalFetch(input, init).then((response) => {
+          if (response?.ok && ttlMs > 0) { recent.set(key, { response: response.clone(), savedAt: Date.now() }); trimRecent(Date.now()); }
+          return response;
+        }).finally(() => inFlight.delete(key));
+        inFlight.set(key, shared);
+        return shared.then((response) => response.clone());
+      }
+      if (isDedupableWrite(details)) {
+        const key = buildWriteKey(details);
+        if (writeInFlight.has(key)) {
+          stats.sharedWriteInflight += 1;
+          return writeInFlight.get(key).then((response) => response.clone());
+        }
+        stats.networkWrites += 1;
+        const sharedWrite = originalFetch(input, init).finally(() => writeInFlight.delete(key));
+        writeInFlight.set(key, sharedWrite);
+        return sharedWrite.then((response) => response.clone());
+      }
+      return originalFetch(input, init);
     };
     host.__plushlifeSupabaseReadDeduper = {
       stats,
-      clear() { inFlight.clear(); recent.clear(); },
+      clear() { inFlight.clear(); recent.clear(); writeInFlight.clear(); },
       restore() { host.fetch = originalFetch; delete host.__plushlifeSupabaseReadDeduper; },
     };
     return true;
