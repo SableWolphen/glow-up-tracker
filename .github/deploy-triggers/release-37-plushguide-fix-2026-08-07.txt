@@ -1,0 +1,1 @@
+Trigger Google Play closed testing release 37 with the PlushGuide spotlight targeting fix.
