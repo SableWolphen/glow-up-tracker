@@ -4557,6 +4557,18 @@ function GlowUpTracker() {
     : ALL.find((item) => item.id === active);
   const scheduleDayId = isHistoricalView ? selectedProgressDayId : (active === "daily" ? dayIdForDate(period.date) : active);
   const scheduleEditingDayId = scheduleEditDayId || scheduleDayId;
+  // Tasks is a week-aware view: Today stays the default, while the same
+  // selectedProgressDate pipeline can safely preview the rest of this week.
+  // Existing toggle() guards already prevent completing future tasks.
+  const taskWeekDates = Array.from({ length: 7 }, (_, index) => offsetDate(period.weekStart, index));
+  const selectedTaskViewIsRest = !isHistoricalView && dailyCheckIn.day_type === "rest";
+  const selectedTaskDateLabel = new Date(`${selectedProgressDate}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+  const selectTaskPreviewDate = (date) => {
+    setSelectedProgressDate(date);
+    setActive(dayIdForDate(date));
+    setFocusHelperOpen(false);
+    setFocusSuggestionKey(null);
+  };
   const reflectionPrompt = reflectionPromptForDay(day.id, selectedProgressDate, day.reflect);
   const reflectionMonthDate = new Date(`${reflectionCalendarMonth}-01T12:00:00Z`);
   const reflectionMonthStart = (reflectionMonthDate.getUTCDay() + 6) % 7;
@@ -8007,6 +8019,33 @@ function GlowUpTracker() {
           <button role="tab" aria-selected={todayCardIndex === 0} type="button" onClick={() => setTodayCardIndex(0)} style={{ padding: "8px 10px", borderRadius: 9, border: 0, background: todayCardIndex === 0 ? `${day.accent}22` : "transparent", color: todayCardIndex === 0 ? day.accent : "#8C6B9E", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>🗓 Schedule</button>
           <button role="tab" aria-selected={todayCardIndex === 1} type="button" onClick={() => setTodayCardIndex(1)} style={{ padding: "8px 10px", borderRadius: 9, border: 0, background: todayCardIndex === 1 ? `${day.accent}22` : "transparent", color: todayCardIndex === 1 ? day.accent : "#8C6B9E", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>✓ Tasks</button>
         </div>
+        {todayCardIndex === 1 && (
+          <>
+            <div role="tablist" aria-label="Task week" style={{ display: "grid", gridTemplateColumns: "repeat(7,minmax(0,1fr))", gap: 4, marginBottom: 9, padding: 5, borderRadius: 13, background: "rgba(255,255,255,.72)", border: "1px solid #EADCEC" }}>
+              {taskWeekDates.map((date) => {
+                const selected = selectedProgressDate === date;
+                const isTodayDate = date === period.date;
+                const isUpcomingDate = date > period.date;
+                const dateValue = new Date(`${date}T12:00:00Z`);
+                const shortDay = dateValue.toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }).slice(0, 2);
+                const dayNumber = dateValue.toLocaleDateString("en-US", { day: "numeric", timeZone: "UTC" });
+                const fullDay = dateValue.toLocaleDateString("en-US", { weekday: "long", timeZone: "UTC" });
+                return (
+                  <button key={date} role="tab" aria-selected={selected} type="button" onClick={() => selectTaskPreviewDate(date)} title={`${fullDay}${isTodayDate ? " · Today" : isUpcomingDate ? " · Preview" : ""}`} style={{ minWidth: 0, minHeight: 48, padding: "5px 2px", borderRadius: 9, border: selected ? `2px solid ${day.accent}` : "1px solid transparent", background: selected ? `${day.accent}18` : "transparent", color: selected ? day.accent : "#806B8D", cursor: "pointer", display: "grid", placeItems: "center", alignContent: "center", gap: 1, position: "relative" }}>
+                    <span style={{ fontSize: 9.5, fontWeight: 900, letterSpacing: ".04em", textTransform: "uppercase" }}>{shortDay}</span>
+                    <span style={{ fontSize: 12, fontWeight: 900, lineHeight: 1 }}>{dayNumber}</span>
+                    {isTodayDate && <span aria-hidden="true" style={{ position: "absolute", bottom: 2, fontSize: 9, lineHeight: 1, color: day.accent }}>●</span>}
+                  </button>
+                );
+              })}
+            </div>
+            {isFutureView && (
+              <div style={{ margin: "-1px 0 10px", padding: "8px 10px", borderRadius: 11, background: "#F7F2FB", border: "1px solid #E6D4F2", color: "#765F84", fontSize: 11.5, lineHeight: 1.4 }}>
+                <strong>{selectedTaskDateLabel} preview</strong> · You can see what is coming up now. Checkboxes unlock when that day arrives.
+              </div>
+            )}
+          </>
+        )}
         <div
           onTouchStart={(event) => { event.stopPropagation(); todaySwipeStartX.current = event.touches[0]?.clientX ?? null; todaySwipeStartY.current = event.touches[0]?.clientY ?? null; }}
           onTouchEnd={(event) => {
@@ -8096,7 +8135,7 @@ function GlowUpTracker() {
         })()}
         </>}
 
-        {todayCardIndex === 1 && rows.length > 0 && dailyCheckIn.day_type !== "rest" && (focusHelperOpen || !nextStepTask) && (
+        {todayCardIndex === 1 && !isFutureView && rows.length > 0 && dailyCheckIn.day_type !== "rest" && (focusHelperOpen || !nextStepTask) && (
           // Suppressed (unless already open) whenever the One Next Step card
           // above is already showing this same single-task suggestion — no
           // point offering "pick one thing for me" right under a card that's
@@ -8137,21 +8176,21 @@ function GlowUpTracker() {
         {todayCardIndex === 1 && rows.length > 0 && (
           <div style={{ marginBottom: 14, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.58)", border: "1px solid #E6D4F2" }}>
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 4 }}>
-              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{dailyCheckIn.day_type === "rest" ? "REST DAY" : isHistoricalView ? "THIS DAY'S TASKS" : "TODAY'S TASKS"}</div>
+              <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>{selectedTaskViewIsRest ? "REST DAY" : isFutureView ? `${selectedTaskDateLabel.toUpperCase()} TASKS` : isHistoricalView ? `${selectedTaskDateLabel.toUpperCase()} HISTORY` : "TODAY'S TASKS"}</div>
               <div style={{ display: "flex", alignItems: "center", justifyContent: "flex-end", gap: 7, flexWrap: "wrap" }}>
-                <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{dailyCheckIn.day_type === "rest" ? "NO TASKS REQUIRED" : `${pct}% · ${requiredDoneCount}/${requiredRows.length}`}</span>
+                <span style={{ fontSize: 13, color: day.accent, fontWeight: 700 }}>{selectedTaskViewIsRest ? "NO TASKS REQUIRED" : `${pct}% · ${requiredDoneCount}/${requiredRows.length}`}</span>
                 {!isHistoricalView && <button type="button" onClick={() => openTaskManager(dayIdForDate(period.date))} style={{ padding: "6px 9px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>✏️ Edit tasks</button>}
               </div>
             </div>
-            {dailyCheckIn.day_type !== "rest" && <div style={{ height: 8, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "8px 0 11px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
+            {!selectedTaskViewIsRest && <div style={{ height: 8, background: "rgba(255,255,255,0.4)", borderRadius: 6, margin: "8px 0 11px", overflow: "hidden", border: "1px solid #F3D9EC" }}>
               <div style={{ height: "100%", width: `${pct}%`, background: day.accent, borderRadius: 6, transition: "width .4s cubic-bezier(.34,1.56,.64,1)" }} />
             </div>}
-            {dailyCheckIn.day_type !== "rest" && preferences.nurturing_checkins && (
+            {!selectedTaskViewIsRest && preferences.nurturing_checkins && (
               <div style={{ marginBottom: 10, fontSize: 13, lineHeight: 1.5, fontWeight: 700, color: "#7D668C" }}>
                 {doneCount > 0 ? voice.nurturingSome(doneCount) : voice.nurturingNone}
               </div>
             )}
-            {dailyCheckIn.day_type === "rest" ? (
+            {selectedTaskViewIsRest ? (
               <div style={{ padding: "22px 14px", borderRadius: 16, background: "#EAF6F1", border: "1px solid #A9DFC4", textAlign: "center", color: "#2F6E48" }}>
                 <div style={{ fontSize: 26 }}>🌴</div>
                 <div style={{ marginTop: 6, fontWeight: 900, fontSize: 15 }}>Your list is resting too.</div>
