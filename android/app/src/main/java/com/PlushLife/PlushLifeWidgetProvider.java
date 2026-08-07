@@ -7,6 +7,7 @@ import android.content.ComponentName;
 import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.os.Bundle;
 import android.view.View;
 import android.widget.RemoteViews;
 
@@ -16,18 +17,41 @@ public class PlushLifeWidgetProvider extends AppWidgetProvider {
     private static final int[] TASK_ROW_IDS = { R.id.widget_task_0, R.id.widget_task_1, R.id.widget_task_2 };
 
     @Override
+    public void onEnabled(Context context) {
+        super.onEnabled(context);
+        refreshAll(context);
+    }
+
+    @Override
     public void onUpdate(Context context, AppWidgetManager manager, int[] appWidgetIds) {
         for (int id : appWidgetIds) updateWidget(context, manager, id);
     }
 
     @Override
+    public void onAppWidgetOptionsChanged(Context context, AppWidgetManager manager, int appWidgetId, Bundle newOptions) {
+        super.onAppWidgetOptionsChanged(context, manager, appWidgetId, newOptions);
+        updateWidget(context, manager, appWidgetId);
+    }
+
+    @Override
+    public void onRestored(Context context, int[] oldWidgetIds, int[] newWidgetIds) {
+        super.onRestored(context, oldWidgetIds, newWidgetIds);
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        for (int id : newWidgetIds) updateWidget(context, manager, id);
+    }
+
+    @Override
     public void onReceive(Context context, Intent intent) {
         super.onReceive(context, intent);
-        if (ACTION_REFRESH.equals(intent.getAction())) {
-            AppWidgetManager manager = AppWidgetManager.getInstance(context);
-            int[] ids = manager.getAppWidgetIds(new ComponentName(context, PlushLifeWidgetProvider.class));
-            onUpdate(context, manager, ids);
+        if (ACTION_REFRESH.equals(intent.getAction()) || Intent.ACTION_MY_PACKAGE_REPLACED.equals(intent.getAction())) {
+            refreshAll(context);
         }
+    }
+
+    private static void refreshAll(Context context) {
+        AppWidgetManager manager = AppWidgetManager.getInstance(context);
+        int[] ids = manager.getAppWidgetIds(new ComponentName(context, PlushLifeWidgetProvider.class));
+        for (int id : ids) updateWidget(context, manager, id);
     }
 
     static void updateWidget(Context context, AppWidgetManager manager, int widgetId) {
@@ -52,8 +76,15 @@ public class PlushLifeWidgetProvider extends AppWidgetProvider {
         views.setTextViewText(R.id.widget_next_task, prefs.getString("nextTask", "Open PlushLife for one caring step"));
         views.setViewVisibility(R.id.widget_next_task, anyTaskShown ? View.GONE : View.VISIBLE);
 
-        Intent launch = new Intent(context, MainActivity.class);
-        PendingIntent pending = PendingIntent.getActivity(context, 0, launch, PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE);
+        Intent launch = new Intent(context, MainActivity.class)
+            .setAction(Intent.ACTION_VIEW)
+            .addFlags(Intent.FLAG_ACTIVITY_NEW_TASK | Intent.FLAG_ACTIVITY_CLEAR_TOP);
+        PendingIntent pending = PendingIntent.getActivity(
+            context,
+            widgetId,
+            launch,
+            PendingIntent.FLAG_UPDATE_CURRENT | PendingIntent.FLAG_IMMUTABLE
+        );
         views.setOnClickPendingIntent(R.id.widget_root, pending);
         manager.updateAppWidget(widgetId, views);
     }
