@@ -19,9 +19,34 @@ function read(file) {
   return fs.readFileSync(file, "utf8");
 }
 
+function stripXmlComments(source) {
+  let output = "";
+  let cursor = 0;
+  while (cursor < source.length) {
+    const start = source.indexOf("<!--", cursor);
+    if (start === -1) {
+      output += source.slice(cursor);
+      break;
+    }
+    output += source.slice(cursor, start);
+    const end = source.indexOf("-->", start + 4);
+    if (end === -1) {
+      throw new Error("Widget layout contains an unterminated XML comment.");
+    }
+    output += " ".repeat(end + 3 - start);
+    cursor = end + 3;
+  }
+  return output;
+}
+
 if (fs.existsSync(layoutPath)) {
   const layout = read(layoutPath);
-  const layoutWithoutComments = layout.replace(/<!--[\s\S]*?-->/g, "");
+  let layoutWithoutComments = layout;
+  try {
+    layoutWithoutComments = stripXmlComments(layout);
+  } catch (error) {
+    failures.push(error.message);
+  }
   const tags = [...layoutWithoutComments.matchAll(/<\/?([A-Za-z0-9_.]+)(?:\s|>|\/)/g)].map((match) => match[1]);
   const allowed = new Set([
     "LinearLayout", "RelativeLayout", "FrameLayout", "GridLayout", "TextView", "Button",
