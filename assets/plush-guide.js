@@ -180,7 +180,7 @@
     return 0;
   }
 
-  function bestMatchingNode(selector, labels) {
+  function bestMatchingNode(selector, labels, minimumScore) {
     const wanted = (labels || []).map(clean).filter(Boolean);
     let best = null;
     let bestScore = 0;
@@ -190,22 +190,49 @@
       const score = wanted.reduce((max, label) => Math.max(max, matchScore(text, label)), 0);
       if (score > bestScore) { best = node; bestScore = score; }
     });
-    return best;
+    return bestScore >= (minimumScore || 1) ? best : null;
   }
 
   function clickMatching(labels) {
-    const match = bestMatchingNode('button,a,[role="button"]', labels);
+    const match = bestMatchingNode('button,a,[role="button"]', labels, 80);
     if (!match) return false;
     match.click();
     return true;
   }
 
   function findTourTarget(labels) {
-    return bestMatchingNode('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea', labels);
+    const semantic = bestMatchingNode('h1,h2,h3,h4,label,[aria-label]:not(button):not(a):not([role="button"]),input,select,textarea', labels, 70);
+    if (semantic) return semantic;
+    return bestMatchingNode('button,a,[role="button"]', labels, 100);
   }
 
   function clearTourHighlight() {
     document.querySelectorAll(`.${HIGHLIGHT_CLASS}`).forEach((node) => node.classList.remove(HIGHLIGHT_CLASS));
+  }
+
+  function looksLikeProfilePanel(node) {
+    if (!visible(node)) return false;
+    const text = clean(node.textContent);
+    return text.includes("settings") && text.includes("feedback") && (text.includes("profile") || text.includes("plushprivacy") || text.includes("plushsafety"));
+  }
+
+  function currentProfilePanel() {
+    const panels = Array.from(document.querySelectorAll('[role="dialog"],aside,[class*="panel"],[class*="modal"]'));
+    return panels.find(looksLikeProfilePanel) || null;
+  }
+
+  function closeProfilePanel(panel) {
+    if (!panel || !visible(panel)) return false;
+    const buttons = Array.from(panel.querySelectorAll('button,a,[role="button"]')).filter((node) => visible(node) && !isGuideUi(node));
+    const close = buttons.find((node) => {
+      const aria = clean(node.getAttribute("aria-label"));
+      const title = clean(node.getAttribute("title"));
+      const text = clean(node.textContent);
+      return aria === "close" || aria === "close profile" || title === "close" || text === "close" || text === "×";
+    });
+    if (!close) return false;
+    close.click();
+    return true;
   }
 
   let tourCleanup = null;
@@ -228,13 +255,17 @@
     if (!spotlight || !backdrop || !tip) return false;
     const rect = target.getBoundingClientRect();
     if (!Number.isFinite(rect.top) || rect.width <= 0 || rect.height <= 0) return false;
+    if (rect.bottom < 8 || rect.top > window.innerHeight - 8 || rect.right < 8 || rect.left > window.innerWidth - 8) return false;
     const pad = 8;
     const top = Math.max(4, rect.top - pad);
     const left = Math.max(4, rect.left - pad);
+    const width = Math.max(24, Math.min(window.innerWidth - left - 4, rect.width + pad * 2));
+    const height = Math.max(24, Math.min(window.innerHeight - top - 4, rect.height + pad * 2));
+    if (width < 32 || height < 24) return false;
     spotlight.style.top = `${top}px`;
     spotlight.style.left = `${left}px`;
-    spotlight.style.width = `${Math.max(24, Math.min(window.innerWidth - left - 4, rect.width + pad * 2))}px`;
-    spotlight.style.height = `${Math.max(24, Math.min(window.innerHeight - top - 4, rect.height + pad * 2))}px`;
+    spotlight.style.width = `${width}px`;
+    spotlight.style.height = `${height}px`;
     backdrop.classList.add("has-spotlight");
     const low = rect.top + rect.height / 2 > window.innerHeight * 0.52;
     tip.dataset.position = low ? "top" : "bottom";
@@ -283,6 +314,9 @@
         if (positionTour(tour, target)) {
           spotlight.style.display = "block";
           if (arrow) arrow.style.visibility = "visible";
+        } else {
+          spotlight.style.display = "none";
+          if (arrow) arrow.style.visibility = "hidden";
         }
       };
       afterLayout(showSpotlight, 180);
@@ -332,16 +366,31 @@
   function route(featureKey) {
     const feature = FEATURES[featureKey];
     if (!feature) return;
+
+    const profile = currentProfilePanel();
+    const profileRouteTarget = profile ? bestMatchingNode('button,a,[role="button"]', feature.routeLabels, 80) : null;
+
     closeGuide();
     closeTour();
+
     window.setTimeout(() => {
-      if (clickMatching(feature.routeLabels)) {
+      if (profileRouteTarget && profileRouteTarget.isConnected && visible(profileRouteTarget)) {
+        profileRouteTarget.click();
         startTour(featureKey);
         return;
       }
-      const firstStep = feature.tour && feature.tour[0];
-      if (firstStep && findTourTarget(firstStep.labels)) startTour(featureKey);
-    }, 120);
+
+      if (profile) closeProfilePanel(profile);
+
+      window.setTimeout(() => {
+        if (clickMatching(feature.routeLabels)) {
+          startTour(featureKey);
+          return;
+        }
+        const firstStep = feature.tour && feature.tour[0];
+        if (firstStep && findTourTarget(firstStep.labels)) startTour(featureKey);
+      }, profile ? 220 : 40);
+    }, 80);
   }
 
   function itemMarkup(key) {
@@ -404,16 +453,9 @@
     });
   }
 
-  function looksLikeProfilePanel(node) {
-    if (!visible(node)) return false;
-    const text = clean(node.textContent);
-    return text.includes("settings") && text.includes("feedback") && (text.includes("profile") || text.includes("plushprivacy") || text.includes("plushsafety"));
-  }
-
   function installEntry() {
     if (document.getElementById(ENTRY_ID)) return;
-    const panels = Array.from(document.querySelectorAll('[role="dialog"],aside,[class*="panel"],[class*="modal"]'));
-    const profile = panels.find(looksLikeProfilePanel);
+    const profile = currentProfilePanel();
     if (!profile) return;
     const entry = document.createElement("button");
     entry.id = ENTRY_ID;
