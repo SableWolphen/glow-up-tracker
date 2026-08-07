@@ -1,5 +1,6 @@
 name: Closed testing Version 36
 
+# Release trigger commit: Version 36 includes the latest widget and interface fixes.
 on:
   workflow_dispatch: {}
   push:
