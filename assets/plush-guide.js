@@ -5,6 +5,121 @@
 
   const GUIDE_ID = "plushlife-feature-guide";
   const ENTRY_ID = "plushlife-guide-entry";
+  const TOUR_ID = "plushlife-guide-tour";
+  const HIGHLIGHT_CLASS = "plushlife-guide-highlight";
+
+  const FEATURES = {
+    rescue: {
+      icon: "🧸", name: "PlushRescue", summary: "Make today smaller, choose one next step, or soften pressure.",
+      what: "PlushRescue helps when the full day feels like too much. It can narrow your attention to something manageable without deleting or rewriting your routine.",
+      when: "Use it when you feel stuck, overloaded, behind, or simply need a gentler version of today.",
+      routeLabels: ["plushrescue", "rescue active"], fallback: "Open PlushRescue from its floating button.",
+      tour: [
+        { title: "This is PlushRescue", text: "This space is for making the next step feel smaller. Nothing here erases your original tasks.", labels: ["plushrescue", "rescue active", "rescue"] },
+        { title: "Choose what would help", text: "Pick the option that matches your capacity right now. PlushRescue is meant to reduce pressure, not add another obligation.", labels: ["pick one", "smaller", "soften", "overwhelmed"] },
+      ],
+    },
+    focus: {
+      icon: "🎯", name: "PlushFocus", summary: "See one clear task without the rest of the day crowding you.",
+      what: "PlushFocus hides the visual noise of the full list and puts one clear task in front of you at a time.",
+      when: "Use it when seeing everything at once makes it harder to start or decide what comes next.",
+      routeLabels: ["plushfocus", "focus mode", "focus"],
+      tour: [
+        { title: "One thing at a time", text: "PlushFocus intentionally keeps the rest of the list out of the way so you can concentrate on the next useful step.", labels: ["plushfocus", "focus", "one task"] },
+        { title: "You stay in control", text: "Finish, skip, or leave Focus whenever you need. Your underlying task list stays intact.", labels: ["next", "done", "complete", "exit"] },
+      ],
+    },
+    calendar: {
+      icon: "📅", name: "PlushCalendar", summary: "See Month, Week, and Day views.",
+      what: "PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.",
+      when: "Use it to understand what is coming up, spot busy days, or review how your routine fits across a week or month.",
+      routeLabels: ["calendar", "plushcalendar"],
+      tour: [
+        { title: "Your calendar view", text: "This is where scheduled PlushLife items are organized by date.", labels: ["plushcalendar", "calendar"] },
+        { title: "Month", text: "Month view gives you the big picture and helps you spot patterns across several weeks.", labels: ["month"] },
+        { title: "Week", text: "Week view is useful for planning the next few days without seeing an entire month at once.", labels: ["week"] },
+        { title: "Day", text: "Day view zooms in on one date so you can see exactly what belongs there.", labels: ["day"] },
+      ],
+    },
+    progress: {
+      icon: "📈", name: "PlushProgress", summary: "Review trends, consistency, and what is helping.",
+      what: "PlushProgress turns your completed routines into a gentle history of consistency and patterns. It is for noticing progress, not grading yourself.",
+      when: "Use it when you want to see what has been working, where routines are becoming easier, or how your recent days compare.",
+      routeLabels: ["progress", "plushprogress"],
+      tour: [
+        { title: "Your progress, not a score", text: "This area summarizes what you have actually done over time. A lower day is information, not a failure.", labels: ["plushprogress", "progress"] },
+        { title: "Look for patterns", text: "Use the trends and consistency views to notice routines that are sticking and days that may need more support.", labels: ["trend", "consistency", "week", "history"] },
+      ],
+    },
+    calm: {
+      icon: "🌙", name: "PlushCalm", summary: "Open grounding, sound, breathing, and gentle-care tools.",
+      what: "PlushCalm collects short calming and grounding tools in one place so you do not have to hunt for them when you need them.",
+      when: "Use it when you want a breathing exercise, grounding prompt, comforting sound, or another low-pressure care tool.",
+      routeLabels: ["plushcalm", "calm"],
+      tour: [
+        { title: "PlushCalm", text: "Choose the kind of support that fits the moment. You do not have to complete every tool.", labels: ["plushcalm", "calm"] },
+        { title: "Pick a care tool", text: "Breathing, grounding, sounds, and other gentle tools can be opened individually whenever they are useful.", labels: ["breathing", "grounding", "sound", "comfort"] },
+      ],
+    },
+    journal: {
+      icon: "📖", name: "PlushJournal", summary: "Write a private reflection or return to today’s prompt.",
+      what: "PlushJournal gives you a private prompt and space to write. Your journal entry stays separate from ordinary tasks.",
+      when: "Use it when you want to capture what happened, reflect on how you feel, or come back to something you wrote earlier.",
+      routeLabels: ["plushjournal", "journal", "private reflection"],
+      tour: [
+        { title: "Today’s prompt", text: "The prompt is simply a starting point. You can answer it in your own words rather than trying to give a perfect response.", labels: ["prompt", "today"] },
+        { title: "Your private entry", text: "This is your writing space. Saving an entry does not turn it into a task or share it with other users.", labels: ["write", "reflection", "journal", "entry"] },
+      ],
+    },
+    paths: {
+      icon: "🌿", name: "PlushPaths", summary: "Open guided routines and care paths.",
+      what: "PlushPaths are guided, multi-step experiences that help you work through a routine or care goal over time.",
+      when: "Use one when you want more guidance than a single task, but still want to move at your own pace.",
+      routeLabels: ["plushpaths", "paths"],
+      tour: [
+        { title: "Choose a PlushPath", text: "Each path tells you what it is for before you begin, so you can choose one that actually fits what you need.", labels: ["plushpaths", "paths", "guided"] },
+        { title: "Continue at your pace", text: "Start or continue a path when you are ready. Your progress is saved so you do not need to rush through it.", labels: ["start", "continue", "resume"] },
+      ],
+    },
+    tasks: {
+      icon: "✅", name: "Change My Tasks", summary: "Add, edit, pause, schedule, or clean up routines.",
+      what: "This is the control center for your PlushList. It is where you create routines, change schedules, pause something, or remove tasks you no longer want.",
+      when: "Use it whenever your real life changes and the list needs to change with you.",
+      routeLabels: ["change my tasks", "manage tasks", "tasks"],
+      tour: [
+        { title: "Your task controls", text: "This area changes the structure of your list. Nothing is changed just by opening it.", labels: ["change my tasks", "manage tasks", "tasks"] },
+        { title: "Add or edit", text: "Create something new or edit an existing routine when its name, type, grouping, or schedule needs to change.", labels: ["add", "edit", "new task"] },
+        { title: "Pause or schedule", text: "Pause a routine temporarily or adjust when it appears instead of deleting it just because today is different.", labels: ["pause", "schedule", "resume"] },
+      ],
+    },
+    guardian: {
+      icon: "🤝", name: "PlushGuardian", summary: "Open the support connection and privacy controls.",
+      what: "PlushGuardian is the optional support connection area. It controls how a trusted support person can connect and what that connection is allowed to do.",
+      when: "Use it to review or change a support connection, permissions, or privacy choices.",
+      routeLabels: ["plushguardian", "guardian"],
+      tour: [
+        { title: "PlushGuardian", text: "Guardian support is optional. This area is where the connection and its boundaries are managed.", labels: ["plushguardian", "guardian"] },
+        { title: "Privacy stays visible", text: "Review the connection and privacy controls here before changing anything. PlushGuide itself never changes these settings.", labels: ["privacy", "connection", "permission"] },
+      ],
+    },
+    safety: {
+      icon: "🛟", name: "PlushSafety", summary: "Find safety resources and account protections.",
+      what: "PlushSafety gathers account-protection and safety resources so they are easier to find when you need them.",
+      when: "Use it when you want to review account protections or find the safety resources available inside PlushLife.",
+      routeLabels: ["plushsafety", "safety"],
+      tour: [
+        { title: "PlushSafety", text: "This area gathers safety information and account protections in one place.", labels: ["plushsafety", "safety"] },
+        { title: "Choose the resource you need", text: "The guide only points things out. It will never automatically contact anyone, change an account setting, or trigger a safety action.", labels: ["resource", "account", "protection", "privacy"] },
+      ],
+    },
+  };
+
+  const SECTIONS = [
+    ["MAKE TODAY FIT", ["rescue", "focus"]],
+    ["PLAN & SEE PROGRESS", ["calendar", "progress"]],
+    ["CARE FOR YOURSELF", ["calm", "journal", "paths", "tasks"]],
+    ["SUPPORT & SAFETY", ["guardian", "safety"]],
+  ];
 
   const style = document.createElement("style");
   style.textContent = `
@@ -16,14 +131,35 @@
     #${GUIDE_ID} .pg-head>div{flex:1}
     #${GUIDE_ID} h2{margin:4px 0 5px;font-size:22px}
     #${GUIDE_ID} p{margin:0;line-height:1.45}
-    #${GUIDE_ID} .pg-close{border:0;background:transparent;color:#806d8d;font-size:25px;cursor:pointer}
+    #${GUIDE_ID} .pg-close{border:0;background:transparent;color:#806d8d;font-size:25px;cursor:pointer;min-width:44px;min-height:44px}
     #${GUIDE_ID} .pg-section{margin-top:16px}
     #${GUIDE_ID} .pg-section-title{font-size:11px;font-weight:900;letter-spacing:.08em;color:#8a6b98;margin-bottom:7px}
-    #${GUIDE_ID} .pg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
-    #${GUIDE_ID} .pg-action{border:1px solid #dec5e8;border-radius:15px;background:#fff;padding:11px;text-align:left;color:#5b4b6b;cursor:pointer;font:800 13px system-ui,sans-serif}
+    #${GUIDE_ID} .pg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
+    #${GUIDE_ID} .pg-item{border:1px solid #dec5e8;border-radius:15px;background:#fff;overflow:hidden}
+    #${GUIDE_ID} .pg-action{width:100%;border:0;background:#fff;padding:11px;text-align:left;color:#5b4b6b;cursor:pointer;font:800 13px system-ui,sans-serif}
     #${GUIDE_ID} .pg-action small{display:block;margin-top:3px;font-weight:500;line-height:1.3;opacity:.75}
+    #${GUIDE_ID} .pg-action .pg-chevron{float:right;font-size:12px;opacity:.65;transition:transform .18s ease}
+    #${GUIDE_ID} .pg-action[aria-expanded="true"] .pg-chevron{transform:rotate(180deg)}
+    #${GUIDE_ID} .pg-details{display:none;border-top:1px solid #eee0f2;padding:0 11px 12px;font-size:12.5px;line-height:1.42;color:#6e6078;background:#fffdfd}
+    #${GUIDE_ID} .pg-details.open{display:block}
+    #${GUIDE_ID} .pg-details strong{display:block;color:#5b4b6b;margin:10px 0 2px}
+    #${GUIDE_ID} .pg-show{width:100%;margin-top:11px;border:0;border-radius:12px;background:#8f63a4;color:#fff;padding:10px 12px;font:800 12.5px system-ui,sans-serif;cursor:pointer}
     #${GUIDE_ID} .pg-note{margin-top:14px;padding:10px 11px;border-radius:13px;background:#f2e9f7;font-size:12px;line-height:1.4}
+    #${TOUR_ID}{position:fixed;inset:0;z-index:2147483300;pointer-events:none;font-family:system-ui,sans-serif}
+    #${TOUR_ID} .pgt-backdrop{position:absolute;inset:0;background:#271b3066;pointer-events:auto}
+    #${TOUR_ID} .pgt-tip{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(420px,calc(100% - 28px));border-radius:18px;background:#fff8fc;border:1px solid #dfc8e8;box-shadow:0 18px 55px #24152d66;padding:14px;color:#5b4b6b;pointer-events:auto}
+    #${TOUR_ID} .pgt-tip[data-position="top"]{top:calc(18px + env(safe-area-inset-top));bottom:auto}
+    #${TOUR_ID} .pgt-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#9b69aa;margin-bottom:4px}
+    #${TOUR_ID} .pgt-title{font-size:17px;font-weight:900;margin-bottom:5px}
+    #${TOUR_ID} .pgt-text{font-size:13px;line-height:1.45;color:#6f6278}
+    #${TOUR_ID} .pgt-arrow{font-size:22px;text-align:center;height:24px;color:#9b69aa;line-height:24px}
+    #${TOUR_ID} .pgt-controls{display:flex;align-items:center;gap:8px;margin-top:12px}
+    #${TOUR_ID} .pgt-controls button{border:1px solid #ddc8e6;border-radius:11px;background:#fff;color:#5b4b6b;padding:9px 12px;font-weight:800;cursor:pointer}
+    #${TOUR_ID} .pgt-controls .pgt-next{margin-left:auto;background:#8f63a4;color:#fff;border-color:#8f63a4}
+    #${TOUR_ID} .pgt-count{font-size:11px;font-weight:800;opacity:.65}
+    .${HIGHLIGHT_CLASS}{position:relative!important;z-index:2147483290!important;outline:4px solid #f0b7ef!important;outline-offset:5px!important;border-radius:10px!important;box-shadow:0 0 0 9999px #271b3044!important}
     @media(max-width:390px){#${GUIDE_ID} .pg-grid{grid-template-columns:1fr}}
+    @media(prefers-reduced-motion:reduce){#${GUIDE_ID} .pg-action .pg-chevron{transition:none}}
   `;
   document.head.appendChild(style);
 
@@ -45,22 +181,110 @@
     return true;
   }
 
+  function findTourTarget(labels) {
+    if (!labels || !labels.length) return null;
+    const wanted = labels.map(clean);
+    const nodes = Array.from(document.querySelectorAll('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea')).filter(visible);
+    return nodes.find((node) => {
+      const text = clean(node.textContent || node.getAttribute("aria-label") || node.getAttribute("placeholder") || node.getAttribute("title"));
+      return wanted.some((label) => text === label || text.includes(label));
+    }) || null;
+  }
+
+  function clearTourHighlight() {
+    document.querySelectorAll(`.${HIGHLIGHT_CLASS}`).forEach((node) => node.classList.remove(HIGHLIGHT_CLASS));
+  }
+
+  function closeTour() {
+    clearTourHighlight();
+    const tour = document.getElementById(TOUR_ID);
+    if (tour) tour.remove();
+  }
+
+  function renderTourStep(featureKey, index) {
+    closeTour();
+    const feature = FEATURES[featureKey];
+    if (!feature || !feature.tour || !feature.tour.length) return;
+    const safeIndex = Math.max(0, Math.min(index, feature.tour.length - 1));
+    const step = feature.tour[safeIndex];
+    const target = findTourTarget(step.labels);
+    if (target) {
+      target.classList.add(HIGHLIGHT_CLASS);
+      target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
+    }
+
+    const tour = document.createElement("div");
+    tour.id = TOUR_ID;
+    tour.setAttribute("role", "dialog");
+    tour.setAttribute("aria-modal", "true");
+    tour.setAttribute("aria-label", `${feature.name} guide`);
+    const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
+    const targetIsLow = rect && rect.top > window.innerHeight * 0.52;
+    tour.innerHTML = `
+      <div class="pgt-backdrop" aria-hidden="true"></div>
+      <div class="pgt-tip" data-position="${targetIsLow ? "top" : "bottom"}">
+        <div class="pgt-eyebrow">${feature.icon} ${feature.name.toUpperCase()} · STEP ${safeIndex + 1} OF ${feature.tour.length}</div>
+        ${target ? `<div class="pgt-arrow">${targetIsLow ? "↓" : "↑"}</div>` : ""}
+        <div class="pgt-title">${step.title}</div>
+        <div class="pgt-text">${step.text}</div>
+        <div class="pgt-controls">
+          <button type="button" class="pgt-close">Close</button>
+          ${safeIndex > 0 ? '<button type="button" class="pgt-prev">Back</button>' : ""}
+          <span class="pgt-count">${safeIndex + 1}/${feature.tour.length}</span>
+          <button type="button" class="pgt-next">${safeIndex === feature.tour.length - 1 ? "Done" : "Next"}</button>
+        </div>
+      </div>`;
+    document.body.appendChild(tour);
+    tour.querySelector(".pgt-close").addEventListener("click", closeTour);
+    tour.querySelector(".pgt-backdrop").addEventListener("click", closeTour);
+    const prev = tour.querySelector(".pgt-prev");
+    if (prev) prev.addEventListener("click", () => renderTourStep(featureKey, safeIndex - 1));
+    tour.querySelector(".pgt-next").addEventListener("click", () => {
+      if (safeIndex === feature.tour.length - 1) closeTour();
+      else renderTourStep(featureKey, safeIndex + 1);
+    });
+  }
+
+  function startTour(featureKey) {
+    window.setTimeout(() => renderTourStep(featureKey, 0), 320);
+  }
+
   function closeGuide() {
     const guide = document.getElementById(GUIDE_ID);
     if (guide) guide.remove();
   }
 
-  function route(labels, fallbackMessage) {
+  function route(featureKey) {
+    const feature = FEATURES[featureKey];
+    if (!feature) return;
     closeGuide();
     window.setTimeout(() => {
-      if (!clickMatching(labels)) {
-        window.alert(fallbackMessage || "Open the matching PlushLife section from the navigation or Profile menu.");
+      if (!clickMatching(feature.routeLabels)) {
+        window.alert(feature.fallback || "Open the matching PlushLife section from the navigation or Profile menu.");
+        return;
       }
+      startTour(featureKey);
     }, 40);
+  }
+
+  function itemMarkup(key) {
+    const feature = FEATURES[key];
+    return `
+      <div class="pg-item" data-feature="${key}">
+        <button class="pg-action" type="button" aria-expanded="false" aria-controls="pg-details-${key}">
+          ${feature.icon} ${feature.name}<span class="pg-chevron">⌄</span><small>${feature.summary}</small>
+        </button>
+        <div class="pg-details" id="pg-details-${key}">
+          <strong>What it does</strong>${feature.what}
+          <strong>When it can help</strong>${feature.when}
+          <button class="pg-show" type="button">Show me →</button>
+        </div>
+      </div>`;
   }
 
   function openGuide() {
     if (document.getElementById(GUIDE_ID)) return;
+    closeTour();
     const guide = document.createElement("div");
     guide.id = GUIDE_ID;
     guide.setAttribute("role", "dialog");
@@ -69,42 +293,38 @@
     guide.innerHTML = `
       <div class="pg-card">
         <div class="pg-head">
-          <div><strong>PLUSHGUIDE</strong><h2>Everything you already have, in one place</h2><p>Choose what you need right now. This guide only opens existing PlushLife tools—your tasks, history, profile, and preferences stay exactly as you saved them.</p></div>
+          <div><strong>PLUSHGUIDE</strong><h2>Everything you already have, in one place</h2><p>Tap a feature to learn what it does. Nothing opens until you choose <strong>Show me</strong>, and the walkthrough only points things out—it never changes your data.</p></div>
           <button class="pg-close" type="button" aria-label="Close PlushGuide">×</button>
         </div>
-        <div class="pg-section"><div class="pg-section-title">MAKE TODAY FIT</div><div class="pg-grid">
-          <button class="pg-action" data-route="rescue">🧸 PlushRescue<small>Make today smaller, choose one next step, or soften pressure.</small></button>
-          <button class="pg-action" data-route="focus">🎯 PlushFocus<small>See one clear task without the rest of the day crowding you.</small></button>
-        </div></div>
-        <div class="pg-section"><div class="pg-section-title">PLAN & SEE PROGRESS</div><div class="pg-grid">
-          <button class="pg-action" data-route="calendar">📅 PlushCalendar<small>See Month, Week, and Day views.</small></button>
-          <button class="pg-action" data-route="progress">📈 PlushProgress<small>Review trends, consistency, and what is helping.</small></button>
-        </div></div>
-        <div class="pg-section"><div class="pg-section-title">CARE FOR YOURSELF</div><div class="pg-grid">
-          <button class="pg-action" data-route="calm">🌙 PlushCalm<small>Open grounding, sound, breathing, and gentle-care tools.</small></button>
-          <button class="pg-action" data-route="journal">📖 PlushJournal<small>Write a private reflection or return to today’s prompt.</small></button>
-          <button class="pg-action" data-route="paths">🌿 PlushPaths<small>Open guided routines and care paths.</small></button>
-          <button class="pg-action" data-route="tasks">✅ Change My Tasks<small>Add, edit, pause, schedule, or clean up routines.</small></button>
-        </div></div>
-        <div class="pg-section"><div class="pg-section-title">SUPPORT & SAFETY</div><div class="pg-grid">
-          <button class="pg-action" data-route="guardian">🤝 PlushGuardian<small>Open the support connection and privacy controls.</small></button>
-          <button class="pg-action" data-route="safety">🛟 PlushSafety<small>Find safety resources and account protections.</small></button>
-        </div></div>
-        <div class="pg-note">PlushGuide does not create new data or change existing data. It is simply a map to the features already built into PlushLife.</div>
+        ${SECTIONS.map(([title, keys]) => `<div class="pg-section"><div class="pg-section-title">${title}</div><div class="pg-grid">${keys.map(itemMarkup).join("")}</div></div>`).join("")}
+        <div class="pg-note">PlushGuide does not create new data or change existing data. It explains and points to features already built into PlushLife. Guided tours never complete tasks, change settings, contact a Guardian, or trigger a safety action.</div>
       </div>`;
     document.body.appendChild(guide);
     guide.querySelector(".pg-close").addEventListener("click", closeGuide);
     guide.addEventListener("click", (event) => { if (event.target === guide) closeGuide(); });
-    guide.querySelector('[data-route="rescue"]').addEventListener("click", () => route(["plushrescue", "rescue active"], "Open PlushRescue from its floating button."));
-    guide.querySelector('[data-route="focus"]').addEventListener("click", () => route(["plushfocus", "focus mode", "focus"]));
-    guide.querySelector('[data-route="calendar"]').addEventListener("click", () => route(["calendar", "plushcalendar"]));
-    guide.querySelector('[data-route="progress"]').addEventListener("click", () => route(["progress", "plushprogress"]));
-    guide.querySelector('[data-route="calm"]').addEventListener("click", () => route(["plushcalm", "calm"]));
-    guide.querySelector('[data-route="journal"]').addEventListener("click", () => route(["plushjournal", "journal", "private reflection"]));
-    guide.querySelector('[data-route="paths"]').addEventListener("click", () => route(["plushpaths", "paths"]));
-    guide.querySelector('[data-route="tasks"]').addEventListener("click", () => route(["change my tasks", "manage tasks", "tasks"]));
-    guide.querySelector('[data-route="guardian"]').addEventListener("click", () => route(["plushguardian", "guardian"]));
-    guide.querySelector('[data-route="safety"]').addEventListener("click", () => route(["plushsafety", "safety"]));
+
+    guide.querySelectorAll(".pg-item").forEach((item) => {
+      const key = item.getAttribute("data-feature");
+      const action = item.querySelector(".pg-action");
+      const details = item.querySelector(".pg-details");
+      const show = item.querySelector(".pg-show");
+      action.addEventListener("click", () => {
+        const willOpen = action.getAttribute("aria-expanded") !== "true";
+        guide.querySelectorAll(".pg-action[aria-expanded='true']").forEach((other) => {
+          if (other === action) return;
+          other.setAttribute("aria-expanded", "false");
+          const otherDetails = other.parentElement && other.parentElement.querySelector(".pg-details");
+          if (otherDetails) otherDetails.classList.remove("open");
+        });
+        action.setAttribute("aria-expanded", willOpen ? "true" : "false");
+        details.classList.toggle("open", willOpen);
+        if (willOpen) window.setTimeout(() => item.scrollIntoView({ behavior: "smooth", block: "nearest" }), 40);
+      });
+      show.addEventListener("click", (event) => {
+        event.stopPropagation();
+        route(key);
+      });
+    });
   }
 
   function looksLikeProfilePanel(node) {
@@ -121,7 +341,7 @@
     const entry = document.createElement("button");
     entry.id = ENTRY_ID;
     entry.type = "button";
-    entry.innerHTML = '✨ PlushGuide<small>Find PlushRescue, PlushProgress, PlushJournal, PlushGuardian, and the rest of your PlushLife tools.</small>';
+    entry.innerHTML = '✨ PlushGuide<small>Learn what PlushRescue, PlushProgress, PlushJournal, PlushGuardian, and the rest of PlushLife actually do.</small>';
     entry.addEventListener("click", openGuide);
     const target = profile.querySelector('button,a,[role="button"]');
     if (target && target.parentElement) target.parentElement.insertBefore(entry, target);
@@ -130,6 +350,10 @@
 
   const observer = new MutationObserver(() => installEntry());
   observer.observe(document.documentElement, { childList: true, subtree: true });
-  document.addEventListener("keydown", (event) => { if (event.key === "Escape") closeGuide(); });
+  document.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    if (document.getElementById(TOUR_ID)) closeTour();
+    else closeGuide();
+  });
   installEntry();
 })();
