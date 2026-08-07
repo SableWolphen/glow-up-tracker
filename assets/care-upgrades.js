@@ -174,7 +174,7 @@
       };
     };
     const buildKey = ({ url, method, headers }) => [method, url, headerValue(headers, "authorization"), headerValue(headers, "apikey"), headerValue(headers, "accept-profile"), headerValue(headers, "range")].join("\n");
-    const canonicalWriteBody = ({ url, body }) => {
+    const canonicalWriteBody = ({ body }) => {
       if (typeof body !== "string" || !body) return body || "";
       try {
         const parsed = JSON.parse(body);
@@ -184,11 +184,6 @@
           // updated_at is client-generated and can differ by a few milliseconds
           // when the same action is accidentally fired twice.
           delete copy.updated_at;
-          // New tracker tasks intentionally use a random key. Ignore only that
-          // generated key when deciding whether two simultaneous inserts are the
-          // same user action. The explicit Duplicate action changes task content,
-          // so it remains a separate write.
-          if (/\/rest\/v1\/tracker_tasks(?:\?|$)/.test(url)) delete copy.task_key;
           return copy;
         };
         return JSON.stringify(Array.isArray(parsed) ? parsed.map(normalizeRow) : normalizeRow(parsed));
