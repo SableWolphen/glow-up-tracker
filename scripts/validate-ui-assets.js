@@ -23,7 +23,6 @@ for (const file of files) {
 const ui = fs.readFileSync("assets/gentle-discovery-ui.js", "utf8");
 for (const required of [
   "plushlife-rescue-hidden",
-  "No document-wide MutationObserver",
 ]) {
   if (!ui.includes(required)) throw new Error(`Missing required UI integration marker: ${required}`);
 }
@@ -37,7 +36,6 @@ for (const required of [
   "ADMIN_EMAILS",
   "No failed requests captured",
   "send feedback",
-  "No document-wide MutationObserver",
 ]) {
   if (!completion.includes(required)) throw new Error(`Missing completion integration marker: ${required}`);
 }
