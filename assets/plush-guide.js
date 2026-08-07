@@ -8,34 +8,34 @@
   const TOUR_ID = "plushlife-guide-tour";
 
   const FEATURES = {
-    rescue: { icon:"🧸", name:"PlushRescue", summary:"Make today smaller, choose one next step, or soften pressure.", what:"PlushRescue helps when the full day feels like too much. It can narrow your attention to something manageable without deleting or rewriting your routine.", when:"Use it when you feel stuck, overloaded, behind, or simply need a gentler version of today.", routeLabels:["plushrescue","rescue active"], tour:[
-      { title:"This is PlushRescue", text:"This space is for making the next step feel smaller. Nothing here erases your original tasks.", labels:["plushrescue","rescue active","rescue"] },
+    rescue: { icon:"🧸", name:"PlushRescue", summary:"Make today smaller, choose one next step, or soften pressure.", what:"PlushRescue helps when the full day feels like too much. It can narrow your attention to something manageable without deleting or rewriting your routine.", when:"Use it when you feel stuck, overloaded, behind, or simply need a gentler version of today.", routeLabels:["plushrescue"], tour:[
+      { title:"This is PlushRescue", text:"This space is for making the next step feel smaller. Nothing here erases your original tasks.", labels:["plushrescue","rescue active"] },
       { title:"Choose what would help", text:"Pick the option that matches your capacity right now. PlushRescue is meant to reduce pressure, not add another obligation.", labels:["make today smaller","give me one next step","pause the pressure"] }
     ]},
-    focus: { icon:"🎯", name:"PlushFocus", summary:"See one clear task without the rest of the day crowding you.", what:"PlushFocus hides the visual noise of the full list and puts one clear task in front of you at a time.", when:"Use it when seeing everything at once makes it harder to start or decide what comes next.", routeLabels:["plushfocus","focus mode","focus"], tour:[
+    focus: { icon:"🎯", name:"PlushFocus", summary:"See one clear task without the rest of the day crowding you.", what:"PlushFocus hides the visual noise of the full list and puts one clear task in front of you at a time.", when:"Use it when seeing everything at once makes it harder to start or decide what comes next.", routeLabels:["plushfocus","focus"], tour:[
       { title:"One thing at a time", text:"PlushFocus intentionally keeps the rest of the list out of the way so you can concentrate on the next useful step.", labels:["plushfocus","focus mode"] },
       { title:"You stay in control", text:"Finish, skip, or leave Focus whenever you need. Your underlying task list stays intact.", labels:["next","done","complete","exit"] }
     ]},
-    calendar: { icon:"📅", name:"PlushCalendar", summary:"See Month, Week, and Day views.", what:"PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.", when:"Use it to understand what is coming up, spot busy days, or review how your routine fits across a week or month.", routeLabels:["plushcalendar","calendar"], tour:[
+    calendar: { icon:"📅", name:"PlushCalendar", summary:"See Month, Week, and Day views.", what:"PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.", when:"Use it to understand what is coming up, spot busy days, or review how your routine fits across a week or month.", routeLabels:["calendar"], tour:[
       { title:"Your calendar view", text:"This is where scheduled PlushLife items are organized by date.", labels:["plushcalendar","calendar"] },
       { title:"Month", text:"Month view gives you the big picture and helps you spot patterns across several weeks.", labels:["month"] },
       { title:"Week", text:"Week view is useful for planning the next few days without seeing an entire month at once.", labels:["week"] },
       { title:"Day", text:"Day view zooms in on one date so you can see exactly what belongs there.", labels:["day"] }
     ]},
-    progress: { icon:"📈", name:"PlushProgress", summary:"Review trends, consistency, and what is helping.", what:"PlushProgress turns your completed routines into a gentle history of consistency and patterns. It is for noticing progress, not grading yourself.", when:"Use it when you want to see what has been working, where routines are becoming easier, or how your recent days compare.", routeLabels:["plushprogress","progress"], tour:[
+    progress: { icon:"📈", name:"PlushProgress", summary:"Review trends, consistency, and what is helping.", what:"PlushProgress turns your completed routines into a gentle history of consistency and patterns. It is for noticing progress, not grading yourself.", when:"Use it when you want to see what has been working, where routines are becoming easier, or how your recent days compare.", routeLabels:["progress"], tour:[
       { title:"Your progress, not a score", text:"This area summarizes what you have actually done over time. A lower day is information, not a failure.", labels:["plushprogress","progress"] },
-      { title:"Look for patterns", text:"Use the trends and consistency views to notice routines that are sticking and days that may need more support.", labels:["trend","consistency","history"] }
+      { title:"Look for patterns", text:"Use the trends and consistency views to notice routines that are sticking and days that may need more support.", labels:["trends","consistency","history"] }
     ]},
-    calm: { icon:"🌙", name:"PlushCalm", summary:"Open grounding, sound, breathing, and gentle-care tools.", what:"PlushCalm collects short calming and grounding tools in one place so you do not have to hunt for them when you need them.", when:"Use it when you want a breathing exercise, grounding prompt, comforting sound, or another low-pressure care tool.", routeLabels:["plushcalm","calm"], tour:[
+    calm: { icon:"🌙", name:"PlushCalm", summary:"Open grounding, sound, breathing, and gentle-care tools.", what:"PlushCalm collects short calming and grounding tools in one place so you do not have to hunt for them when you need them.", when:"Use it when you want a breathing exercise, grounding prompt, comforting sound, or another low-pressure care tool.", routeLabels:["care","plushcalm"], tour:[
       { title:"PlushCalm", text:"Choose the kind of support that fits the moment. You do not have to complete every tool.", labels:["plushcalm","calm"] },
-      { title:"Pick a care tool", text:"Breathing, grounding, sounds, and other gentle tools can be opened individually whenever they are useful.", labels:["breathing","grounding","sound","comfort"] }
+      { title:"Pick a care tool", text:"Breathing, grounding, sounds, and other gentle tools can be opened individually whenever they are useful.", labels:["breathing","grounding","sounds","comfort"] }
     ]},
-    journal: { icon:"📖", name:"PlushJournal", summary:"Write a private reflection or return to today’s prompt.", what:"PlushJournal gives you a private prompt and space to write. Your journal entry stays separate from ordinary tasks.", when:"Use it when you want to capture what happened, reflect on how you feel, or come back to something you wrote earlier.", routeLabels:["plushjournal","journal","private reflection"], tour:[
-      { title:"Today’s prompt", text:"The prompt is simply a starting point. You can answer it in your own words rather than trying to give a perfect response.", labels:["prompt","today"] },
-      { title:"Your private entry", text:"This is your writing space. Saving an entry does not turn it into a task or share it with other users.", labels:["journal","entry","reflection"] }
+    journal: { icon:"📖", name:"PlushJournal", summary:"Write a private reflection or return to today’s prompt.", what:"PlushJournal gives you a private prompt and space to write. Your journal entry stays separate from ordinary tasks.", when:"Use it when you want to capture what happened, reflect on how you feel, or come back to something you wrote earlier.", routeLabels:["plushjournal","journal"], tour:[
+      { title:"Today’s prompt", text:"The prompt is simply a starting point. You can answer it in your own words rather than trying to give a perfect response.", labels:["today's prompt","today’s prompt","plushjournal"] },
+      { title:"Your private entry", text:"This is your writing space. Saving an entry does not turn it into a task or share it with other users.", labels:["you wrote","journal","reflection"] }
     ]},
     paths: { icon:"🌿", name:"PlushPaths", summary:"Open guided routines and care paths.", what:"PlushPaths are guided, multi-step experiences that help you work through a routine or care goal over time.", when:"Use one when you want more guidance than a single task, but still want to move at your own pace.", routeLabels:["plushpaths","paths"], tour:[
-      { title:"Choose a PlushPath", text:"Each path tells you what it is for before you begin, so you can choose one that actually fits what you need.", labels:["plushpaths","paths","guided"] },
+      { title:"Choose a PlushPath", text:"Each path tells you what it is for before you begin, so you can choose one that actually fits what you need.", labels:["plushpaths","paths"] },
       { title:"Continue at your pace", text:"Start or continue a path when you are ready. Your progress is saved so you do not need to rush through it.", labels:["start","continue","resume"] }
     ]},
     tasks: { icon:"✅", name:"Change My Tasks", summary:"Add, edit, pause, schedule, or clean up routines.", what:"This is the control center for your PlushList. It is where you create routines, change schedules, pause something, or remove tasks you no longer want.", when:"Use it whenever your real life changes and the list needs to change with you.", routeLabels:["change my tasks","manage tasks"], tour:[
@@ -43,13 +43,13 @@
       { title:"Add or edit", text:"Create something new or edit an existing routine when its name, type, grouping, or schedule needs to change.", labels:["add","edit","new task"] },
       { title:"Pause or schedule", text:"Pause a routine temporarily or adjust when it appears instead of deleting it just because today is different.", labels:["pause","schedule","resume"] }
     ]},
-    guardian: { icon:"🤝", name:"PlushGuardian", summary:"Open the support connection and privacy controls.", what:"PlushGuardian is the optional support connection area. It controls how a trusted support person can connect and what that connection is allowed to do.", when:"Use it to review or change a support connection, permissions, or privacy choices.", routeLabels:["add a guardian","plushguardian","guardian"], tour:[
-      { title:"PlushGuardian", text:"Guardian support is optional. This area is where the connection and its boundaries are managed.", labels:["plushguardian","guardian","add a guardian"] },
+    guardian: { icon:"🤝", name:"PlushGuardian", summary:"Open the support connection and privacy controls.", what:"PlushGuardian is the optional support connection area. It controls how a trusted support person can connect and what that connection is allowed to do.", when:"Use it to review or change a support connection, permissions, or privacy choices.", routeLabels:["add a guardian","plushguardian","guardian"], keepProfile:true, tour:[
+      { title:"PlushGuardian", text:"Guardian support is optional. This area is where the connection and its boundaries are managed.", labels:["add a guardian","plushguardian","guardian"] },
       { title:"Privacy stays visible", text:"Review the connection and privacy controls here before changing anything. PlushGuide itself never changes these settings.", labels:["privacy","connection","permission"] }
     ]},
-    safety: { icon:"🛟", name:"PlushSafety", summary:"Find safety resources and account protections.", what:"PlushSafety gathers account-protection and safety resources so they are easier to find when you need them.", when:"Use it when you want to review account protections or find the safety resources available inside PlushLife.", routeLabels:["plushsafety","safety"], tour:[
-      { title:"PlushSafety", text:"This area gathers safety information and account protections in one place.", labels:["plushsafety","safety"] },
-      { title:"Choose the resource you need", text:"The guide only points things out. It will never automatically contact anyone, change an account setting, or trigger a safety action.", labels:["resource","account","protection","privacy"] }
+    safety: { icon:"🛟", name:"PlushSafety", summary:"Find safety resources and account protections.", what:"PlushSafety gathers account-protection and safety resources so they are easier to find when you need them.", when:"Use it when you want to review account protections or find the safety resources available inside PlushLife.", routeLabels:["plushsafety"], keepProfile:true, tour:[
+      { title:"PlushSafety", text:"This area gathers safety information and account protections in one place.", labels:["plushsafety"] },
+      { title:"Choose the resource you need", text:"The guide only points things out. It will never automatically contact anyone, change an account setting, or trigger a safety action.", labels:["crisis & support resources","resources","privacy"] }
     ]}
   };
 
@@ -97,78 +97,63 @@
   document.head.appendChild(style);
 
   const clean = (v) => String(v || "").replace(/\s+/g," ").trim().toLowerCase();
-  const visible = (n) => !!(n && n.isConnected && n.getClientRects && n.getClientRects().length && getComputedStyle(n).visibility !== "hidden");
+  const visible = (n) => !!(n && n.isConnected && n.getClientRects && n.getClientRects().length && getComputedStyle(n).visibility !== "hidden" && getComputedStyle(n).display !== "none");
   const isGuideUi = (n) => !!(n && n.closest && (n.closest(`#${GUIDE_ID}`) || n.closest(`#${TOUR_ID}`) || n.closest(`#${ENTRY_ID}`)));
-  const labelText = (n) => clean(n && (n.getAttribute("aria-label") || n.getAttribute("title") || n.getAttribute("placeholder") || n.textContent));
-
-  function score(text, label) {
-    if (!text || !label) return 0;
-    if (text === label) return 100;
-    if (text.startsWith(label + " ") || text.endsWith(" " + label)) return 75;
-    if (label.length >= 5 && text.includes(label)) return 45;
-    return 0;
-  }
+  const labelText = (n) => clean(n && (n.getAttribute("aria-label") || n.getAttribute("title") || n.textContent));
+  const nextPaint = () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)));
 
   function looksLikeProfilePanel(node) {
     if (!visible(node)) return false;
     const text = clean(node.textContent);
-    return text.includes("settings") && text.includes("feedback") && (text.includes("profile") || text.includes("plushsafety"));
+    return text.includes("settings") && text.includes("feedback") && text.includes("profile");
   }
 
   function profilePanel() {
     return Array.from(document.querySelectorAll('[role="dialog"],aside,[class*="panel"],[class*="modal"]')).find(looksLikeProfilePanel) || null;
   }
 
-  function bestMatch(selector, labels, featureKey) {
-    const wanted = (labels || []).map(clean).filter(Boolean);
-    const profile = profilePanel();
-    let best = null, bestScore = 0;
-    for (const node of document.querySelectorAll(selector)) {
-      if (!visible(node) || isGuideUi(node)) continue;
-      if (profile && profile.contains(node) && featureKey !== "guardian" && featureKey !== "safety") continue;
+  function exactClickable(labels, scope) {
+    const wanted = new Set((labels || []).map(clean).filter(Boolean));
+    const root = scope || document;
+    return Array.from(root.querySelectorAll('button,a,[role="button"]')).find((node) => {
+      if (!visible(node) || isGuideUi(node)) return false;
       const text = labelText(node);
-      const s = wanted.reduce((m,l) => Math.max(m, score(text,l)), 0);
-      if (s > bestScore) { best = node; bestScore = s; }
+      return wanted.has(text) || Array.from(wanted).some((label) => text === label || text.startsWith(label + " "));
+    }) || null;
+  }
+
+  function closeProfileIfNeeded() {
+    const profile = profilePanel();
+    if (!profile) return false;
+    const close = Array.from(profile.querySelectorAll('button,[role="button"]')).find((n) => {
+      const text = labelText(n);
+      return text === "close" || text === "close profile";
+    });
+    if (close) { close.click(); return true; }
+    return false;
+  }
+
+  function findTarget(labels) {
+    const wanted = new Set((labels || []).map(clean).filter(Boolean));
+    const candidates = document.querySelectorAll('h1,h2,h3,h4,[role="heading"],button,a,[role="button"]');
+    for (const node of candidates) {
+      if (!visible(node) || isGuideUi(node)) continue;
+      const text = labelText(node);
+      if (wanted.has(text)) return node;
     }
-    return bestScore >= 45 ? best : null;
-  }
-
-  function clickMatching(labels, featureKey) {
-    const node = bestMatch('button,a,[role="button"]', labels, featureKey);
-    if (!node) return false;
-    node.click();
-    return true;
-  }
-
-  function findTarget(labels, featureKey) {
-    return bestMatch('h1,h2,h3,h4,[aria-label],button,a,[role="button"],label,input,select,textarea', labels, featureKey);
-  }
-
-  let targetObserver = null;
-  let layoutHandler = null;
-  function clearTourWatchers() {
-    if (targetObserver) { targetObserver.disconnect(); targetObserver = null; }
-    if (layoutHandler) {
-      window.removeEventListener("resize", layoutHandler);
-      window.removeEventListener("scroll", layoutHandler, true);
-      layoutHandler = null;
-    }
+    return null;
   }
 
   function closeTour() {
-    clearTourWatchers();
     const tour = document.getElementById(TOUR_ID);
     if (tour) tour.remove();
   }
 
   function positionSpotlight(tour, target) {
-    if (!tour || !target || !visible(target)) return false;
+    if (!tour || !target || !visible(target)) return;
     const rect = target.getBoundingClientRect();
-    if (!Number.isFinite(rect.top) || rect.width < 8 || rect.height < 8) return false;
-    if (rect.bottom < 0 || rect.top > window.innerHeight || rect.right < 0 || rect.left > window.innerWidth) {
-      target.scrollIntoView({behavior:"auto", block:"center", inline:"nearest"});
-      return false;
-    }
+    if (!Number.isFinite(rect.top) || rect.width < 20 || rect.height < 18) return;
+    if (rect.bottom <= 0 || rect.top >= window.innerHeight || rect.right <= 0 || rect.left >= window.innerWidth) return;
     const spotlight = tour.querySelector(".pgt-spotlight");
     const backdrop = tour.querySelector(".pgt-backdrop");
     const tip = tour.querySelector(".pgt-tip");
@@ -176,44 +161,25 @@
     const pad = 8;
     const top = Math.max(4, rect.top - pad);
     const left = Math.max(4, rect.left - pad);
+    const width = Math.min(window.innerWidth - left - 4, rect.width + pad * 2);
+    const height = Math.min(window.innerHeight - top - 4, rect.height + pad * 2);
+    if (width < 24 || height < 24) return;
     spotlight.style.top = `${top}px`;
     spotlight.style.left = `${left}px`;
-    spotlight.style.width = `${Math.max(24, Math.min(window.innerWidth-left-4, rect.width+pad*2))}px`;
-    spotlight.style.height = `${Math.max(24, Math.min(window.innerHeight-top-4, rect.height+pad*2))}px`;
+    spotlight.style.width = `${width}px`;
+    spotlight.style.height = `${height}px`;
     spotlight.style.display = "block";
     backdrop.classList.add("has-spotlight");
-    const low = rect.top + rect.height/2 > window.innerHeight*0.52;
+    const low = rect.top + rect.height / 2 > window.innerHeight * 0.52;
     tip.dataset.position = low ? "top" : "bottom";
     arrow.textContent = low ? "↓" : "↑";
     arrow.style.visibility = "visible";
-    return true;
   }
 
-  function attachTargetWhenReady(featureKey, step, tour) {
-    const tryAttach = () => {
-      if (!document.getElementById(TOUR_ID)) return true;
-      const target = findTarget(step.labels, featureKey);
-      if (!target) return false;
-      requestAnimationFrame(() => {
-        if (!positionSpotlight(tour, target)) requestAnimationFrame(() => positionSpotlight(tour, target));
-      });
-      layoutHandler = () => requestAnimationFrame(() => positionSpotlight(tour, target));
-      window.addEventListener("resize", layoutHandler, {passive:true});
-      window.addEventListener("scroll", layoutHandler, {passive:true, capture:true});
-      return true;
-    };
-    if (tryAttach()) return;
-    targetObserver = new MutationObserver(() => {
-      if (tryAttach() && targetObserver) { targetObserver.disconnect(); targetObserver = null; }
-    });
-    targetObserver.observe(document.body, {childList:true, subtree:true});
-    window.setTimeout(() => { if (targetObserver) { targetObserver.disconnect(); targetObserver = null; } }, 900);
-  }
-
-  function renderTourStep(featureKey, index) {
+  async function renderTourStep(featureKey, index) {
     closeTour();
     const feature = FEATURES[featureKey];
-    if (!feature || !feature.tour.length) return;
+    if (!feature) return;
     const safeIndex = Math.max(0, Math.min(index, feature.tour.length - 1));
     const step = feature.tour[safeIndex];
     const tour = document.createElement("div");
@@ -221,28 +187,16 @@
     tour.setAttribute("role","dialog");
     tour.setAttribute("aria-modal","true");
     tour.setAttribute("aria-label",`${feature.name} guide`);
-    tour.innerHTML = `
-      <div class="pgt-backdrop" aria-hidden="true"></div>
-      <div class="pgt-spotlight" aria-hidden="true"></div>
-      <div class="pgt-tip" data-position="bottom">
-        <div class="pgt-eyebrow">${feature.icon} ${feature.name.toUpperCase()} · STEP ${safeIndex+1} OF ${feature.tour.length}</div>
-        <div class="pgt-arrow">↑</div>
-        <div class="pgt-title">${step.title}</div>
-        <div class="pgt-text">${step.text}</div>
-        <div class="pgt-controls">
-          <button type="button" class="pgt-close">Close</button>
-          ${safeIndex > 0 ? '<button type="button" class="pgt-prev">Back</button>' : ''}
-          <span class="pgt-count">${safeIndex+1}/${feature.tour.length}</span>
-          <button type="button" class="pgt-next">${safeIndex === feature.tour.length-1 ? "Done" : "Next"}</button>
-        </div>
-      </div>`;
+    tour.innerHTML = `<div class="pgt-backdrop" aria-hidden="true"></div><div class="pgt-spotlight" aria-hidden="true"></div><div class="pgt-tip" data-position="bottom"><div class="pgt-eyebrow">${feature.icon} ${feature.name.toUpperCase()} · STEP ${safeIndex+1} OF ${feature.tour.length}</div><div class="pgt-arrow">↑</div><div class="pgt-title">${step.title}</div><div class="pgt-text">${step.text}</div><div class="pgt-controls"><button type="button" class="pgt-close">Close</button>${safeIndex > 0 ? '<button type="button" class="pgt-prev">Back</button>' : ''}<span class="pgt-count">${safeIndex+1}/${feature.tour.length}</span><button type="button" class="pgt-next">${safeIndex === feature.tour.length-1 ? "Done" : "Next"}</button></div></div>`;
     document.body.appendChild(tour);
     tour.querySelector(".pgt-close").addEventListener("click", closeTour);
     tour.querySelector(".pgt-backdrop").addEventListener("click", closeTour);
     const prev = tour.querySelector(".pgt-prev");
-    if (prev) prev.addEventListener("click", () => renderTourStep(featureKey, safeIndex-1));
-    tour.querySelector(".pgt-next").addEventListener("click", () => safeIndex === feature.tour.length-1 ? closeTour() : renderTourStep(featureKey, safeIndex+1));
-    attachTargetWhenReady(featureKey, step, tour);
+    if (prev) prev.addEventListener("click", () => renderTourStep(featureKey, safeIndex - 1));
+    tour.querySelector(".pgt-next").addEventListener("click", () => safeIndex === feature.tour.length - 1 ? closeTour() : renderTourStep(featureKey, safeIndex + 1));
+    await nextPaint();
+    const target = findTarget(step.labels);
+    if (target) positionSpotlight(tour, target);
   }
 
   function closeGuide() {
@@ -250,33 +204,29 @@
     if (guide) guide.remove();
   }
 
-  function closeProfileIfNeeded() {
-    const profile = profilePanel();
-    if (!profile) return false;
-    const close = Array.from(profile.querySelectorAll('button,[role="button"]')).find((n) => {
-      const t = labelText(n);
-      return t === "close" || t === "close profile";
-    });
-    if (close) { close.click(); return true; }
-    return false;
-  }
-
-  function route(featureKey) {
+  async function route(featureKey) {
     const feature = FEATURES[featureKey];
     if (!feature) return;
     closeGuide();
     closeTour();
 
-    if (clickMatching(feature.routeLabels, featureKey)) {
+    if (feature.keepProfile) {
+      const panel = profilePanel();
+      const button = exactClickable(feature.routeLabels, panel || document);
+      if (button) button.click();
+      await nextPaint();
       renderTourStep(featureKey, 0);
       return;
     }
 
     closeProfileIfNeeded();
-    requestAnimationFrame(() => {
-      clickMatching(feature.routeLabels, featureKey);
-      renderTourStep(featureKey, 0);
-    });
+    await nextPaint();
+    const button = exactClickable(feature.routeLabels);
+    if (button) {
+      button.click();
+      await nextPaint();
+    }
+    renderTourStep(featureKey, 0);
   }
 
   function itemMarkup(key) {
@@ -302,7 +252,10 @@
       const details = item.querySelector(".pg-details");
       action.addEventListener("click", () => {
         const open = action.getAttribute("aria-expanded") !== "true";
-        guide.querySelectorAll('.pg-action[aria-expanded="true"]').forEach((a) => { a.setAttribute("aria-expanded","false"); a.parentElement.querySelector(".pg-details").classList.remove("open"); });
+        guide.querySelectorAll('.pg-action[aria-expanded="true"]').forEach((a) => {
+          a.setAttribute("aria-expanded","false");
+          a.parentElement.querySelector(".pg-details").classList.remove("open");
+        });
         action.setAttribute("aria-expanded", open ? "true" : "false");
         details.classList.toggle("open", open);
       });
@@ -324,7 +277,7 @@
   }
 
   const observer = new MutationObserver(installEntry);
-  observer.observe(document.documentElement, {childList:true, subtree:true});
+  observer.observe(document.documentElement, { childList:true, subtree:true });
   document.addEventListener("keydown", (e) => {
     if (e.key !== "Escape") return;
     if (document.getElementById(TOUR_ID)) closeTour(); else closeGuide();
