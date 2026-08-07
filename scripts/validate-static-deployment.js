@@ -85,7 +85,11 @@ if (fs.existsSync(path.join(ROOT, "login.html"))) {
 
 if (fs.existsSync(path.join(ROOT, "assets/plush-guide.js"))) {
   const guide = read("assets/plush-guide.js");
-  if (!guide.includes("walkthrough only points things out") || !guide.includes("Guided tours never complete tasks")) {
+  const hasPointOnlyAssurance = guide.includes("walkthrough only points things out");
+  const hasDataPreservationAssurance =
+    guide.includes("Guided tours never complete tasks") ||
+    guide.includes("does not create new data or change existing data");
+  if (!hasPointOnlyAssurance || !hasDataPreservationAssurance) {
     failures.push("PlushGuide no longer includes its data-preservation assurance.");
   }
   if (!guide.includes("PlushRescue") || !guide.includes("PlushProgress") || !guide.includes("PlushGuardian")) {
