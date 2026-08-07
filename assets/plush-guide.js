@@ -13,7 +13,7 @@
       icon: "🧸", name: "PlushRescue", summary: "Make today smaller, choose one next step, or soften pressure.",
       what: "PlushRescue helps when the full day feels like too much. It can narrow your attention to something manageable without deleting or rewriting your routine.",
       when: "Use it when you feel stuck, overloaded, behind, or simply need a gentler version of today.",
-      routeLabels: ["plushrescue", "rescue active"], fallback: "Open PlushRescue from its floating button.",
+      routeLabels: ["plushrescue", "rescue active"],
       tour: [
         { title: "This is PlushRescue", text: "This space is for making the next step feel smaller. Nothing here erases your original tasks.", labels: ["plushrescue", "rescue active", "rescue"] },
         { title: "Choose what would help", text: "Pick the option that matches your capacity right now. PlushRescue is meant to reduce pressure, not add another obligation.", labels: ["pick one", "smaller", "soften", "overwhelmed"] },
@@ -33,7 +33,7 @@
       icon: "📅", name: "PlushCalendar", summary: "See Month, Week, and Day views.",
       what: "PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.",
       when: "Use it to understand what is coming up, spot busy days, or review how your routine fits across a week or month.",
-      routeLabels: ["calendar", "plushcalendar"],
+      routeLabels: ["plushcalendar", "calendar"],
       tour: [
         { title: "Your calendar view", text: "This is where scheduled PlushLife items are organized by date.", labels: ["plushcalendar", "calendar"] },
         { title: "Month", text: "Month view gives you the big picture and helps you spot patterns across several weeks.", labels: ["month"] },
@@ -45,7 +45,7 @@
       icon: "📈", name: "PlushProgress", summary: "Review trends, consistency, and what is helping.",
       what: "PlushProgress turns your completed routines into a gentle history of consistency and patterns. It is for noticing progress, not grading yourself.",
       when: "Use it when you want to see what has been working, where routines are becoming easier, or how your recent days compare.",
-      routeLabels: ["progress", "plushprogress"],
+      routeLabels: ["plushprogress", "progress"],
       tour: [
         { title: "Your progress, not a score", text: "This area summarizes what you have actually done over time. A lower day is information, not a failure.", labels: ["plushprogress", "progress"] },
         { title: "Look for patterns", text: "Use the trends and consistency views to notice routines that are sticking and days that may need more support.", labels: ["trend", "consistency", "week", "history"] },
@@ -96,9 +96,9 @@
       icon: "🤝", name: "PlushGuardian", summary: "Open the support connection and privacy controls.",
       what: "PlushGuardian is the optional support connection area. It controls how a trusted support person can connect and what that connection is allowed to do.",
       when: "Use it to review or change a support connection, permissions, or privacy choices.",
-      routeLabels: ["plushguardian", "guardian"],
+      routeLabels: ["plushguardian", "guardian", "add a guardian"],
       tour: [
-        { title: "PlushGuardian", text: "Guardian support is optional. This area is where the connection and its boundaries are managed.", labels: ["plushguardian", "guardian"] },
+        { title: "PlushGuardian", text: "Guardian support is optional. This area is where the connection and its boundaries are managed.", labels: ["plushguardian", "guardian", "add a guardian"] },
         { title: "Privacy stays visible", text: "Review the connection and privacy controls here before changing anything. PlushGuide itself never changes these settings.", labels: ["privacy", "connection", "permission"] },
       ],
     },
@@ -127,33 +127,27 @@
     #${ENTRY_ID} small{display:block;margin-top:4px;font-weight:500;line-height:1.35;opacity:.78}
     #${GUIDE_ID}{position:fixed;inset:0;z-index:2147483200;background:#32243b99;display:grid;place-items:end center;padding:16px 14px calc(16px + env(safe-area-inset-bottom));font-family:system-ui,sans-serif}
     #${GUIDE_ID} .pg-card{width:min(540px,100%);max-height:86vh;overflow:auto;border-radius:24px;background:#fff8fc;border:1px solid #ead7ef;box-shadow:0 20px 70px #26152f66;padding:18px;color:#5b4b6b}
-    #${GUIDE_ID} .pg-head{display:flex;gap:12px;align-items:flex-start}
-    #${GUIDE_ID} .pg-head>div{flex:1}
-    #${GUIDE_ID} h2{margin:4px 0 5px;font-size:22px}
-    #${GUIDE_ID} p{margin:0;line-height:1.45}
+    #${GUIDE_ID} .pg-head{display:flex;gap:12px;align-items:flex-start} #${GUIDE_ID} .pg-head>div{flex:1}
+    #${GUIDE_ID} h2{margin:4px 0 5px;font-size:22px} #${GUIDE_ID} p{margin:0;line-height:1.45}
     #${GUIDE_ID} .pg-close{border:0;background:transparent;color:#806d8d;font-size:25px;cursor:pointer;min-width:44px;min-height:44px}
-    #${GUIDE_ID} .pg-section{margin-top:16px}
-    #${GUIDE_ID} .pg-section-title{font-size:11px;font-weight:900;letter-spacing:.08em;color:#8a6b98;margin-bottom:7px}
+    #${GUIDE_ID} .pg-section{margin-top:16px} #${GUIDE_ID} .pg-section-title{font-size:11px;font-weight:900;letter-spacing:.08em;color:#8a6b98;margin-bottom:7px}
     #${GUIDE_ID} .pg-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;align-items:start}
     #${GUIDE_ID} .pg-item{border:1px solid #dec5e8;border-radius:15px;background:#fff;overflow:hidden}
     #${GUIDE_ID} .pg-action{width:100%;border:0;background:#fff;padding:11px;text-align:left;color:#5b4b6b;cursor:pointer;font:800 13px system-ui,sans-serif}
     #${GUIDE_ID} .pg-action small{display:block;margin-top:3px;font-weight:500;line-height:1.3;opacity:.75}
-    #${GUIDE_ID} .pg-action .pg-chevron{float:right;font-size:12px;opacity:.65;transition:transform .18s ease}
-    #${GUIDE_ID} .pg-action[aria-expanded="true"] .pg-chevron{transform:rotate(180deg)}
+    #${GUIDE_ID} .pg-action .pg-chevron{float:right;font-size:12px;opacity:.65;transition:transform .18s ease} #${GUIDE_ID} .pg-action[aria-expanded="true"] .pg-chevron{transform:rotate(180deg)}
     #${GUIDE_ID} .pg-details{display:none;border-top:1px solid #eee0f2;padding:0 11px 12px;font-size:12.5px;line-height:1.42;color:#6e6078;background:#fffdfd}
-    #${GUIDE_ID} .pg-details.open{display:block}
-    #${GUIDE_ID} .pg-details strong{display:block;color:#5b4b6b;margin:10px 0 2px}
+    #${GUIDE_ID} .pg-details.open{display:block} #${GUIDE_ID} .pg-details strong{display:block;color:#5b4b6b;margin:10px 0 2px}
     #${GUIDE_ID} .pg-show{width:100%;margin-top:11px;border:0;border-radius:12px;background:#8f63a4;color:#fff;padding:10px 12px;font:800 12.5px system-ui,sans-serif;cursor:pointer}
     #${GUIDE_ID} .pg-note{margin-top:14px;padding:10px 11px;border-radius:13px;background:#f2e9f7;font-size:12px;line-height:1.4}
     #${TOUR_ID}{position:fixed;inset:0;z-index:2147483300;pointer-events:none;font-family:system-ui,sans-serif}
     #${TOUR_ID} .pgt-backdrop{position:absolute;inset:0;background:#271b3066;pointer-events:auto}
     #${TOUR_ID} .pgt-backdrop.has-spotlight{background:transparent}
-    #${TOUR_ID} .pgt-spotlight{position:fixed;pointer-events:none;border:3px solid #f0b7ef;border-radius:14px;box-shadow:0 0 0 9999px #271b3066;transition:top .16s ease,left .16s ease,width .16s ease,height .16s ease}
+    #${TOUR_ID} .pgt-spotlight{position:fixed;pointer-events:none;border:3px solid #f0b7ef;border-radius:14px;box-shadow:0 0 0 9999px #271b3066;transition:top .12s ease,left .12s ease,width .12s ease,height .12s ease}
     #${TOUR_ID} .pgt-tip{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(420px,calc(100% - 28px));border-radius:18px;background:#fff8fc;border:1px solid #dfc8e8;box-shadow:0 18px 55px #24152d66;padding:14px;color:#5b4b6b;pointer-events:auto}
     #${TOUR_ID} .pgt-tip[data-position="top"]{top:calc(18px + env(safe-area-inset-top));bottom:auto}
     #${TOUR_ID} .pgt-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#9b69aa;margin-bottom:4px}
-    #${TOUR_ID} .pgt-title{font-size:17px;font-weight:900;margin-bottom:5px}
-    #${TOUR_ID} .pgt-text{font-size:13px;line-height:1.45;color:#6f6278}
+    #${TOUR_ID} .pgt-title{font-size:17px;font-weight:900;margin-bottom:5px} #${TOUR_ID} .pgt-text{font-size:13px;line-height:1.45;color:#6f6278}
     #${TOUR_ID} .pgt-arrow{font-size:22px;text-align:center;height:24px;color:#9b69aa;line-height:24px}
     #${TOUR_ID} .pgt-controls{display:flex;align-items:center;gap:8px;margin-top:12px}
     #${TOUR_ID} .pgt-controls button{border:1px solid #ddc8e6;border-radius:11px;background:#fff;color:#5b4b6b;padding:9px 12px;font-weight:800;cursor:pointer}
@@ -161,50 +155,92 @@
     #${TOUR_ID} .pgt-count{font-size:11px;font-weight:800;opacity:.65}
     .${HIGHLIGHT_CLASS}{outline:3px solid #f0b7ef!important;outline-offset:4px!important;border-radius:10px!important}
     @media(max-width:390px){#${GUIDE_ID} .pg-grid{grid-template-columns:1fr}}
-    @media(prefers-reduced-motion:reduce){#${GUIDE_ID} .pg-action .pg-chevron{transition:none}}
+    @media(prefers-reduced-motion:reduce){#${GUIDE_ID} .pg-action .pg-chevron,#${TOUR_ID} .pgt-spotlight{transition:none}}
   `;
   document.head.appendChild(style);
 
   const clean = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
-  const visible = (node) => !!(node && node.getClientRects && node.getClientRects().length);
+  const visible = (node) => !!(node && node.isConnected && node.getClientRects && node.getClientRects().length && getComputedStyle(node).visibility !== "hidden");
 
   function isGuideUi(node) {
-    return !!(node && node.closest && (node.closest(`#${GUIDE_ID}`) || node.closest(`#${TOUR_ID}`)));
+    return !!(node && node.closest && (node.closest(`#${GUIDE_ID}`) || node.closest(`#${TOUR_ID}`) || node.closest(`#${ENTRY_ID}`)));
   }
 
-  function candidates() {
-    return Array.from(document.querySelectorAll('button,a,[role="button"]')).filter((node) => visible(node) && !isGuideUi(node));
+  function labelText(node) {
+    return clean(node && (node.getAttribute("aria-label") || node.getAttribute("title") || node.getAttribute("placeholder") || node.textContent));
+  }
+
+  function matchScore(text, label) {
+    if (!text || !label) return 0;
+    if (text === label) return 100;
+    if (text.startsWith(label + " ") || text.endsWith(" " + label)) return 80;
+    const words = text.split(/\s+/);
+    if (words.includes(label)) return 70;
+    if (label.length >= 5 && text.includes(label)) return 50;
+    return 0;
+  }
+
+  function bestMatchingNode(selector, labels) {
+    const wanted = (labels || []).map(clean).filter(Boolean);
+    let best = null;
+    let bestScore = 0;
+    Array.from(document.querySelectorAll(selector)).forEach((node) => {
+      if (!visible(node) || isGuideUi(node)) return;
+      const text = labelText(node);
+      const score = wanted.reduce((max, label) => Math.max(max, matchScore(text, label)), 0);
+      if (score > bestScore) { best = node; bestScore = score; }
+    });
+    return best;
   }
 
   function clickMatching(labels) {
-    const wanted = labels.map(clean);
-    const match = candidates().find((node) => {
-      const text = clean(node.textContent || node.getAttribute("aria-label") || node.getAttribute("title"));
-      return wanted.some((label) => text === label || text.includes(label));
-    });
+    const match = bestMatchingNode('button,a,[role="button"]', labels);
     if (!match) return false;
     match.click();
     return true;
   }
 
   function findTourTarget(labels) {
-    if (!labels || !labels.length) return null;
-    const wanted = labels.map(clean);
-    const nodes = Array.from(document.querySelectorAll('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea')).filter((node) => visible(node) && !isGuideUi(node));
-    return nodes.find((node) => {
-      const text = clean(node.textContent || node.getAttribute("aria-label") || node.getAttribute("placeholder") || node.getAttribute("title"));
-      return wanted.some((label) => text === label || text.includes(label));
-    }) || null;
+    return bestMatchingNode('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea', labels);
   }
 
   function clearTourHighlight() {
     document.querySelectorAll(`.${HIGHLIGHT_CLASS}`).forEach((node) => node.classList.remove(HIGHLIGHT_CLASS));
   }
 
+  let tourCleanup = null;
   function closeTour() {
     clearTourHighlight();
+    if (tourCleanup) { tourCleanup(); tourCleanup = null; }
     const tour = document.getElementById(TOUR_ID);
     if (tour) tour.remove();
+  }
+
+  function afterLayout(callback, delay) {
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => window.setTimeout(callback, delay || 0)));
+  }
+
+  function positionTour(tour, target) {
+    if (!tour || !target || !visible(target)) return false;
+    const spotlight = tour.querySelector(".pgt-spotlight");
+    const backdrop = tour.querySelector(".pgt-backdrop");
+    const tip = tour.querySelector(".pgt-tip");
+    if (!spotlight || !backdrop || !tip) return false;
+    const rect = target.getBoundingClientRect();
+    if (!Number.isFinite(rect.top) || rect.width <= 0 || rect.height <= 0) return false;
+    const pad = 8;
+    const top = Math.max(4, rect.top - pad);
+    const left = Math.max(4, rect.left - pad);
+    spotlight.style.top = `${top}px`;
+    spotlight.style.left = `${left}px`;
+    spotlight.style.width = `${Math.max(24, Math.min(window.innerWidth - left - 4, rect.width + pad * 2))}px`;
+    spotlight.style.height = `${Math.max(24, Math.min(window.innerHeight - top - 4, rect.height + pad * 2))}px`;
+    backdrop.classList.add("has-spotlight");
+    const low = rect.top + rect.height / 2 > window.innerHeight * 0.52;
+    tip.dataset.position = low ? "top" : "bottom";
+    const arrow = tip.querySelector(".pgt-arrow");
+    if (arrow) arrow.textContent = low ? "↓" : "↑";
+    return true;
   }
 
   function renderTourStep(featureKey, index) {
@@ -214,26 +250,18 @@
     const safeIndex = Math.max(0, Math.min(index, feature.tour.length - 1));
     const step = feature.tour[safeIndex];
     const target = findTourTarget(step.labels);
-    if (target) {
-      target.classList.add(HIGHLIGHT_CLASS);
-      target.scrollIntoView({ behavior: "smooth", block: "center", inline: "nearest" });
-    }
 
     const tour = document.createElement("div");
     tour.id = TOUR_ID;
     tour.setAttribute("role", "dialog");
     tour.setAttribute("aria-modal", "true");
     tour.setAttribute("aria-label", `${feature.name} guide`);
-    const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
-    const targetIsLow = rect && rect.top > window.innerHeight * 0.52;
-    const pad = 8;
-    const spotlightStyle = rect ? `top:${Math.max(4, rect.top - pad)}px;left:${Math.max(4, rect.left - pad)}px;width:${Math.max(24, Math.min(window.innerWidth - Math.max(4, rect.left - pad) - 4, rect.width + pad * 2))}px;height:${Math.max(24, Math.min(window.innerHeight - Math.max(4, rect.top - pad) - 4, rect.height + pad * 2))}px` : "";
     tour.innerHTML = `
-      <div class="pgt-backdrop${rect ? " has-spotlight" : ""}" aria-hidden="true"></div>
-      ${rect ? `<div class="pgt-spotlight" aria-hidden="true" style="${spotlightStyle}"></div>` : ""}
-      <div class="pgt-tip" data-position="${targetIsLow ? "top" : "bottom"}">
+      <div class="pgt-backdrop" aria-hidden="true"></div>
+      <div class="pgt-spotlight" aria-hidden="true" style="display:none"></div>
+      <div class="pgt-tip" data-position="bottom">
         <div class="pgt-eyebrow">${feature.icon} ${feature.name.toUpperCase()} · STEP ${safeIndex + 1} OF ${feature.tour.length}</div>
-        ${target ? `<div class="pgt-arrow">${targetIsLow ? "↓" : "↑"}</div>` : ""}
+        <div class="pgt-arrow" style="visibility:hidden">↑</div>
         <div class="pgt-title">${step.title}</div>
         <div class="pgt-text">${step.text}</div>
         <div class="pgt-controls">
@@ -244,6 +272,29 @@
         </div>
       </div>`;
     document.body.appendChild(tour);
+
+    if (target) {
+      target.classList.add(HIGHLIGHT_CLASS);
+      target.scrollIntoView({ behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block: "center", inline: "nearest" });
+      const showSpotlight = () => {
+        if (!document.getElementById(TOUR_ID) || !visible(target)) return;
+        const spotlight = tour.querySelector(".pgt-spotlight");
+        const arrow = tour.querySelector(".pgt-arrow");
+        if (positionTour(tour, target)) {
+          spotlight.style.display = "block";
+          if (arrow) arrow.style.visibility = "visible";
+        }
+      };
+      afterLayout(showSpotlight, 180);
+      const onLayout = () => afterLayout(showSpotlight, 0);
+      window.addEventListener("resize", onLayout, { passive: true });
+      window.addEventListener("scroll", onLayout, { passive: true, capture: true });
+      tourCleanup = () => {
+        window.removeEventListener("resize", onLayout);
+        window.removeEventListener("scroll", onLayout, true);
+      };
+    }
+
     tour.querySelector(".pgt-close").addEventListener("click", closeTour);
     tour.querySelector(".pgt-backdrop").addEventListener("click", closeTour);
     const prev = tour.querySelector(".pgt-prev");
@@ -261,16 +312,16 @@
       attempts += 1;
       const firstStep = feature && feature.tour && feature.tour[0];
       if (firstStep && findTourTarget(firstStep.labels)) {
-        renderTourStep(featureKey, 0);
+        afterLayout(() => renderTourStep(featureKey, 0), 80);
         return;
       }
-      if (attempts < 20) {
+      if (attempts < 30) {
         window.setTimeout(waitForDestination, 120);
         return;
       }
       renderTourStep(featureKey, 0);
     };
-    window.setTimeout(waitForDestination, 180);
+    window.setTimeout(waitForDestination, 160);
   }
 
   function closeGuide() {
@@ -282,14 +333,15 @@
     const feature = FEATURES[featureKey];
     if (!feature) return;
     closeGuide();
+    closeTour();
     window.setTimeout(() => {
-      if (document.getElementById(GUIDE_ID)) closeGuide();
-      if (!clickMatching(feature.routeLabels)) {
-        window.alert(feature.fallback || "Open the matching PlushLife section from the navigation or Profile menu.");
+      if (clickMatching(feature.routeLabels)) {
+        startTour(featureKey);
         return;
       }
-      startTour(featureKey);
-    }, 90);
+      const firstStep = feature.tour && feature.tour[0];
+      if (firstStep && findTourTarget(firstStep.labels)) startTour(featureKey);
+    }, 120);
   }
 
   function itemMarkup(key) {
