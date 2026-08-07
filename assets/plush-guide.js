@@ -147,6 +147,8 @@
     #${GUIDE_ID} .pg-note{margin-top:14px;padding:10px 11px;border-radius:13px;background:#f2e9f7;font-size:12px;line-height:1.4}
     #${TOUR_ID}{position:fixed;inset:0;z-index:2147483300;pointer-events:none;font-family:system-ui,sans-serif}
     #${TOUR_ID} .pgt-backdrop{position:absolute;inset:0;background:#271b3066;pointer-events:auto}
+    #${TOUR_ID} .pgt-backdrop.has-spotlight{background:transparent}
+    #${TOUR_ID} .pgt-spotlight{position:fixed;pointer-events:none;border:3px solid #f0b7ef;border-radius:14px;box-shadow:0 0 0 9999px #271b3066;transition:top .16s ease,left .16s ease,width .16s ease,height .16s ease}
     #${TOUR_ID} .pgt-tip{position:fixed;left:50%;bottom:calc(18px + env(safe-area-inset-bottom));transform:translateX(-50%);width:min(420px,calc(100% - 28px));border-radius:18px;background:#fff8fc;border:1px solid #dfc8e8;box-shadow:0 18px 55px #24152d66;padding:14px;color:#5b4b6b;pointer-events:auto}
     #${TOUR_ID} .pgt-tip[data-position="top"]{top:calc(18px + env(safe-area-inset-top));bottom:auto}
     #${TOUR_ID} .pgt-eyebrow{font-size:11px;font-weight:900;letter-spacing:.08em;color:#9b69aa;margin-bottom:4px}
@@ -157,7 +159,7 @@
     #${TOUR_ID} .pgt-controls button{border:1px solid #ddc8e6;border-radius:11px;background:#fff;color:#5b4b6b;padding:9px 12px;font-weight:800;cursor:pointer}
     #${TOUR_ID} .pgt-controls .pgt-next{margin-left:auto;background:#8f63a4;color:#fff;border-color:#8f63a4}
     #${TOUR_ID} .pgt-count{font-size:11px;font-weight:800;opacity:.65}
-    .${HIGHLIGHT_CLASS}{position:relative!important;z-index:2147483290!important;outline:4px solid #f0b7ef!important;outline-offset:5px!important;border-radius:10px!important;box-shadow:0 0 0 9999px #271b3044!important}
+    .${HIGHLIGHT_CLASS}{outline:3px solid #f0b7ef!important;outline-offset:4px!important;border-radius:10px!important}
     @media(max-width:390px){#${GUIDE_ID} .pg-grid{grid-template-columns:1fr}}
     @media(prefers-reduced-motion:reduce){#${GUIDE_ID} .pg-action .pg-chevron{transition:none}}
   `;
@@ -220,8 +222,11 @@
     tour.setAttribute("aria-label", `${feature.name} guide`);
     const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;
     const targetIsLow = rect && rect.top > window.innerHeight * 0.52;
+    const pad = 8;
+    const spotlightStyle = rect ? `top:${Math.max(4, rect.top - pad)}px;left:${Math.max(4, rect.left - pad)}px;width:${Math.max(24, Math.min(window.innerWidth - Math.max(4, rect.left - pad) - 4, rect.width + pad * 2))}px;height:${Math.max(24, Math.min(window.innerHeight - Math.max(4, rect.top - pad) - 4, rect.height + pad * 2))}px` : "";
     tour.innerHTML = `
-      <div class="pgt-backdrop" aria-hidden="true"></div>
+      <div class="pgt-backdrop${rect ? " has-spotlight" : ""}" aria-hidden="true"></div>
+      ${rect ? `<div class="pgt-spotlight" aria-hidden="true" style="${spotlightStyle}"></div>` : ""}
       <div class="pgt-tip" data-position="${targetIsLow ? "top" : "bottom"}">
         <div class="pgt-eyebrow">${feature.icon} ${feature.name.toUpperCase()} · STEP ${safeIndex + 1} OF ${feature.tour.length}</div>
         ${target ? `<div class="pgt-arrow">${targetIsLow ? "↓" : "↑"}</div>` : ""}
