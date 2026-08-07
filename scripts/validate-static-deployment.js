@@ -85,7 +85,7 @@ if (fs.existsSync(path.join(ROOT, "login.html"))) {
 
 if (fs.existsSync(path.join(ROOT, "assets/plush-guide.js"))) {
   const guide = read("assets/plush-guide.js");
-  if (!guide.includes("your tasks, history, profile, and preferences stay exactly as you saved them")) {
+  if (!guide.includes("walkthrough only points things out") || !guide.includes("Guided tours never complete tasks")) {
     failures.push("PlushGuide no longer includes its data-preservation assurance.");
   }
   if (!guide.includes("PlushRescue") || !guide.includes("PlushProgress") || !guide.includes("PlushGuardian")) {
