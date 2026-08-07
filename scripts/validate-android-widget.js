@@ -20,7 +20,8 @@ function read(file) {
 
 if (fs.existsSync(layoutPath)) {
   const layout = read(layoutPath);
-  const tags = [...layout.matchAll(/<\/?([A-Za-z0-9_.]+)(?:\s|>|\/)/g)].map((match) => match[1]);
+  const layoutWithoutComments = layout.replace(/<!--[\s\S]*?-->/g, "");
+  const tags = [...layoutWithoutComments.matchAll(/<\/?([A-Za-z0-9_.]+)(?:\s|>|\/)/g)].map((match) => match[1]);
   const allowed = new Set([
     "LinearLayout",
     "RelativeLayout",
