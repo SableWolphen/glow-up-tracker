@@ -11,16 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Show PlushGuide source context
+      - name: Locate PlushGuide source
         run: |
-          python - <<'PY'
-          from pathlib import Path
-          s = Path('index.html').read_text()
-          needles = ['Everything you already have, in one place', 'MAKE TODAY FIT', 'PlushGuide does not create new data']
-          for needle in needles:
-              i = s.find(needle)
-              print('\n===', needle, 'index', i, '===')
-              if i >= 0:
-                  start=max(0, i-7000); end=min(len(s), i+14000)
-                  print(s[start:end])
-          PY
+          echo '=== files containing PlushGuide-ish text ==='
+          grep -RniE 'PLUSHGUIDE|PlushGuide|Everything you already have|MAKE TODAY FIT|PlushGuide does not create|PlushFocus|Change My Tasks' . --exclude-dir=.git --exclude='package-lock.json' | head -n 200 || true
