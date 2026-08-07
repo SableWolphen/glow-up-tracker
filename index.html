@@ -6191,7 +6191,7 @@ function GlowUpTracker() {
               <select value={editTaskDraft.habit_type || "regular"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, habit_type: event.target.value }))} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
                 <option value="regular">Regular task</option>
                 <option value="build">🌱 Build a habit</option>
-                <option value="reduce">🛡️ Break a habit</option>
+                <option value="reduce">🍂 Reduce a habit</option>
               </select>
             </label>
 
@@ -7474,7 +7474,7 @@ function GlowUpTracker() {
                   <select value={newTaskKind} onChange={(event) => setNewTaskKind(event.target.value)} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
                     <option value="regular">Regular task</option>
                     <option value="build">🌱 Build a habit</option>
-                    <option value="reduce">🛡️ Break a habit</option>
+                    <option value="reduce">🍂 Reduce a habit</option>
                   </select>
                 </label>
                 {newTaskKind !== "regular" && (
