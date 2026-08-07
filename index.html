@@ -7169,20 +7169,28 @@ function GlowUpTracker() {
           {adminFunnel && (
             <div style={{ marginBottom: 16, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.82)", border: "1px solid #F0D5DB" }}>
               <div style={{ fontSize: 12, fontWeight: 900, color: "#4C8FE8" }}>🚦 ONBOARDING FUNNEL</div>
-              <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E" }}>How many distinct accounts reached each onboarding step, versus how many finished.</div>
-              <div style={{ display: "grid", gap: 6, marginTop: 10 }}>
-                {(adminFunnel.by_step || []).map((row) => {
+              <div style={{ marginTop: 4, fontSize: 10.5, color: "#8C6B9E", lineHeight: 1.45 }}>Shows how many tracked accounts reached each stage and where people stopped. Cozy and Guardian onboarding are combined here, so stage names are intentionally broad.</div>
+              <div style={{ marginTop: 8, padding: "8px 10px", borderRadius: 10, background: "#F7FBFF", border: "1px solid #DCEEFF", fontSize: 10.5, color: "#6B5A7D" }}>
+                <b>{adminFunnel.started || 0}</b> tracked starters · <b>{adminFunnel.completed || 0}</b> finished · <b>{Math.max(0, (adminFunnel.started || 0) - (adminFunnel.completed || 0))}</b> unfinished
+              </div>
+              <div style={{ display: "grid", gap: 9, marginTop: 10 }}>
+                {(adminFunnel.by_step || []).map((row, index, rows) => {
                   const started = adminFunnel.started || 1;
                   const pct = Math.round((row.reached / started) * 100);
+                  const nextReached = index < rows.length - 1 ? Number(rows[index + 1]?.reached || 0) : Number(adminFunnel.completed || 0);
+                  const dropped = Math.max(0, Number(row.reached || 0) - nextReached);
+                  const stageNames = ["Profile & welcome", "Setup choices", "Starting point", "Goals & support", "Preferences", "Ready to begin"];
+                  const stageName = stageNames[Math.max(0, Number(row.step || 1) - 1)] || `Stage ${row.step}`;
                   return (
                     <div key={row.step}>
                       <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: "#6B5A7D", marginBottom: 3 }}>
-                        <span>Step {row.step}</span>
-                        <span>{row.reached} ({pct}%)</span>
+                        <span><b>{stageName}</b> <span style={{ fontSize: 9.5, color: "#9A86A7" }}>· Step {row.step}</span></span>
+                        <span>{row.reached} reached · {pct}%</span>
                       </div>
                       <div style={{ height: 8, borderRadius: 5, background: "#EAF4FF", overflow: "hidden" }}>
                         <div style={{ height: "100%", width: `${pct}%`, background: "#4C8FE8", borderRadius: 5 }} />
                       </div>
+                      <div style={{ marginTop: 3, fontSize: 9.8, color: dropped > 0 ? "#B06A7A" : "#7B9B8F" }}>{dropped > 0 ? `${dropped} stopped here before the next stage` : "No drop-off at this stage"}</div>
                     </div>
                   );
                 })}
