@@ -1,0 +1,50 @@
+name: Fix PlushGuide spotlight once
+on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/fix-plushguide-spotlight-once.yml'
+permissions:
+  contents: write
+jobs:
+  fix:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Apply spotlight cutout fix
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          p=Path('assets/plush-guide.js')
+          s=p.read_text()
+          old='''    #${TOUR_ID} .pgt-backdrop{position:absolute;inset:0;background:#271b3066;pointer-events:auto}\n'''
+          new='''    #${TOUR_ID} .pgt-backdrop{position:absolute;inset:0;background:#271b3066;pointer-events:auto}\n    #${TOUR_ID} .pgt-backdrop.has-spotlight{background:transparent}\n    #${TOUR_ID} .pgt-spotlight{position:fixed;pointer-events:none;border:3px solid #f0b7ef;border-radius:14px;box-shadow:0 0 0 9999px #271b3066;transition:top .16s ease,left .16s ease,width .16s ease,height .16s ease}\n'''
+          if old not in s: raise SystemExit('backdrop CSS guard not found')
+          s=s.replace(old,new,1)
+          old2='''    .${HIGHLIGHT_CLASS}{position:relative!important;z-index:2147483290!important;outline:4px solid #f0b7ef!important;outline-offset:5px!important;border-radius:10px!important;box-shadow:0 0 0 9999px #271b3044!important}\n'''
+          new2='''    .${HIGHLIGHT_CLASS}{outline:3px solid #f0b7ef!important;outline-offset:4px!important;border-radius:10px!important}\n'''
+          if old2 not in s: raise SystemExit('highlight CSS guard not found')
+          s=s.replace(old2,new2,1)
+          old3='''    const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;\n    const targetIsLow = rect && rect.top > window.innerHeight * 0.52;\n    tour.innerHTML = `\n      <div class="pgt-backdrop" aria-hidden="true"></div>\n      <div class="pgt-tip" data-position="${targetIsLow ? "top" : "bottom"}">\n'''
+          new3='''    const rect = target && target.getBoundingClientRect ? target.getBoundingClientRect() : null;\n    const targetIsLow = rect && rect.top > window.innerHeight * 0.52;\n    const pad = 8;\n    const spotlightStyle = rect ? `top:${Math.max(4, rect.top - pad)}px;left:${Math.max(4, rect.left - pad)}px;width:${Math.max(24, Math.min(window.innerWidth - Math.max(4, rect.left - pad) - 4, rect.width + pad * 2))}px;height:${Math.max(24, Math.min(window.innerHeight - Math.max(4, rect.top - pad) - 4, rect.height + pad * 2))}px` : "";\n    tour.innerHTML = `\n      <div class="pgt-backdrop${rect ? " has-spotlight" : ""}" aria-hidden="true"></div>\n      ${rect ? `<div class="pgt-spotlight" aria-hidden="true" style="${spotlightStyle}"></div>` : ""}\n      <div class="pgt-tip" data-position="${targetIsLow ? "top" : "bottom"}">\n'''
+          if old3 not in s: raise SystemExit('tour markup guard not found')
+          s=s.replace(old3,new3,1)
+          p.write_text(s)
+          PY
+      - name: Validate
+        run: |
+          node --check assets/plush-guide.js
+          npm test
+      - name: Commit fix
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add assets/plush-guide.js
+          git diff --cached --quiet && exit 0
+          git commit -m "Fix PlushGuide spotlight visibility"
+          git push
