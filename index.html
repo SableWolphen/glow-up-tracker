@@ -8026,9 +8026,19 @@ function GlowUpTracker() {
               <span style={{ color: "#A65DC1", fontWeight: 900 }}>›</span>
             </div>
             {privateNote ? (
-              <div style={{ marginTop: 5, fontSize: 12.5, lineHeight: 1.5, color: "#6B5A7D" }}>You already wrote about today — tap to keep going.</div>
+              <div style={{ marginTop: 7 }}>
+                <div style={{ fontSize: 9.5, letterSpacing: "0.08em", fontWeight: 900, color: "#9A6BAD" }}>TODAY'S PROMPT</div>
+                <div style={{ marginTop: 3, fontSize: 12.5, lineHeight: 1.45, color: "#6B5A7D", fontStyle: "italic" }}>{reflectionPrompt}</div>
+                <div style={{ marginTop: 8, fontSize: 9.5, letterSpacing: "0.08em", fontWeight: 900, color: "#9A6BAD" }}>YOU WROTE</div>
+                <div style={{ marginTop: 3, fontSize: 12.5, lineHeight: 1.5, color: "#5B4B6B" }}>{privateNote.length > 180 ? `${privateNote.slice(0, 180).trim()}…` : privateNote}</div>
+                <div style={{ marginTop: 7, fontSize: 11, fontWeight: 900, color: "#A65DC1" }}>View entry →</div>
+              </div>
             ) : (
-              <div style={{ marginTop: 5, fontSize: 13, lineHeight: 1.5, color: "#6B5A7D", fontStyle: "italic" }}>{reflectionPrompt}</div>
+              <div style={{ marginTop: 7 }}>
+                <div style={{ fontSize: 9.5, letterSpacing: "0.08em", fontWeight: 900, color: "#9A6BAD" }}>TODAY'S PROMPT</div>
+                <div style={{ marginTop: 3, fontSize: 13, lineHeight: 1.5, color: "#6B5A7D", fontStyle: "italic" }}>{reflectionPrompt}</div>
+                <div style={{ marginTop: 7, fontSize: 11, fontWeight: 900, color: "#A65DC1" }}>Write about this →</div>
+              </div>
             )}
           </button>
         )}
