@@ -19,7 +19,7 @@ jobs:
           cache: npm
       - name: Install dependencies
         run: npm ci
-      - name: Apply guarded cleanup
+      - name: Apply guarded cleanup to both stale labels
         run: python scripts/fix-health-audit-findings.py
       - name: Validate app
         run: npm test
