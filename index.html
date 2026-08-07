@@ -4748,7 +4748,7 @@ function GlowUpTracker() {
       // all 7 days) get grouped under one "Daily" header below, distinct
       // from this-list's-own section — otherwise they were indistinguishable
       // from a today-only task that just happens to share the same section.
-      isEveryday: task.day_id === "daily" || (Array.isArray(task.schedule_days) && task.schedule_days.length === 7),
+      isEveryday: false,
       isBonus: taskIsOptional(task),
       habitType: habitTypeForTask(task),
     };
