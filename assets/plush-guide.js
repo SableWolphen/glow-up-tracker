@@ -168,8 +168,12 @@
   const clean = (value) => String(value || "").replace(/\s+/g, " ").trim().toLowerCase();
   const visible = (node) => !!(node && node.getClientRects && node.getClientRects().length);
 
+  function isGuideUi(node) {
+    return !!(node && node.closest && (node.closest(`#${GUIDE_ID}`) || node.closest(`#${TOUR_ID}`)));
+  }
+
   function candidates() {
-    return Array.from(document.querySelectorAll('button,a,[role="button"]')).filter(visible);
+    return Array.from(document.querySelectorAll('button,a,[role="button"]')).filter((node) => visible(node) && !isGuideUi(node));
   }
 
   function clickMatching(labels) {
@@ -186,7 +190,7 @@
   function findTourTarget(labels) {
     if (!labels || !labels.length) return null;
     const wanted = labels.map(clean);
-    const nodes = Array.from(document.querySelectorAll('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea')).filter(visible);
+    const nodes = Array.from(document.querySelectorAll('button,a,[role="button"],h1,h2,h3,h4,label,[aria-label],input,select,textarea')).filter((node) => visible(node) && !isGuideUi(node));
     return nodes.find((node) => {
       const text = clean(node.textContent || node.getAttribute("aria-label") || node.getAttribute("placeholder") || node.getAttribute("title"));
       return wanted.some((label) => text === label || text.includes(label));
@@ -251,7 +255,22 @@
   }
 
   function startTour(featureKey) {
-    window.setTimeout(() => renderTourStep(featureKey, 0), 320);
+    const feature = FEATURES[featureKey];
+    let attempts = 0;
+    const waitForDestination = () => {
+      attempts += 1;
+      const firstStep = feature && feature.tour && feature.tour[0];
+      if (firstStep && findTourTarget(firstStep.labels)) {
+        renderTourStep(featureKey, 0);
+        return;
+      }
+      if (attempts < 20) {
+        window.setTimeout(waitForDestination, 120);
+        return;
+      }
+      renderTourStep(featureKey, 0);
+    };
+    window.setTimeout(waitForDestination, 180);
   }
 
   function closeGuide() {
@@ -264,12 +283,13 @@
     if (!feature) return;
     closeGuide();
     window.setTimeout(() => {
+      if (document.getElementById(GUIDE_ID)) closeGuide();
       if (!clickMatching(feature.routeLabels)) {
         window.alert(feature.fallback || "Open the matching PlushLife section from the navigation or Profile menu.");
         return;
       }
       startTour(featureKey);
-    }, 40);
+    }, 90);
   }
 
   function itemMarkup(key) {
