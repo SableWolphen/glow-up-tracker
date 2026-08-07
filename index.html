@@ -1138,7 +1138,7 @@ function HabitTypeIcon({ task }) {
   if (habitType === "regular") return null;
   return (
     <span aria-hidden="true" title={habitType === "build" ? "Building this habit" : "Reducing this habit"} style={{ marginRight: 5 }}>
-      {habitType === "build" ? "🌱" : "🛡️"}
+      {habitType === "build" ? "🌱" : "🍂"}
     </span>
   );
 }
@@ -6190,8 +6190,8 @@ function GlowUpTracker() {
               WHAT KIND OF TASK IS THIS?
               <select value={editTaskDraft.habit_type || "regular"} onChange={(event) => setEditTaskDraft((draft) => ({ ...draft, habit_type: event.target.value }))} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
                 <option value="regular">Regular task</option>
-                <option value="build">🌱 Build a good habit</option>
-                <option value="reduce">🛡️ Reduce a habit</option>
+                <option value="build">🌱 Build a habit</option>
+                <option value="reduce">🛡️ Break a habit</option>
               </select>
             </label>
 
@@ -7435,8 +7435,8 @@ function GlowUpTracker() {
                   WHAT KIND OF TASK IS THIS?
                   <select value={newTaskKind} onChange={(event) => setNewTaskKind(event.target.value)} aria-label="Choose task kind" style={{ width: "100%", padding: 9, borderRadius: 10, border: "1px solid #E3C9EC", background: "white" }}>
                     <option value="regular">Regular task</option>
-                    <option value="build">🌱 Build a good habit</option>
-                    <option value="reduce">🛡️ Reduce a habit</option>
+                    <option value="build">🌱 Build a habit</option>
+                    <option value="reduce">🛡️ Break a habit</option>
                   </select>
                 </label>
                 {newTaskKind !== "regular" && (
@@ -8126,16 +8126,17 @@ function GlowUpTracker() {
         {dailyCheckIn.day_type !== "rest" && (() => {
           // A small glance at what still needs doing, so leading with the
           // schedule doesn't mean losing sight of today's tasks entirely.
-          const previewTasks = requiredRows.filter((r) => !viewDone[r.key]).slice(0, 3);
-          if (previewTasks.length === 0) return null;
+          const habitRowsToday = rows.filter((r) => r.habitType !== "regular");
+          const previewHabits = habitRowsToday.filter((r) => !viewDone[r.key]).slice(0, 3);
+          if (habitRowsToday.length === 0) return null;
           return (
             <div style={{ marginTop: 14, padding: 14, borderRadius: 16, background: "rgba(255,255,255,0.58)", border: "1px solid #E6D4F2" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8, marginBottom: 8 }}>
-                <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>A FEW TASKS TODAY</div>
-                <button type="button" onClick={() => setTodayCardIndex(1)} style={{ padding: "5px 9px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>See all ({requiredRows.length}) →</button>
+                <div style={{ fontSize: 11, letterSpacing: "0.18em", color: day.accent, fontWeight: 800 }}>🌱 HABITS TODAY</div>
+                <button type="button" onClick={() => openTaskManager(dayIdForDate(period.date))} style={{ padding: "5px 9px", borderRadius: 8, border: `1px solid ${day.accent}55`, background: "white", color: day.accent, fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Manage habits ({habitRowsToday.length}) →</button>
               </div>
               <div style={{ display: "grid", gap: 5 }}>
-                {previewTasks.map((r) => (
+                {previewHabits.length > 0 ? previewHabits.map((r) => (
                   <div key={r.key} style={{ display: "flex", alignItems: "center", gap: 10, padding: "8px 9px", borderRadius: 9, background: "#FFFFFF99", border: "1px solid #F3D9EC", opacity: isFutureView ? 0.62 : 1 }}>
                     <span onClick={() => { if (!isFutureView) toggle(r.key); }}
                       role="checkbox" aria-checked={false} aria-label={r.label} tabIndex={isFutureView ? -1 : 0}
@@ -8146,7 +8147,9 @@ function GlowUpTracker() {
                       {r.label}
                     </span>
                   </div>
-                ))}
+                )) : (
+                  <div style={{ padding: "9px 10px", borderRadius: 9, background: "#FFFFFF99", border: "1px solid #D7EEE2", fontSize: 12.5, color: "#318C79", fontWeight: 800 }}>All of today\'s habits are checked in. ✨</div>
+                )}
               </div>
             </div>
           );
@@ -8727,7 +8730,7 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#F2FFF8CC", border: "1px solid #BFE5D2" }}>
             <div style={{ fontSize: 11, letterSpacing: "0.14em", fontWeight: 900, color: "#318C79" }}>🌱 HABIT GARDEN & REWARDS</div>
             <div style={{ marginTop: 5, fontSize: 12, lineHeight: 1.5, color: "#5E766F" }}>
-              Good habits grow here, and habits you are reducing count as caring wins too. A reset never takes away a badge you already earned.
+              Habits you are building grow here, and habits you are breaking count as caring wins too. A reset never takes away a badge you already earned.
             </div>
             <div style={{ display: "grid", gap: 8, marginTop: 11 }}>
               {habitTasks.map((habit) => {
@@ -8738,11 +8741,11 @@ function GlowUpTracker() {
                 <div key={habit.task_key} style={{ padding: "10px 11px", borderRadius: 12, background: "#FFFFFFB8", border: "1px solid #D7EEE2" }}>
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, flexWrap: "wrap" }}>
                     <div style={{ fontSize: 13.5, fontWeight: 900, color: "#4F405C" }}>
-                      {habit.habitType === "build" ? "🌱" : "🛡️"} {habit.task}
+                      {habit.habitType === "build" ? "🌱" : "🍂"} {habit.task}
                     </div>
                     <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap" }}>
                       <span style={{ padding: "3px 7px", borderRadius: 999, background: habit.habitType === "build" ? "#EAF4FF" : "#FFF3E4", color: habit.habitType === "build" ? "#4C8FE8" : "#B4761D", fontSize: 9.5, fontWeight: 800 }}>
-                        {habit.habitType === "build" ? "Building" : "Reducing"}
+                        {habit.habitType === "build" ? "Building" : "Breaking"}
                       </span>
                       {habit.stats.current > 0 && (
                         <div title={`Best ever: ${habit.stats.best}`} style={{ padding: "4px 7px", borderRadius: 999, background: "#FFF3E4", color: "#B4761D", fontSize: 10.5, fontWeight: 900 }}>
