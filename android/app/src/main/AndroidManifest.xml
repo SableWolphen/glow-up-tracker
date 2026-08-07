@@ -41,6 +41,7 @@
             android:exported="true">
             <intent-filter>
                 <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+                <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
                 <action android:name="com.PlushLife.WIDGET_REFRESH" />
             </intent-filter>
             <meta-data
@@ -48,8 +49,6 @@
                 android:resource="@xml/plushlife_widget_info" />
         </receiver>
     </application>
-
-    <!-- Permissions -->
 
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
