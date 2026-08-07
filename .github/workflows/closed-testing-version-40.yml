@@ -1,0 +1,118 @@
+name: Closed testing Version 40
+
+# Release trigger commit: Version 40 fixes PlushGuide routing and incorrect spotlight targets.
+on:
+  workflow_dispatch: {}
+  push:
+    branches: [main]
+
+permissions:
+  contents: write
+
+jobs:
+  build-and-upload:
+    if: github.event_name == 'workflow_dispatch' || contains(github.event.head_commit.message, '[release-40]')
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Set up JDK
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "21"
+
+      - name: Set up Android SDK
+        uses: android-actions/setup-android@v3
+
+      - name: Install Android API 36
+        run: sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run app and widget tests
+        run: npm test
+
+      - name: Build www and sync Android
+        run: npm run android:sync
+
+      - name: Set release version 40
+        working-directory: android/app
+        run: |
+          sed -E -i 's/versionCode [0-9]+/versionCode 40/' build.gradle
+          sed -E -i 's/versionName "[^"]+"/versionName "1.0.40"/' build.gradle
+          grep -q "versionCode 40" build.gradle
+          grep -q 'versionName "1.0.40"' build.gradle
+
+      - name: Compile Android release sources
+        working-directory: android
+        run: ./gradlew compileReleaseJavaWithJavac
+
+      - name: Verify signing secrets
+        env:
+          KEYSTORE: ${{ secrets.ANDROID_KEYSTORE_BASE64 }}
+          STORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLAY_JSON: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+        run: |
+          test -n "$KEYSTORE" || { echo "ANDROID_KEYSTORE_BASE64 is missing"; exit 1; }
+          test -n "$STORE_PASSWORD" || { echo "ANDROID_KEYSTORE_PASSWORD is missing"; exit 1; }
+          test -n "$KEY_ALIAS" || { echo "ANDROID_KEY_ALIAS is missing"; exit 1; }
+          test -n "$KEY_PASSWORD" || { echo "ANDROID_KEY_PASSWORD is missing"; exit 1; }
+          test -n "$PLAY_JSON" || { echo "PLAY_SERVICE_ACCOUNT_JSON is missing"; exit 1; }
+
+      - name: Decode signing keystore
+        run: echo "${{ secrets.ANDROID_KEYSTORE_BASE64 }}" | base64 -d > android/app/release.keystore
+
+      - name: Build signed AAB
+        working-directory: android
+        env:
+          PLUSHLIFE_KEYSTORE_PATH: release.keystore
+          PLUSHLIFE_KEYSTORE_PASSWORD: ${{ secrets.ANDROID_KEYSTORE_PASSWORD }}
+          PLUSHLIFE_KEY_ALIAS: ${{ secrets.ANDROID_KEY_ALIAS }}
+          PLUSHLIFE_KEY_PASSWORD: ${{ secrets.ANDROID_KEY_PASSWORD }}
+          PLUSHLIFE_GIT_SHA: ${{ github.sha }}
+        run: ./gradlew bundleRelease
+
+      - name: Upload AAB artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release-40
+          path: android/app/build/outputs/bundle/release/app-release.aab
+          if-no-files-found: error
+          retention-days: 30
+
+      - name: Create or update GitHub Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view v1.0.40 >/dev/null 2>&1; then
+            gh release upload v1.0.40 android/app/build/outputs/bundle/release/app-release.aab --clobber
+          else
+            gh release create v1.0.40 android/app/build/outputs/bundle/release/app-release.aab \
+              --target "$GITHUB_SHA" \
+              --title "PlushLife 1.0.40" \
+              --generate-notes
+          fi
+
+      - name: Publish to Google Play closed testing
+        uses: r0adkll/upload-google-play@v1
+        with:
+          serviceAccountJsonPlainText: ${{ secrets.PLAY_SERVICE_ACCOUNT_JSON }}
+          packageName: com.PlushLife
+          releaseFiles: android/app/build/outputs/bundle/release/app-release.aab
+          track: alpha
+          status: completed
+
+      - name: Remove decoded keystore
+        if: always()
+        run: rm -f android/app/release.keystore
