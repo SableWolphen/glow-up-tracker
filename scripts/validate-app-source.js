@@ -42,6 +42,8 @@ const requiredRegressionMarkers = [
   'Ambient themes never recolor content.',
   'A little hello from Mama 🍼',
   'const MOTHERLY_NICKNAMES = [',
+  'function NurseryNook({ outfit, mood, activityDays, onOpenCloset })',
+  'MY LITTLE NURSERY',
 ];
 
 for (const marker of requiredRegressionMarkers) {
