@@ -6759,7 +6759,7 @@ function GlowUpTracker() {
         )}
         <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"}</div>
+            <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{babyMode ? "WELCOME TO YOUR LITTLE NURSERY 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"}</div>
             <h1 className="app-title" style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
               {user ? personalPlushlistTitle : "PlushLife"} 💜
             </h1>
@@ -6823,8 +6823,9 @@ function GlowUpTracker() {
           }} style={{ flex: 1, display: "grid", gridTemplateColumns: `repeat(${dashboardItems.length}, minmax(0, 1fr))`, gap: 6, minWidth: 0 }}>
             {dashboardItems.map((item) => {
               const on = item.id === dashboard;
-              return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: item.label.length > 10 ? 9.5 : 11, lineHeight: 1.15, overflowWrap: "break-word", wordBreak: "break-word", cursor: "pointer" }}>
-                <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{item.label}
+              const displayLabel = babyMode ? ({ today: "Nursery", week: "My Week", care: "Comfort", progress: "My Growth", guardian: "Guardian" }[item.id] || item.label) : item.label;
+              return <button key={item.id} id={`dashboard-tab-${item.id}`} role="tab" aria-selected={on} onClick={() => goToDashboard(item.id)} style={{ position: "relative", minHeight: 52, padding: "7px 3px", borderRadius: 13, border: on ? `2px solid ${item.accent}` : "2px solid #F3D9EC", background: on ? `${item.accent}22` : "#FFFFFF", color: on ? item.accent : "#8C6B9E", fontWeight: 900, fontSize: displayLabel.length > 10 ? 9.5 : 11, lineHeight: 1.15, overflowWrap: "break-word", wordBreak: "break-word", cursor: "pointer" }}>
+                <span style={{ display: "block", fontSize: 16, marginBottom: 2 }} aria-hidden="true">{item.icon}</span>{displayLabel}
               </button>;
             })}
           </div>
@@ -6833,10 +6834,10 @@ function GlowUpTracker() {
         {dashboard === "today" && (
           <div style={{ display: "flex", alignItems: "center", gap: 7, margin: "-2px 0 14px", flexWrap: "wrap" }}>
             <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ flex: "1 1 220px", display: "flex", alignItems: "center", gap: 7, padding: "9px 11px", borderRadius: 11, border: "1px solid #E6D4F2", background: "#FFFFFFC7", color: "#76558A", fontWeight: 800, fontSize: 12, cursor: "pointer", textAlign: "left" }}>
-              🎯 {dailyCheckIn.mood ? `${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[1] || ""} ${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[2] || ""}` : dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : "Check in"}
+              {babyMode ? "🍼 How does my little self feel?" : "🎯"} {dailyCheckIn.mood ? `${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[1] || ""} ${CHECKIN_MOODS.find(([value]) => value === dailyCheckIn.mood)?.[2] || ""}` : dailyCheckIn.capacity ? { very_low: "😞 Very low", low: "😕 Low", usual: "🙂 Usual", high: "💪 High" }[dailyCheckIn.capacity] : babyMode ? "Tell me when you are ready" : "Check in"}
               {dailyCheckIn.day_type ? ` · ${DAY_TYPES.find(([value]) => value === dailyCheckIn.day_type)?.[2] || dailyCheckIn.day_type}` : ""}
               {dailyCheckIn.custom_essentials?.length ? ` · ${dailyCheckIn.custom_essentials.length} picked` : ""}
-              <span style={{ marginLeft: "auto", color: "#A65DC1", fontSize: 11 }}>Change</span>
+              <span style={{ marginLeft: "auto", color: "#A65DC1", fontSize: 11 }}>{babyMode ? "Tell me" : "Change"}</span>
             </button>
             {dailyCheckIn.day_type && dailyCheckIn.day_type !== "full" && <button type="button" onClick={() => selectDayType("full")} style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #E6D4F2", background: "white", color: "#76558A", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Full Day</button>}
             {rows.some((row) => row.sourceTask?.schedule_type === "once" && !viewDone[row.key]) && ["soft", "tiny", "recovery"].includes(dailyCheckIn.day_type) && <button type="button" onClick={moveAllOneTimeTasksToTomorrow} style={{ padding: "8px 10px", borderRadius: 10, border: "1px solid #E7C98D", background: "#FFFBF2", color: "#9A6918", fontWeight: 800, fontSize: 11.5, cursor: "pointer" }}>Move extras</button>}
@@ -6847,10 +6848,10 @@ function GlowUpTracker() {
           <div style={{ marginBottom: 18, display: "grid", gap: 14 }}>
             <div style={{ padding: 18, borderRadius: 20, background: "linear-gradient(145deg,#F2FFFB,#FFF7FC)", border: "1px solid #BFE5D2", boxShadow: "0 8px 24px rgba(49,140,121,.09)" }}>
               <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10, flexWrap: "wrap" }}>
-                <div><div style={{ fontSize: 11, letterSpacing: ".15em", color: "#318C79", fontWeight: 900 }}>♥ PLUSHCARE</div><div style={{ marginTop: 4, fontSize: 20, color: "#4F405C", fontWeight: 900 }}>What would help right now?</div></div>
+                <div><div style={{ fontSize: 11, letterSpacing: ".15em", color: "#318C79", fontWeight: 900 }}>{babyMode ? "🧸 LITTLE COMFORT CORNER" : "♥ PLUSHCARE"}</div><div style={{ marginTop: 4, fontSize: 20, color: "#4F405C", fontWeight: 900 }}>{babyMode ? "What does my little self need?" : "What would help right now?"}</div></div>
                 <button type="button" onClick={() => setCheckInPopupOpen(true)} style={{ padding: "7px 10px", borderRadius: 10, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>Update check-in</button>
               </div>
-              <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#607A73" }}>Choose what is happening. PlushLife will offer one short tool and one realistic next step.</div>
+              <div style={{ marginTop: 6, fontSize: 12, lineHeight: 1.5, color: "#607A73" }}>{babyMode ? "Pick a feeling, and we will make everything smaller and softer together." : "Choose what is happening. PlushLife will offer one short tool and one realistic next step."}</div>
               <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 8, marginTop: 12 }}>
                 {HELP_ME_NOW_OPTIONS.slice(0, careSituationsExpanded ? HELP_ME_NOW_OPTIONS.length : 4).map((option) => (
                   <button key={option.id} type="button" onClick={() => { setCareMessage(option.next); openCareSession(option.tool); }} style={{ padding: "11px 10px", borderRadius: 13, border: "1px solid #CFE8E1", background: "#FFFFFFD9", color: "#4F625D", textAlign: "left", fontWeight: 800, fontSize: 12, lineHeight: 1.35, cursor: "pointer" }}><span style={{ fontSize: 19, marginRight: 6 }}>{option.icon}</span>{option.label}</button>
@@ -8464,7 +8465,7 @@ function GlowUpTracker() {
             <>
             <FeatureTip id="one_next_step" text="This is your One Next Step — just the single most useful thing to do right now, so you don't have to look at everything at once." />
             <div style={{ marginBottom: 14, padding: "13px 14px", borderRadius: 15, background: `${day.accent}10`, border: `1px solid ${day.accent}88` }}>
-              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", fontWeight: 900, color: day.accent }}>🎯 NEXT STEP</div>
+              <div style={{ fontSize: 10.5, letterSpacing: "0.12em", fontWeight: 900, color: day.accent }}>{babyMode ? "🍼 ONE TINY THING" : "🎯 NEXT STEP"}</div>
               <div style={{ marginTop: 4, fontSize: 18, fontWeight: 800, color: "#5B4B6B" }}>{nextStepTask.sourceTask && <HabitTypeIcon task={nextStepTask.sourceTask} />}{nextStepTask.label}</div>
               {nextStepHint?.key === nextStepTask.key && (
                 <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", fontSize: 12.5, color: "#6B5A7D" }}>
