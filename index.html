@@ -1481,6 +1481,7 @@ function ToolPanel({ title, onClose, children, inline = false, hideClose = false
 function GlowUpTracker() {
   const [active, setActive] = useState(() => dayIdForDate(trackerPeriod().date));
   const [dashboard, setDashboard] = useState("today");
+  const [progressView, setProgressView] = useState("overview");
   const swipeStartX = React.useRef(null);
   const swipeStartY = React.useRef(null);
   const todaySwipeStartX = React.useRef(null);
@@ -9021,6 +9022,13 @@ function GlowUpTracker() {
         </>}
 
         {dashboard === "progress" && <>
+        <div role="tablist" aria-label="Progress views" style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 6, marginBottom: 12, padding: 5, borderRadius: 14, background: "#F3E8FA", border: "1px solid #E6D4F2" }}>
+          {[{ id: "overview", label: "Overview", icon: "📊" }, { id: "story", label: "Care Story", icon: "📖" }, { id: "areas", label: "Care Areas", icon: "🪴" }].map((item) => {
+            const selected = progressView === item.id;
+            return <button key={item.id} type="button" role="tab" aria-selected={selected} onClick={() => setProgressView(item.id)} style={{ minWidth: 0, padding: "8px 4px", borderRadius: 10, border: selected ? "2px solid #A65DC1" : "1px solid transparent", background: selected ? "white" : "transparent", color: selected ? "#7A3D93" : "#8C6B9E", fontSize: 10.5, fontWeight: 900, cursor: "pointer" }}>{item.icon} {item.label}</button>;
+          })}
+        </div>
+        {progressView === "overview" && <>
         <div style={{ marginBottom: 12, padding: "11px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 8 }}>
             <div style={{ fontSize: 10.5, letterSpacing: "0.1em", fontWeight: 900, color: "#8E4EAA" }}>📮 THIS WEEK'S INTENTION</div>
@@ -9112,12 +9120,12 @@ function GlowUpTracker() {
           <div style={{ marginTop: 9, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
             <strong>Gentle weekly review:</strong> {weeklyEssentialDone} essentials and {weeklyBonusDone} bonus wins completed across {caringDays} caring {caringDays === 1 ? "day" : "days"}. A missed day never erases the care you gave yourself.
           </div>
-          <div style={{ marginTop: 9, padding: "12px", borderRadius: 12, background: "#F5FBF8", border: "1px solid #CFE8E1", color: "#526F67" }}>
+          {false && <div style={{ marginTop: 9, padding: "12px", borderRadius: 12, background: "#F5FBF8", border: "1px solid #CFE8E1", color: "#526F67" }}>
             <div style={{ fontSize: 9.5, letterSpacing: "0.12em", fontWeight: 900, color: "#318C79" }}>📖 YOUR CARE STORY</div>
             <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.55 }}>{careStory.map((line, index) => <div key={index} style={{ marginTop: index ? 3 : 0 }}>{line}</div>)}</div>
             <div style={{ marginTop: 7, fontSize: 10.5, lineHeight: 1.4, color: "#6B8A82" }}>A gentle reflection on what you chose—not a score, diagnosis, or rule for next week.</div>
-          </div>
-          {careAreas.length > 0 && (
+          </div>}
+          {false && careAreas.length > 0 && (
             <div style={{ marginTop: 9, padding: "12px", borderRadius: 12, background: "#F7F9FF", border: "1px solid #D9E6F6" }}>
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
                 <div style={{ fontSize: 9.5, letterSpacing: "0.12em", fontWeight: 900, color: "#4C78A8" }}>🪴 CARE AREAS</div>
@@ -9232,6 +9240,23 @@ function GlowUpTracker() {
             </div>
           )}
         </div>
+        </>}
+        {progressView === "story" && (
+          <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#F5FBF8", border: "1px solid #CFE8E1", boxShadow: "0 8px 24px rgba(77,132,112,.08)", color: "#526F67" }}>
+            <div style={{ fontSize: 10.5, letterSpacing: "0.14em", fontWeight: 900, color: "#318C79" }}>📖 YOUR CARE STORY · THIS WEEK</div>
+            <div style={{ marginTop: 7, fontSize: 14, lineHeight: 1.6 }}>{careStory.map((line, index) => <div key={index} style={{ marginTop: index ? 5 : 0 }}>{line}</div>)}</div>
+            <div style={{ marginTop: 12, paddingTop: 11, borderTop: "1px solid #D8EEE5", fontSize: 11.5, lineHeight: 1.55 }}>This is a reflection on the care you chose—not a score, diagnosis, or rule for next week.</div>
+            {weeklyHighlights && <div style={{ marginTop: 12, padding: 11, borderRadius: 11, background: "white", border: "1px solid #D8EEE5", fontSize: 11.5, lineHeight: 1.6 }}><strong>Small highlights:</strong>{weeklyHighlights.mostConsistent && <div style={{ marginTop: 4 }}>Steady routine: <strong><HabitTypeIcon task={weeklyHighlights.mostConsistent.task} />{weeklyHighlights.mostConsistent.task.task}</strong></div>}{weeklyHighlights.topTool && <div style={{ marginTop: 4 }}>Helpful support: <strong>{weeklyHighlights.topTool.icon} {weeklyHighlights.topTool.name || weeklyHighlights.topTool.title}</strong></div>}{weeklyHighlights.topMood && <div style={{ marginTop: 4 }}>Most common check-in: <strong>{weeklyHighlights.topMood}</strong></div>}</div>}
+            <button type="button" onClick={goWriteWeeklyIntention} style={{ marginTop: 12, width: "100%", padding: "9px 12px", borderRadius: 10, border: "1px solid #A9DCCD", background: "white", color: "#318C79", fontWeight: 900, cursor: "pointer" }}>📝 Set next week's intention</button>
+          </div>
+        )}
+        {progressView === "areas" && (
+          <div style={{ marginBottom: 18, padding: 16, borderRadius: 18, background: "#F7F9FF", border: "1px solid #D9E6F6", boxShadow: "0 8px 24px rgba(76,143,232,.08)" }}>
+            <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}><div style={{ fontSize: 10.5, letterSpacing: "0.14em", fontWeight: 900, color: "#4C78A8" }}>🪴 YOUR CARE AREAS</div><button type="button" onClick={() => openTaskManager()} style={{ padding: "5px 8px", borderRadius: 8, border: "1px solid #B9DCF6", background: "white", color: "#3D70A3", fontWeight: 900, fontSize: 10.5, cursor: "pointer" }}>Edit groups</button></div>
+            <div style={{ marginTop: 6, fontSize: 11.5, lineHeight: 1.45, color: "#6B7C99" }}>Your task groups become your care areas. Rename or make a group anytime from task settings.</div>
+            {careAreas.length ? <div style={{ display: "grid", gap: 10, marginTop: 14 }}>{careAreas.map((area) => <div key={area.label} style={{ padding: "10px 11px", borderRadius: 11, background: "white", border: "1px solid #DCEAF8" }}><div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 12, color: "#536C89" }}><strong>{area.label}</strong><span>{area.done}/{area.possible} · {area.pct}%</span></div><div style={{ height: 7, marginTop: 7, overflow: "hidden", borderRadius: 99, background: "#E6EFF9" }}><div style={{ height: "100%", width: `${area.pct}%`, borderRadius: 99, background: "linear-gradient(90deg,#7FC8F8,#4C8FE8)" }} /></div></div>)}</div> : <div style={{ marginTop: 12, padding: 11, borderRadius: 10, background: "white", color: "#6B7C99", fontSize: 12 }}>Add a few task groups and your care areas will appear here.</div>}
+          </div>
+        )}
         </>}
 
         </>

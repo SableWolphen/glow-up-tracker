@@ -33,6 +33,8 @@ const requiredRegressionMarkers = [
   'const careAreas = (() => {',
   '📖 YOUR CARE STORY',
   '🪴 CARE AREAS',
+  'const [progressView, setProgressView] = useState("overview");',
+  'aria-label="Progress views"',
 ];
 
 for (const marker of requiredRegressionMarkers) {
