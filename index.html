@@ -6860,6 +6860,17 @@ function GlowUpTracker() {
               {careMessage && <div aria-live="polite" style={{ marginTop: 10, padding: "9px 11px", borderRadius: 10, background: "#FFFFFFB8", color: "#5E766F", fontSize: 11.5, lineHeight: 1.5 }}>{careMessage}</div>}
             </div>
 
+            {babyMode && (
+              <BabyModeCareSuite
+                date={period.date}
+                todayDone={todayRequiredDone}
+                todayTotal={todayRequiredKeys.length}
+                activityDays={activityDaysTotal}
+                careDays={careDaysTotal}
+                onOpenJournal={() => { setPrivateNoteDraft(privateNote); setJournalQuickOpen(true); }}
+              />
+            )}
+
             <div role="tablist" aria-label="Care library" style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 7, padding: 6, borderRadius: 15, background: "#FFFFFF99", border: "1px solid #E6D4F2" }}>
               {[["quick", "🌿", "PlushCalm"], ["paths", "🗺️", "PlushPaths"], ["sleep", "🌙", "PlushSleep"]].map(([value, icon, label]) => (
                 <button key={value} type="button" role="tab" aria-selected={careSection === value} onClick={() => setCareSection(value)} style={{ minWidth: 0, padding: "9px 6px", borderRadius: 11, border: careSection === value ? "2px solid #A65DC1" : "1px solid transparent", background: careSection === value ? "#F7ECFB" : "transparent", color: careSection === value ? "#75428C" : "#7B6888", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{icon} {label}</button>
@@ -7200,9 +7211,9 @@ function GlowUpTracker() {
             </div>
 
             <div style={{ display: "flex", gap: 6, marginTop: 14 }}>
-              <button type="button" onClick={() => setCollectionTab("mascot")} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: collectionTab === "mascot" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "mascot" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🧸 Mascot Closet</button>
+              <button type="button" onClick={() => setCollectionTab("mascot")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: collectionTab === "mascot" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "mascot" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🧸 Closet</button>
               <button type="button" onClick={() => setCollectionTab("badges")} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: collectionTab === "badges" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "badges" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🏅 Badges</button>
-              <button type="button" onClick={() => setCollectionTab("wins")} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: collectionTab === "wins" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "wins" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🫙 Wins Jar</button>
+              <button type="button" onClick={() => setCollectionTab("wins")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: collectionTab === "wins" ? "2px solid #A65DC1" : "1px solid #E4D7B4", background: collectionTab === "wins" ? "#F8ECFC" : "white", color: "#5B4B6B", fontWeight: 800, cursor: "pointer" }}>🫙 Jar</button>
             </div>
 
             {collectionTab === "mascot" && (
@@ -8474,17 +8485,6 @@ function GlowUpTracker() {
             </>
           );
         })()}
-
-        {babyMode && !isFutureView && (
-          <BabyModeCareSuite
-            date={period.date}
-            todayDone={todayRequiredDone}
-            todayTotal={todayRequiredKeys.length}
-            activityDays={activityDaysTotal}
-            careDays={careDaysTotal}
-            onOpenJournal={() => { setPrivateNoteDraft(privateNote); setJournalQuickOpen(true); }}
-          />
-        )}
 
         {weeklyIntentionText && <div style={{ marginBottom: 12, padding: "10px 12px", borderRadius: 12, background: "#F9F1FC", border: "1px solid #E6D4F2" }}>
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", gap: 10 }}>
