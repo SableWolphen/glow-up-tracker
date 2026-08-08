@@ -6047,6 +6047,19 @@ function GlowUpTracker() {
         @media (max-width: 640px) {
           .dash-arrow { display: none; }
         }
+        @media (max-width: 480px) {
+          .app-title { font-size: 22px !important; line-height: 1.08; letter-spacing: -0.035em !important; }
+          .baby-mode .nursery-nook { min-height: 108px; margin-bottom: 12px; padding: 16px 14px 10px; border-radius: 19px; }
+          .baby-mode .nursery-mascot { height: 82px; padding-top: 0; transform: scale(.78); transform-origin: center bottom; }
+          .baby-mode .nursery-nook-label { top: 9px; left: 12px; }
+          .baby-mode .nursery-cloud-left { left: 4%; top: 35px; font-size: 24px; }
+          .baby-mode .nursery-cloud-right { right: 5%; top: 39px; font-size: 21px; }
+          .baby-mode .nursery-toy { bottom: 10px; font-size: 19px; }
+          .baby-mode .nursery-toy-left { left: 9%; }
+          .baby-mode .nursery-toy-right { right: 9%; }
+          .baby-mode .nursery-mobile { right: 12%; transform: scale(.8); transform-origin: top center; }
+          .baby-mode .nursery-nook-caption { right: 10px; bottom: 7px; font-size: 8.5px; }
+        }
       `}</style>
       {preferences.reduced_motion && <style>{`*,*::before,*::after{animation-duration:0.01ms!important;animation-iteration-count:1!important;transition-duration:0.01ms!important;scroll-behavior:auto!important}`}</style>}
       {autoPopupToShow === "weekly_kickoff" && (
@@ -6719,7 +6732,7 @@ function GlowUpTracker() {
         <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0 }}>
             <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"}</div>
-            <h1 style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
+            <h1 className="app-title" style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
               {user ? personalPlushlistTitle : "PlushLife"} 💜
             </h1>
           </div>
@@ -6734,7 +6747,7 @@ function GlowUpTracker() {
           </div>}
         </div>
 
-        {user && babyMode && (
+        {user && babyMode && dashboard === "today" && (
           <NurseryNook
             outfit={selectedOutfit}
             mood={mascotMood}

@@ -4,6 +4,7 @@
 
 const fs = require("fs");
 const path = require("path");
+const Babel = require("@babel/standalone");
 
 const ROOT = path.join(__dirname, "..");
 const WWW = path.join(ROOT, "www");
@@ -32,14 +33,12 @@ const SITE_DIRECTORIES = ["assets"];
 const VENDOR_FILES = [
   { src: "node_modules/react/umd/react.production.min.js", dest: "react.production.min.js" },
   { src: "node_modules/react-dom/umd/react-dom.production.min.js", dest: "react-dom.production.min.js" },
-  { src: "node_modules/@babel/standalone/babel.min.js", dest: "babel.min.js" },
   { src: "node_modules/@supabase/supabase-js/dist/umd/supabase.js", dest: "supabase.min.js" },
 ];
 
 const CDN_REPLACEMENTS = [
   ["https://unpkg.com/react@18/umd/react.production.min.js", "./vendor/react.production.min.js"],
   ["https://unpkg.com/react-dom@18/umd/react-dom.production.min.js", "./vendor/react-dom.production.min.js"],
-  ["https://unpkg.com/@babel/standalone/babel.min.js", "./vendor/babel.min.js"],
   ["https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.0/dist/umd/supabase.min.js", "./vendor/supabase.min.js"],
 ];
 
@@ -59,7 +58,17 @@ function copyDirectory(source, destination) {
   return true;
 }
 
-function prepareHtml(file, source) {
+function compileAppSource(source) {
+  const sourceMatch = source.match(/<script id="app-source" type="text\/plain">([\s\S]*?)<\/script>/);
+  if (!sourceMatch) throw new Error("Could not find the PlushLife app source in index.html");
+  return Babel.transform(sourceMatch[1], {
+    presets: [["react", { runtime: "classic" }]],
+    filename: "app.bundle.js",
+    compact: true,
+  }).code;
+}
+
+function prepareHtml(file, source, buildArtifacts) {
   let content = source;
   for (const [from, to] of CDN_REPLACEMENTS) content = content.split(from).join(to);
 
@@ -67,6 +76,14 @@ function prepareHtml(file, source) {
   // compatibility and the non-destructive feature helpers there while leaving
   // the GitHub Pages source untouched as an independently deployable backup.
   if (file === "index.html") {
+    buildArtifacts.appBundle = compileAppSource(source);
+    content = content
+      .replace(/<script src="https:\/\/unpkg\.com\/@babel\/standalone\/babel\.min\.js"><\/script>\s*/, "")
+      .replace(/<script id="app-source" type="text\/plain">[\s\S]*?<\/script>/, '<script src="./assets/app.bundle.js"></script>')
+      .replace(/<script>\s*\(function \(\) \{\s*const source = document\.getElementById\("app-source"\)\.textContent;\s*const compiled = Babel\.transform\(source, \{ presets: \[\["react", \{ runtime: "classic" \}\]\] \}\)\.code;\s*Function\(compiled\)\(\);\s*\}\(\)\);\s*<\/script>/, "");
+    if (content.includes("babel.min.js") || content.includes('id="app-source"') || content.includes("Babel.transform")) {
+      throw new Error("Production index.html still contains runtime Babel compilation");
+    }
     for (const script of GENERATED_INDEX_SCRIPTS) {
       if (!content.includes(script)) content = content.replace("</body>", `  ${script}\n</body>`);
     }
@@ -78,6 +95,7 @@ function prepareHtml(file, source) {
 function main() {
   rimraf(WWW);
   fs.mkdirSync(VENDOR, { recursive: true });
+  const buildArtifacts = {};
 
   let copiedFiles = 0;
   for (const file of SITE_FILES) {
@@ -86,7 +104,7 @@ function main() {
     const destination = path.join(WWW, file);
     fs.mkdirSync(path.dirname(destination), { recursive: true });
     if (/\.html$/.test(file)) {
-      const content = prepareHtml(file, fs.readFileSync(src, "utf8"));
+      const content = prepareHtml(file, fs.readFileSync(src, "utf8"), buildArtifacts);
       fs.writeFileSync(destination, content);
     } else {
       fs.copyFileSync(src, destination);
@@ -97,6 +115,10 @@ function main() {
   let copiedDirectories = 0;
   for (const directory of SITE_DIRECTORIES) {
     if (copyDirectory(path.join(ROOT, directory), path.join(WWW, directory))) copiedDirectories += 1;
+  }
+
+  if (buildArtifacts.appBundle) {
+    fs.writeFileSync(path.join(WWW, "assets", "app.bundle.js"), buildArtifacts.appBundle);
   }
 
   let missingVendorFiles = false;
@@ -111,7 +133,7 @@ function main() {
   }
 
   if (missingVendorFiles) process.exitCode = 1;
-  console.log(`www/ synced (${copiedFiles} files, ${copiedDirectories} directories, ${VENDOR_FILES.length} vendored scripts).`);
+  console.log(`www/ synced (${copiedFiles} files, ${copiedDirectories} directories, ${VENDOR_FILES.length} vendored scripts, precompiled app bundle).`);
 }
 
 main();
