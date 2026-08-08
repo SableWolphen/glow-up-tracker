@@ -54,6 +54,10 @@ const requiredRegressionMarkers = [
   'case "reflection_count": return reflectionDates.length;',
   'STILL TO UNLOCK',
   'Your progress is shown on each reward',
+  'function BabyArrivalRitual({ comfortItemName, onShowTinyThing, onSoftDay, onShowPlanner })',
+  'LITTLE SPACE ARRIVAL',
+  'NURSERY KEEPSAKE WALL',
+  'BEDTIME NEST',
 ];
 
 for (const marker of requiredRegressionMarkers) {
