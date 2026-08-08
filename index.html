@@ -1413,7 +1413,7 @@ function LandingPage({ email, setEmail, otpCode, setOtpCode, showSignIn, setShow
   );
 }
 
-function ToolPanel({ title, onClose, children, inline = false }) {
+function ToolPanel({ title, onClose, children, inline = false, hideClose = false }) {
   // onClose is a fresh arrow function on every parent render, so it can't be
   // in the effect's deps — that would toggle document.body.style.overflow
   // off and back on every time something inside the panel triggers a
@@ -1467,10 +1467,10 @@ function ToolPanel({ title, onClose, children, inline = false }) {
           backdropFilter: "blur(8px)",
         }}>
           <div style={{ fontSize: 15, fontWeight: 900, color: "#5B4B6B" }}>{title}</div>
-          <button type="button" onClick={onClose} aria-label={`Close ${title}`} style={{
+          {!hideClose && <button type="button" onClick={onClose} aria-label={`Close ${title}`} style={{
             minWidth: 44, minHeight: 38, padding: "7px 11px", borderRadius: 11, border: "1px solid #D9C5E2",
             background: "white", color: "#7A598C", fontWeight: 900, cursor: "pointer",
-          }}>{inline ? "Back to tracker" : "Close"}</button>
+          }}>{inline ? "Back to tracker" : "Close"}</button>}
         </div>
         <div style={{ padding: "14px" }}>{children}</div>
       </div>
@@ -7701,7 +7701,7 @@ function GlowUpTracker() {
         )}
 
         {user && dashboard === "guardian" && (
-          <ToolPanel inline title={isGuardianAccount ? "Guardian Support" : (supportViewMode === "caretaker" ? "Supporting" : (hasOwnGuardian ? "Guardian" : "Add a Guardian"))} onClose={() => setDashboard(isGuardianAccount ? "guardian" : "today")}>
+          <ToolPanel inline hideClose={isGuardianAccount} title={isGuardianAccount ? "Guardian Support" : (supportViewMode === "caretaker" ? "Supporting" : (hasOwnGuardian ? "Guardian" : "Add a Guardian"))} onClose={() => setDashboard(isGuardianAccount ? "guardian" : "today")}>
           <div style={{ marginBottom: 18, padding: 18, borderRadius: 20, background: "rgba(255,255,255,0.72)", border: "1px solid #B9DCF6", boxShadow: "0 8px 24px rgba(76,143,232,0.10)" }}>
             {isGuardianAccount && (
               <div style={{ marginBottom: 14, padding: "13px 14px", borderRadius: 14, background: "linear-gradient(135deg,#EAF6F1,#F4FAFF)", border: "1px solid #B9E0D0" }}>
