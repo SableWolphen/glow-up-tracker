@@ -1582,6 +1582,8 @@ function GlowUpTracker() {
   const [displayNameDraft, setDisplayNameDraft] = useState("");
   const [comfortItemDraft, setComfortItemDraft] = useState("");
   const [selectedTemplateId, setSelectedTemplateId] = useState("basics");
+  const [starterPackId, setStarterPackId] = useState("basics");
+  const [starterPackMessage, setStarterPackMessage] = useState("");
   const [onboardingReason, setOnboardingReason] = useState(null);
   const [onboardingIntentionDraft, setOnboardingIntentionDraft] = useState("");
   const [onboardingMode, setOnboardingMode] = useState(null);
@@ -3269,6 +3271,47 @@ function GlowUpTracker() {
     setTrackerTasks((tasks) => [...tasks, ...rows]);
     setImportText("");
     setImportMessage(`✨ Imported ${rows.length} ${rows.length === 1 ? "task" : "tasks"} into ${section}.`);
+  };
+
+  const addStarterPack = async () => {
+    const pack = TEMPLATE_PACKS.find((item) => item.id === starterPackId) || TEMPLATE_PACKS[0];
+    const existingTaskNames = new Set(
+      trackerTasks
+        .filter((item) => item.day_id === "daily" && !item.archived_at)
+        .map((item) => item.task.trim().toLocaleLowerCase())
+    );
+    const tasksToAdd = pack.tasks.filter((item) => !existingTaskNames.has(item.task.trim().toLocaleLowerCase()));
+    if (tasksToAdd.length === 0) {
+      setStarterPackMessage(`Everything in ${pack.label} is already on your every-day list.`);
+      return;
+    }
+    if (SUPPORTER_FEATURES_ENABLED && !isSupporterAccount) {
+      const dailyCount = trackerTasks.filter((item) => item.day_id === "daily" && !item.archived_at).length;
+      if (dailyCount + tasksToAdd.length > FREE_TASK_LIMIT_PER_DAY) {
+        setStarterPackMessage(`This pack needs ${tasksToAdd.length} open spots on your every-day list. Free accounts can have up to ${FREE_TASK_LIMIT_PER_DAY}.`);
+        return;
+      }
+    }
+    const nextSortOrder = Math.max(0, ...trackerTasks.filter((item) => item.day_id === "daily").map((item) => Number(item.sort_order) || 0));
+    const rows = tasksToAdd.map((item, index) => ({
+      user_id: user.id,
+      task_key: `starter-${pack.id}-${crypto.randomUUID()}`,
+      day_id: "daily",
+      section: item.section,
+      task: item.task,
+      detail: "",
+      sort_order: nextSortOrder + index + 1,
+      is_bonus: false,
+      schedule_type: "weekly",
+    }));
+    setStarterPackMessage(`Adding ${tasksToAdd.length} ${tasksToAdd.length === 1 ? "task" : "tasks"}…`);
+    const { error } = await supabase.from("tracker_tasks").insert(rows);
+    if (error) {
+      setStarterPackMessage("Couldn't add that starter pack. Please try again.");
+      return;
+    }
+    setTrackerTasks((tasks) => [...tasks, ...rows]);
+    setStarterPackMessage(`Added ${tasksToAdd.length} ${tasksToAdd.length === 1 ? "task" : "tasks"} from ${pack.label}. Nothing you already had was changed.`);
   };
 
   const addTrackerTask = async () => {
@@ -7449,6 +7492,27 @@ function GlowUpTracker() {
                 );
               })}
             </div>
+          </div>
+
+          <div style={{ marginBottom: 14, padding: 16, borderRadius: 16, background: "#F7FCFA", border: "1px solid #CFE8E1" }}>
+            <div style={{ fontSize: 13, fontWeight: 900, color: "#318C79" }}>STARTER PACKS · ADD A GENTLE HEAD START</div>
+            <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.45, color: "#6B7F78" }}>Add a pack whenever you want. It only adds missing every-day tasks — your current list stays exactly as it is.</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 7, marginTop: 10 }}>
+              {TEMPLATE_PACKS.map((pack) => {
+                const selected = starterPackId === pack.id;
+                return <button key={pack.id} type="button" aria-pressed={selected} onClick={() => { setStarterPackId(pack.id); setStarterPackMessage(""); }} style={{ minWidth: 0, padding: "9px 7px", borderRadius: 11, border: selected ? "2px solid #318C79" : "1px solid #CFE8E1", background: selected ? "#E8F7F1" : "white", color: selected ? "#236B5D" : "#5E766F", fontWeight: 900, fontSize: 11, lineHeight: 1.3, cursor: "pointer" }}>
+                  <span style={{ display: "block", fontSize: 17 }}>{pack.emoji}</span>{pack.label}
+                </button>;
+              })}
+            </div>
+            {(() => {
+              const selectedPack = TEMPLATE_PACKS.find((pack) => pack.id === starterPackId) || TEMPLATE_PACKS[0];
+              return <>
+                <div style={{ marginTop: 8, fontSize: 11, lineHeight: 1.45, color: "#6B7F78" }}>{selectedPack.tasks.map((item) => item.task).join(" · ")}</div>
+                <button type="button" onClick={addStarterPack} style={{ marginTop: 9, padding: "8px 12px", borderRadius: 10, border: 0, background: "#318C79", color: "white", fontWeight: 900, cursor: "pointer" }}>Add {selectedPack.label}</button>
+              </>;
+            })()}
+            {starterPackMessage && <div role={starterPackMessage.includes("Couldn't") ? "alert" : "status"} aria-live="polite" style={{ marginTop: 8, fontSize: 11.5, lineHeight: 1.45, color: starterPackMessage.includes("Couldn't") ? "#B24D65" : "#318C79", fontWeight: 700 }}>{starterPackMessage}</div>}
           </div>
 
           <div style={{ marginBottom: 14, padding: 16, borderRadius: 16, background: "rgba(255,255,255,0.72)", border: "1px solid #E6D4F2" }}>

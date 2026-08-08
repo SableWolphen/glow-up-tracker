@@ -25,6 +25,9 @@ const requiredRegressionMarkers = [
   '🧸 My Guardians',
   '💛 People I Support',
   'Nothing is shared until they accept, and you choose every permission.',
+  'STARTER PACKS · ADD A GENTLE HEAD START',
+  'const addStarterPack = async () => {',
+  'Nothing you already had was changed.',
 ];
 
 for (const marker of requiredRegressionMarkers) {
