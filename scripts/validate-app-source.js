@@ -19,6 +19,9 @@ const requiredRegressionMarkers = [
   'Open Guardian invitations 💛',
   'pendingInviteAutoOpenedFor',
   'const invitation = supportLinks.find((link) => link.id === linkId);',
+  'const isGuardianAccount = !!user && trackerProfile?.account_type === "caretaker";',
+  'GUARDIAN SUPPORT DASHBOARD',
+  'CALM, CONSENT-BASED SUPPORT',
 ];
 
 for (const marker of requiredRegressionMarkers) {
