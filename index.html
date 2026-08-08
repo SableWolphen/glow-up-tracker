@@ -440,7 +440,7 @@ function BabyArrivalRitual({ comfortItemName, onShowTinyThing, onSoftDay, onShow
   );
 }
 
-function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays, onOpenJournal }) {
+function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays, comfortItemName, onOpenJournal, onSoftDay }) {
   const [windDown, setWindDown] = React.useState([false, false, false]);
   const [comfortOpen, setComfortOpen] = React.useState(null);
   const [open, setOpen] = React.useState(false);
@@ -483,6 +483,18 @@ function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays
           {comfortTools.map((tool) => <button key={tool.id} type="button" onClick={() => setComfortOpen((current) => current === tool.id ? null : tool.id)} aria-expanded={comfortOpen === tool.id}>{tool.label}</button>)}
         </div>
         {comfortOpen && <div className="baby-comfort-note">{comfortTools.find((tool) => tool.id === comfortOpen)?.text}</div>}
+      </div>
+      <div className="baby-comfort">
+        <div className="baby-section-label">🧸 BIG FEELINGS TRANSLATOR</div>
+        <div className="baby-wind-down-copy">Big feelings are allowed. Pick one and let today become extra small.</div>
+        <div className="baby-comfort-actions">
+          {["😟 Scared", "😤 Grumpy", "😢 Weepy", "🫠 Too much"].map((label) => <button key={label} type="button" onClick={onSoftDay}>{label}</button>)}
+        </div>
+      </div>
+      <div className="baby-comfort">
+        <div className="baby-section-label">🧼 COZY LITTLE ROUTINES</div>
+        <div className="baby-wind-down-copy">Morning snuggles · Wash-up · Snack & water · Bedtime nest. Use the ones that help; none are a test.</div>
+        {comfortItemName && <div className="baby-comfort-note">🧸 {comfortItemName} can be part of any cozy routine today.</div>}
       </div>
       <button type="button" className="baby-journal-prompt" onClick={onOpenJournal}>📖 Put one little thought in PlushJournal <span>›</span></button>
       <div className="baby-care-footer">{careDays ? `${careDays} gentle-care ${careDays === 1 ? "day" : "days"} collected so far` : `Start your first gentle-care day whenever you are ready`} · {date}</div>
@@ -6897,7 +6909,9 @@ function GlowUpTracker() {
                 todayTotal={todayRequiredKeys.length}
                 activityDays={activityDaysTotal}
                 careDays={careDaysTotal}
+                comfortItemName={trackerProfile?.comfort_item_name?.trim() || ""}
                 onOpenJournal={() => { setPrivateNoteDraft(privateNote); setJournalQuickOpen(true); }}
+                onSoftDay={() => selectDayType("soft")}
               />
             )}
 
