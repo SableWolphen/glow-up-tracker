@@ -12,4 +12,18 @@ Babel.transform(match[1], {
   filename: "index.html",
 });
 
+const requiredRegressionMarkers = [
+  'const [onboardingMode, setOnboardingMode] = useState(null);',
+  'onboardingMode === "supporter"',
+  '.from("weekly_intentions")',
+  'Open Guardian invitations 💛',
+  'pendingInviteAutoOpenedFor',
+];
+
+for (const marker of requiredRegressionMarkers) {
+  if (!match[1].includes(marker)) {
+    throw new Error(`Missing onboarding/weekly-intention regression marker: ${marker}`);
+  }
+}
+
 console.log("App source compiles successfully.");
