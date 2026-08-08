@@ -35,6 +35,9 @@ const requiredRegressionMarkers = [
   '🪴 CARE AREAS',
   'const [progressView, setProgressView] = useState("overview");',
   'aria-label="Progress views"',
+  'const APPEARANCE_THEMES = [',
+  'Rainy-Day Coat',
+  'AMBIENT THEME',
 ];
 
 for (const marker of requiredRegressionMarkers) {

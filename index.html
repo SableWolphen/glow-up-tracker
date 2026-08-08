@@ -307,6 +307,15 @@ const MASCOT_OUTFITS = [
   { id: "change-champion", name: "Change Champion", badge: "⚡", accessory: "⚡", unlock: { type: "reduce_checkins", count: 30 }, hint: "Check in with one habit you are reducing 30 times" },
   { id: "diamond-shield", name: "Diamond Shield", badge: "💠", accessory: "💠", unlock: { type: "reduce_checkins", count: 60 }, hint: "Check in with one habit you are reducing 60 times" },
   { id: "founders-ribbon", name: "Founder's Ribbon", badge: "🎗️", accessory: "🎗️", unlock: { type: "founding", count: 1 }, hint: "Exclusive to accounts from PlushLife's early access period — can never be earned later." },
+  { id: "knit-sweater", name: "Knit Sweater", badge: "🧶", accessory: "🧶", unlock: { type: "activity_days", count: 10 }, hint: "Check in or care for yourself on any 10 days" },
+  { id: "moon-cap", name: "Moonlit Cap", badge: "🌙", accessory: "🌙", unlock: { type: "care_days", count: 10 }, hint: "Complete your essential care on any 10 days" },
+  { id: "book-buddy", name: "Book Buddy", badge: "📚", accessory: "📚", unlock: { type: "activity_days", count: 21 }, hint: "Check in or care for yourself on any 21 days" },
+  { id: "raincoat", name: "Rainy-Day Coat", badge: "🧥", accessory: "🧥", unlock: { type: "care_days", count: 21 }, hint: "Complete your essential care on any 21 days" },
+];
+const APPEARANCE_THEMES = [
+  { id: "soft", label: "Soft Plush", icon: "💜", background: "#FFF6FB", glowA: "#FFD9EC", glowB: "#C9ECFF", glowC: "#FFF3D6", glowD: "#D6F5E3" },
+  { id: "twilight", label: "Twilight", icon: "🌙", background: "#F4F0FF", glowA: "#DCD0FF", glowB: "#BFD9FF", glowC: "#F3D6FF", glowD: "#D6F1FF" },
+  { id: "meadow", label: "Meadow", icon: "🌿", background: "#F4FBF5", glowA: "#CDEFD8", glowB: "#D2F0F4", glowC: "#FFF1B8", glowD: "#DDF0CB" },
 ];
 const OPTIONAL_SECTION_MARKERS = ["bonus", "little space", "reward", "fun"];
 
@@ -1481,6 +1490,7 @@ function ToolPanel({ title, onClose, children, inline = false, hideClose = false
 function GlowUpTracker() {
   const [active, setActive] = useState(() => dayIdForDate(trackerPeriod().date));
   const [dashboard, setDashboard] = useState("today");
+  const [appearanceTheme, setAppearanceTheme] = useState("soft");
   const [progressView, setProgressView] = useState("overview");
   const swipeStartX = React.useRef(null);
   const swipeStartY = React.useRef(null);
@@ -1525,6 +1535,12 @@ function GlowUpTracker() {
   const [emailChangeDraft, setEmailChangeDraft] = useState("");
   const [signingOut, setSigningOut] = useState(false);
   const [period, setPeriod] = useState(() => trackerPeriod());
+
+  useEffect(() => {
+    if (!user?.id) return;
+    const savedTheme = window.localStorage.getItem(`plushlist-appearance-${user.id}`);
+    if (APPEARANCE_THEMES.some((theme) => theme.id === savedTheme)) setAppearanceTheme(savedTheme);
+  }, [user?.id]);
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [longHistory, setLongHistory] = useState([]);
   const [previousWeekHistory, setPreviousWeekHistory] = useState([]);
@@ -5693,6 +5709,11 @@ function GlowUpTracker() {
 
   const babyMode = preferences.nickname_style === "baby";
   const dinoTheme = !!preferences.dino_theme;
+  const selectedAppearanceTheme = APPEARANCE_THEMES.find((theme) => theme.id === appearanceTheme) || APPEARANCE_THEMES[0];
+  const selectAppearanceTheme = (themeId) => {
+    setAppearanceTheme(themeId);
+    if (user?.id) window.localStorage.setItem(`plushlist-appearance-${user.id}`, themeId);
+  };
 
   const BADGE_DEFS = [
     { id: "first_step", badge: "🌱", name: "First Step", hint: "Complete your essential care on one day.", check: () => careDaysTotal >= 1 },
@@ -5813,17 +5834,17 @@ function GlowUpTracker() {
   return (
     <div id="main-content" tabIndex="-1" className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
       minHeight: "100vh",
-      background: babyMode ? "#FFF0FA" : "#FFF6FB",
+      background: babyMode ? "#FFF0FA" : selectedAppearanceTheme.background,
       backgroundImage: preferences.simple_mode ? "none" : babyMode ? `
         radial-gradient(circle at 8% 9%, #FFBFE4 0%, transparent 34%),
         radial-gradient(circle at 93% 8%, #BDEBFF 0%, transparent 35%),
         radial-gradient(circle at 88% 91%, #FFF0A8 0%, transparent 38%),
         radial-gradient(circle at 9% 88%, #C8F4DE 0%, transparent 38%)
       ` : `
-        radial-gradient(circle at 8% 12%, #FFD9EC 0%, transparent 42%),
-        radial-gradient(circle at 92% 8%, #C9ECFF 0%, transparent 42%),
-        radial-gradient(circle at 85% 90%, #FFF3D6 0%, transparent 48%),
-        radial-gradient(circle at 10% 85%, #D6F5E3 0%, transparent 48%)
+        radial-gradient(circle at 8% 12%, ${selectedAppearanceTheme.glowA} 0%, transparent 42%),
+        radial-gradient(circle at 92% 8%, ${selectedAppearanceTheme.glowB} 0%, transparent 42%),
+        radial-gradient(circle at 85% 90%, ${selectedAppearanceTheme.glowC} 0%, transparent 48%),
+        radial-gradient(circle at 10% 85%, ${selectedAppearanceTheme.glowD} 0%, transparent 48%)
       `,
       fontFamily: babyMode ? "'Comic Sans MS','Nunito','Segoe UI',sans-serif" : "'Avenir Next','Segoe UI',system-ui,sans-serif",
       color: preferences.high_contrast ? "#2D2038" : "#5B4B6B",
@@ -7082,6 +7103,14 @@ function GlowUpTracker() {
               🌙 Dark Mode
             </label>
             <div style={{ marginTop: 6, fontSize: 11, lineHeight: 1.45, color: "#7B6888" }}>Inverts the whole app to a dark palette — easier on the eyes at night. Colors and emoji may look a little different than in light mode.</div>
+            <div style={{ marginTop: 12, fontSize: 10.5, fontWeight: 900, color: "#8E4EAA" }}>AMBIENT THEME</div>
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(3,minmax(0,1fr))", gap: 7, marginTop: 7 }}>
+              {APPEARANCE_THEMES.map((theme) => {
+                const selected = appearanceTheme === theme.id;
+                return <button key={theme.id} type="button" aria-pressed={selected} onClick={() => selectAppearanceTheme(theme.id)} style={{ minWidth: 0, padding: "8px 4px", borderRadius: 10, border: selected ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: selected ? "#F7ECFB" : "white", color: "#76558A", fontSize: 10.5, fontWeight: 900, cursor: "pointer" }}>{theme.icon} {theme.label}</button>;
+              })}
+            </div>
+            <div style={{ marginTop: 5, fontSize: 10.5, lineHeight: 1.4, color: "#8C6B9E" }}>Saved privately on this device. It only changes PlushLife’s background mood.</div>
             <label style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 10, fontSize: 14, fontWeight: 900, color: "#8E4EAA", cursor: "pointer" }}>
               <input type="checkbox" checked={preferences.nickname_style === "baby"} onChange={(event) => updatePreference({ nickname_style: event.target.checked ? "baby" : "warm", dino_theme: event.target.checked ? false : preferences.dino_theme })} />
               🍼 Baby Mode
