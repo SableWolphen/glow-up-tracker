@@ -61,11 +61,15 @@ function copyDirectory(source, destination) {
 function compileAppSource(source) {
   const sourceMatch = source.match(/<script id="app-source" type="text\/plain">([\s\S]*?)<\/script>/);
   if (!sourceMatch) throw new Error("Could not find the PlushLife app source in index.html");
-  return Babel.transform(sourceMatch[1], {
+  const compiled = Babel.transform(sourceMatch[1], {
     presets: [["react", { runtime: "classic" }]],
     filename: "app.bundle.js",
     compact: true,
   }).code;
+  // Runtime Babel previously used Function(compiled), which gave the app its
+  // own scope. Keep that boundary in the production bundle so names such as
+  // `supabase` never collide with the UMD libraries loaded before the app.
+  return `;(function () {\n${compiled}\n}());\n`;
 }
 
 function prepareHtml(file, source, buildArtifacts) {
