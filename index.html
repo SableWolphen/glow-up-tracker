@@ -9550,6 +9550,10 @@ function GlowUpTracker() {
               <div style={{ marginTop: 2, fontSize: 10.5, color: "#8C6B9E" }}>CARING DAYS</div>
             </div>}
           </div>
+          {weeklyEssentialDone === 0 && weeklyBonusDone === 0 && caringDays === 0 && <div style={{ marginTop: 10, padding: "11px 12px", borderRadius: 12, background: "#F2FFFB", border: "1px solid #C8E8DE", color: "#55766E", fontSize: 11.5, lineHeight: 1.45 }}>
+            <strong>Your story gets to begin softly.</strong> One tiny task, a check-in, or a kind pause is enough to make this week yours.
+            <button type="button" onClick={() => goToDashboard("today")} style={{ display: "block", marginTop: 8, padding: "6px 9px", borderRadius: 9, border: "1px solid #84C9B7", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11, cursor: "pointer" }}>Show me today’s tiny thing</button>
+          </div>}
           <div style={{ marginTop: 10, fontSize: 11.5, lineHeight: 1.45, color: "#8C6B9E" }}>
             Bonus items are celebrated separately, so they never lower your essentials score. 💛
           </div>
