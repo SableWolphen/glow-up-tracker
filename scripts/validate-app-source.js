@@ -38,6 +38,7 @@ const requiredRegressionMarkers = [
   'const APPEARANCE_THEMES = [',
   'Rainy-Day Coat',
   'AMBIENT THEME',
+  'appearanceTheme !== "soft"',
 ];
 
 for (const marker of requiredRegressionMarkers) {
