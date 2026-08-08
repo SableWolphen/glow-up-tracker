@@ -447,7 +447,7 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
   const [error, setError] = React.useState("");
   const [taskToConfirm, setTaskToConfirm] = React.useState(null);
   const [messages, setMessages] = React.useState(() => [{ role: "assistant", content: "Hi baby. I’m your PlushLife AI comfort companion. What feels most important to say right now?" }]);
-  const send = async (messageOverride = null) => {
+  const send = async (messageOverride = null, options = {}) => {
     const text = (typeof messageOverride === "string" ? messageOverride : draft).trim();
     if (!text || sending) return;
     const nextMessages = [...messages, { role: "user", content: text }];
@@ -461,7 +461,7 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
       const response = await fetch("/api/mamas-corner", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${session?.access_token || ""}` },
-        body: JSON.stringify({ messages: nextMessages, unfinishedTasks: (incompleteTasks || []).slice(0, 6).map((task) => task.label).filter(Boolean) }),
+        body: JSON.stringify({ messages: nextMessages, unfinishedTasks: (incompleteTasks || []).slice(0, 6).map((task) => task.label).filter(Boolean), taskCheckIn: !!options.taskCheckIn }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.reply) throw new Error(result.error || "No reply yet.");
@@ -500,7 +500,7 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
         </div>
         {error && <div className="mamas-corner-error" role="alert">{error}</div>}
         {taskToConfirm && <div className="mamas-task-confirm"><div>Did you want Mama to check off <strong>{taskToConfirm.label}</strong>?</div><div><button type="button" onClick={() => { onConfirmTask(taskToConfirm.key); setTaskToConfirm(null); }}>✓ Yes, tuck it in</button><button type="button" onClick={() => setTaskToConfirm(null)}>Not yet</button></div></div>}
-        <button type="button" className="mamas-task-checkin" onClick={() => send("Can you check in on my unfinished tasks? Ask me about just one small one, and do not assume it is done.")} disabled={sending || !(incompleteTasks || []).length}>{(incompleteTasks || []).length ? "🧸 Mama, check in on my tasks" : "🧸 Everything is tucked in"}</button>
+        <button type="button" className="mamas-task-checkin" onClick={() => send("Mama, please check in on one of my unfinished tasks.", { taskCheckIn: true })} disabled={sending || !(incompleteTasks || []).length}>{(incompleteTasks || []).length ? "🧸 Mama, check in on my tasks" : "🧸 Everything is tucked in"}</button>
         <div className="mamas-compose">
           <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} maxLength="1200" placeholder="Tell Mama what is going on…" aria-label="Message Mama's Corner" rows="2" />
           <button type="button" onClick={send} disabled={!draft.trim() || sending}>{sending ? "Thinking…" : "Send"}</button>
