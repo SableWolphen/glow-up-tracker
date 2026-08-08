@@ -24,6 +24,7 @@ const requiredRegressionMarkers = [
   '{ id: "guardian", label: "Guardian", icon: "💛", accent: "#318C79" }',
   '🧸 My Guardians',
   '💛 People I Support',
+  'Nothing is shared until they accept, and you choose every permission.',
 ];
 
 for (const marker of requiredRegressionMarkers) {

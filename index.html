@@ -7886,7 +7886,10 @@ function GlowUpTracker() {
                 </div>
                 <div style={{ marginTop: 12 }}>
                   {ownedSupportLinks.length === 0 ? (
-                    <div style={{ fontSize: 12, color: "#8C6B9E" }}>You haven't added a Guardian yet.</div>
+                    <div style={{ padding: "12px 13px", borderRadius: 12, background: "#F5FAFF", border: "1px solid #D9ECFA", color: "#4C6E8E" }}>
+                      <div style={{ fontSize: 12.5, fontWeight: 900 }}>No Guardians added yet</div>
+                      <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5 }}>Invite someone you trust with the email they use for PlushLife. Nothing is shared until they accept, and you choose every permission.</div>
+                    </div>
                   ) : ownedSupportLinks.map((link) => {
                     const pending = !link.accepted_at;
                     const mutual = supportRelationships.find((rel) => rel.they_support_me_link_id === link.id && rel.i_support_them);
