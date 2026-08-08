@@ -45,6 +45,9 @@ const guide = fs.readFileSync("assets/plush-guide.js", "utf8");
 for (const required of ["PLUSHGUIDE", "PlushRescue", "PlushProgress", "PlushGuardian"]) {
   if (!guide.includes(required)) throw new Error(`Missing PlushGuide integration marker: ${required}`);
 }
+if (!guide.includes('name:"PlushCalendar", dashboard:"week"') || !guide.includes('fallback:"dashboard-tab-week"')) {
+  throw new Error("PlushCalendar guide must route to the Calendar dashboard's week ID");
+}
 
 const toolsFix = fs.readFileSync("assets/plush-tools-fix.js", "utf8");
 for (const required of [

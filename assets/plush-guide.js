@@ -19,8 +19,8 @@
       { title:"One thing at a time", text:"PlushFocus intentionally keeps the rest of the list out of the way so you can concentrate on the next useful step.", labels:["plushfocus","focus mode","focus"], fallback:"dashboard-tab-today" },
       { title:"You stay in control", text:"Finish, skip, or leave Focus whenever you need. Your underlying task list stays intact.", labels:["next","done","complete","exit"] }
     ]},
-    calendar: { icon:"📅", name:"PlushCalendar", dashboard:"calendar", summary:"See Month, Week, and Day views.", what:"PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.", when:"Use it to understand what is coming up, spot busy days, or review a week or month.", tour:[
-      { title:"Your calendar view", text:"This is where scheduled PlushLife items are organized by date.", labels:["plushcalendar","calendar"], fallback:"dashboard-tab-calendar" },
+    calendar: { icon:"📅", name:"PlushCalendar", dashboard:"week", summary:"See Month, Week, and Day views.", what:"PlushCalendar lets you look ahead at routines and tasks by date instead of only seeing today.", when:"Use it to understand what is coming up, spot busy days, or review a week or month.", tour:[
+      { title:"Your calendar view", text:"This is where scheduled PlushLife items are organized by date.", labels:["plushcalendar","calendar"], fallback:"dashboard-tab-week" },
       { title:"Month", text:"Month view gives you the big picture and helps you spot patterns across several weeks.", labels:["month"] },
       { title:"Week", text:"Week view is useful for planning the next few days without seeing an entire month at once.", labels:["week"] },
       { title:"Day", text:"Day view zooms in on one date so you can see exactly what belongs there.", labels:["day"] }
