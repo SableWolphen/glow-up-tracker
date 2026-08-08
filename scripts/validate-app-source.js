@@ -28,6 +28,8 @@ const requiredRegressionMarkers = [
   'STARTER PACKS · ADD A GENTLE HEAD START',
   'const addStarterPack = async () => {',
   'Nothing you already had was changed.',
+  'Add another one anyway?',
+  'Import ${duplicateNames.length === 1 ? "it" : "them"} again anyway?',
 ];
 
 for (const marker of requiredRegressionMarkers) {

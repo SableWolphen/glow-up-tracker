@@ -3235,6 +3235,22 @@ function GlowUpTracker() {
       setImportMessage("Paste one task per line first.");
       return;
     }
+    const existingTaskNames = new Set(
+      trackerTasks
+        .filter((item) => !item.archived_at && (item.day_id === newTaskDay || (newTaskDay !== "daily" && item.day_id === "daily")))
+        .map((item) => item.task.trim().toLocaleLowerCase())
+    );
+    const seenImportedNames = new Set();
+    const duplicateNames = Array.from(new Set(lines.filter((task) => {
+      const normalized = task.toLocaleLowerCase();
+      const duplicate = existingTaskNames.has(normalized) || seenImportedNames.has(normalized);
+      seenImportedNames.add(normalized);
+      return duplicate;
+    })));
+    if (duplicateNames.length > 0 && !window.confirm(`You already have ${duplicateNames.length === 1 ? `“${duplicateNames[0]}”` : `${duplicateNames.length} matching tasks`} on this list. Import ${duplicateNames.length === 1 ? "it" : "them"} again anyway?`)) {
+      setImportMessage("Import cancelled — your current tasks are unchanged.");
+      return;
+    }
     if (SUPPORTER_FEATURES_ENABLED && !isSupporterAccount) {
       const existingCount = trackerTasks.filter((item) => item.day_id === "daily" || item.day_id === newTaskDay).length;
       if (existingCount + lines.length > FREE_TASK_LIMIT_PER_DAY) {
@@ -3330,6 +3346,15 @@ function GlowUpTracker() {
     }
     if (!section) {
       setTaskMessage("Choose a section or name your new section first.");
+      return;
+    }
+    const matchingTask = trackerTasks.find((item) =>
+      !item.archived_at &&
+      (item.day_id === newTaskDay || (newTaskDay !== "daily" && item.day_id === "daily")) &&
+      item.task.trim().toLocaleLowerCase() === task.toLocaleLowerCase()
+    );
+    if (matchingTask && !window.confirm(`You already have “${matchingTask.task}” on this list. Add another one anyway?`)) {
+      setTaskMessage("No duplicate added — your current task is still there.");
       return;
     }
     if (SUPPORTER_FEATURES_ENABLED && !isSupporterAccount) {
