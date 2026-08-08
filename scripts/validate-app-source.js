@@ -18,6 +18,7 @@ const requiredRegressionMarkers = [
   '.from("weekly_intentions")',
   'Open Guardian invitations 💛',
   'pendingInviteAutoOpenedFor',
+  'const invitation = supportLinks.find((link) => link.id === linkId);',
 ];
 
 for (const marker of requiredRegressionMarkers) {

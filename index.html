@@ -2391,6 +2391,7 @@ function GlowUpTracker() {
   };
 
   const acceptSupportInvitation = async (linkId) => {
+    const invitation = supportLinks.find((link) => link.id === linkId);
     setSupportMessage("Accepting invitation…");
     const { error } = await supabase.rpc("accept_support_invitation", { link_id: linkId });
     if (error) {
@@ -2399,6 +2400,10 @@ function GlowUpTracker() {
     }
     setSupportMessage("Invitation accepted 💛");
     await loadSupportData(user);
+    if (invitation?.owner_user_id) {
+      setSupportViewMode("caretaker");
+      await loadSupportOwner(invitation.owner_user_id);
+    }
   };
 
   const declineSupportInvitation = async (linkId) => {
