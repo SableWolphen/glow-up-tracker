@@ -7206,8 +7206,16 @@ function GlowUpTracker() {
             </div>
 
             {collectionTab === "mascot" && (
-            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(132px,1fr))", gap: 8, marginTop: 14 }}>
-              {MASCOT_OUTFITS.map((outfit) => {
+            <div style={{ marginTop: 14 }}>
+              {[
+                { id: "unlocked", title: `✨ UNLOCKED · ${unlockedOutfits.length}`, subtitle: "Tap an outfit to wear it.", items: MASCOT_OUTFITS.filter((outfit) => unlockedIdSet.has(outfit.id)) },
+                { id: "locked", title: `🔒 STILL TO UNLOCK · ${MASCOT_OUTFITS.length - unlockedOutfits.length}`, subtitle: "Your progress is shown on each reward—nothing already earned can disappear.", items: MASCOT_OUTFITS.filter((outfit) => !unlockedIdSet.has(outfit.id)) },
+              ].map((section) => (
+              <div key={section.id} style={{ marginTop: section.id === "unlocked" ? 0 : 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".1em", color: section.id === "unlocked" ? "#318C79" : "#8C6B9E" }}>{section.title}</div>
+                <div style={{ marginTop: 3, fontSize: 10.5, color: "#8C6B9E" }}>{section.subtitle}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(132px,1fr))", gap: 8, marginTop: 8 }}>
+              {section.items.map((outfit) => {
                 const unlocked = unlockedIdSet.has(outfit.id);
                 const selected = selectedOutfit.id === outfit.id;
                 const progress = Math.min(outfit.unlock.count, mascotRequirementProgress(outfit));
@@ -7231,14 +7239,23 @@ function GlowUpTracker() {
                   </button>
                 );
               })}
+                </div>
+              </div>
+              ))}
             </div>
             )}
 
             {collectionTab === "badges" && (
             <div style={{ marginTop: 14 }}>
               <div style={{ fontSize: 11.5, lineHeight: 1.5, color: "#7B6888" }}>Earned for all kinds of caring, not just streaks — showing up, reflecting, connecting, organizing, and growing habits. Once earned, a badge is yours forever.</div>
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(112px,1fr))", gap: 8, marginTop: 10 }}>
-                {BADGE_DEFS.map((item) => {
+              {[
+                { id: "earned", title: `✨ EARNED · ${earnedBadgeIdSet.size}`, items: BADGE_DEFS.filter((item) => earnedBadgeIdSet.has(item.id)) },
+                { id: "locked", title: `🔒 STILL TO UNLOCK · ${BADGE_DEFS.length - earnedBadgeIdSet.size}`, items: BADGE_DEFS.filter((item) => !earnedBadgeIdSet.has(item.id)) },
+              ].map((section) => (
+              <div key={section.id} style={{ marginTop: section.id === "earned" ? 12 : 18 }}>
+                <div style={{ fontSize: 11, fontWeight: 900, letterSpacing: ".1em", color: section.id === "earned" ? "#318C79" : "#8C6B9E" }}>{section.title}</div>
+                <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit,minmax(112px,1fr))", gap: 8, marginTop: 8 }}>
+                {section.items.map((item) => {
                   const unlocked = earnedBadgeIdSet.has(item.id);
                   return (
                     <div key={item.id} style={{ minHeight: 88, padding: "10px 8px", borderRadius: 13, border: unlocked ? "1px solid #E4D7B4" : "1px solid #E9E4E7", background: unlocked ? "#FFFFFFC9" : "#F1ECEF", color: unlocked ? "#5B4B6B" : "#9B919F", textAlign: "center", opacity: unlocked ? 1 : .68 }}>
@@ -7249,7 +7266,9 @@ function GlowUpTracker() {
                     </div>
                   );
                 })}
+                </div>
               </div>
+              ))}
             </div>
             )}
 

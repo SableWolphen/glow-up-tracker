@@ -52,6 +52,8 @@ const requiredRegressionMarkers = [
   'YOUR WINS JAR',
   'yearlight-crown',
   'case "reflection_count": return reflectionDates.length;',
+  'STILL TO UNLOCK',
+  'Your progress is shown on each reward',
 ];
 
 for (const marker of requiredRegressionMarkers) {
