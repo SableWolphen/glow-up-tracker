@@ -5832,7 +5832,7 @@ function GlowUpTracker() {
   })();
 
   return (
-    <div id="main-content" tabIndex="-1" className={babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} style={{
+    <div id="main-content" tabIndex="-1" className={`${babyMode ? "baby-mode" : dinoTheme ? "dino-theme" : ""} appearance-${appearanceTheme}`} style={{
       minHeight: "100vh",
       background: babyMode ? "#FFF0FA" : selectedAppearanceTheme.background,
       backgroundImage: preferences.simple_mode ? "none" : babyMode ? `
@@ -5907,6 +5907,21 @@ function GlowUpTracker() {
         }
         .baby-mode .baby-mode-welcome {
           display: block;
+        }
+        /* Twilight and Meadow are whole-app skins, not background pictures.
+           The transform is deliberately applied to the app shell so cards,
+           controls, illustrations, and existing feature panels keep their
+           contrast and all shift together. Baby and Dino remain their own
+           complete visual modes and aren't recolored underneath. */
+        .appearance-twilight:not(.baby-mode):not(.dino-theme) {
+          filter: hue-rotate(16deg) saturate(.88) brightness(.91);
+        }
+        .appearance-meadow:not(.baby-mode):not(.dino-theme) {
+          filter: hue-rotate(152deg) saturate(.82) brightness(1.02);
+        }
+        .appearance-twilight:not(.baby-mode):not(.dino-theme) button,
+        .appearance-meadow:not(.baby-mode):not(.dino-theme) button {
+          box-shadow: 0 3px 10px rgba(55,43,102,.12);
         }
         .dash-arrow { flex-shrink: 0; }
         @media (max-width: 640px) {
