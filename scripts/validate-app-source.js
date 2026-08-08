@@ -21,10 +21,7 @@ const requiredRegressionMarkers = [
   'const invitation = supportLinks.find((link) => link.id === linkId);',
   'const isGuardianAccount = !!user && trackerProfile?.account_type === "caretaker";',
   'GUARDIAN SUPPORT DASHBOARD',
-  'CALM, CONSENT-BASED SUPPORT',
-  'My own PlushLife',
-  'setGuardianWorkspace("personal")',
-  '[isGuardianAccount, guardianUsingPersonalSpace, canUseCaretakerDashboard, invitedSupportLinks.length]',
+  '{ id: "guardian", label: "Guardian", icon: "💛", accent: "#318C79" }',
 ];
 
 for (const marker of requiredRegressionMarkers) {
