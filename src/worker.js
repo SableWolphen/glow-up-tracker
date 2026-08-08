@@ -45,7 +45,7 @@ export default {
     if (!messages.length || messages[messages.length - 1].role !== "user") return json({ error: "Please write a message first." }, 400);
 
     try {
-      const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct", {
+      const result = await env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
         messages: [{ role: "system", content: MAMA_INSTRUCTIONS }, ...messages],
         max_tokens: 350,
         temperature: 0.75,
