@@ -40,6 +40,7 @@ const requiredRegressionMarkers = [
   'AMBIENT THEME',
   'appearanceTheme !== "soft"',
   'Ambient themes never recolor content.',
+  'A little hello from Mama 🍼',
 ];
 
 for (const marker of requiredRegressionMarkers) {
