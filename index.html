@@ -1538,6 +1538,7 @@ function GlowUpTracker() {
   const [reflectionViewerNote, setReflectionViewerNote] = useState("");
   const [reflectionViewerLoading, setReflectionViewerLoading] = useState(false);
   const [supportViewMode, setSupportViewMode] = useState("mine");
+  const [guardianWorkspace, setGuardianWorkspace] = useState("support");
   const [supportLinks, setSupportLinks] = useState([]);
   const [supportNotes, setSupportNotes] = useState([]);
   const [unreadNoteCount, setUnreadNoteCount] = useState(0);
@@ -5456,7 +5457,8 @@ function GlowUpTracker() {
   const ownedSupportLinks = supportLinks.filter((link) => link.owner_user_id === user?.id);
   const hasOwnGuardian = ownedSupportLinks.some((link) => link.active && link.accepted_at);
   const isGuardianAccount = !!user && trackerProfile?.account_type === "caretaker";
-  const dashboardItems = isGuardianAccount
+  const guardianUsingPersonalSpace = isGuardianAccount && guardianWorkspace === "personal";
+  const dashboardItems = isGuardianAccount && !guardianUsingPersonalSpace
     ? [{ id: "guardian", label: "Support", icon: "💛", accent: "#318C79" }]
     : DASHBOARDS;
 
@@ -5477,7 +5479,7 @@ function GlowUpTracker() {
   }, [user?.id, preferences.onboarding_complete, pendingSupportInvites.length, pendingInviteAutoOpenedFor]);
 
   useEffect(() => {
-    if (!isGuardianAccount) return;
+    if (!isGuardianAccount || guardianUsingPersonalSpace) return;
     setDashboard("guardian");
     if (canUseCaretakerDashboard) {
       setSupportViewMode("caretaker");
@@ -5485,7 +5487,11 @@ function GlowUpTracker() {
         loadSupportOwner(invitedSupportLinks[0].owner_user_id);
       }
     }
-  }, [isGuardianAccount, canUseCaretakerDashboard, invitedSupportLinks.length, supportOwnerId]);
+  }, [isGuardianAccount, guardianUsingPersonalSpace, canUseCaretakerDashboard, invitedSupportLinks.length, supportOwnerId]);
+
+  useEffect(() => {
+    if (!isGuardianAccount) setGuardianWorkspace("support");
+  }, [isGuardianAccount]);
 
   const goToDashboard = (id) => {
     setDashboard(id);
@@ -6459,13 +6465,13 @@ function GlowUpTracker() {
         )}
         <div style={{ marginBottom: 14, display: "flex", alignItems: "center", justifyContent: "space-between", gap: 10 }}>
           <div style={{ minWidth: 0 }}>
-            <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{isGuardianAccount ? "CALM, CONSENT-BASED SUPPORT" : (babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨")}</div>
+            <div style={{ fontSize: 11, letterSpacing: "0.18em", color: "#B08AC7", fontWeight: 700 }}>{isGuardianAccount && !guardianUsingPersonalSpace ? "CALM, CONSENT-BASED SUPPORT" : (isGuardianAccount ? "YOUR OWN COZY SPACE" : (babyMode ? "BABY STEPS, BIG LOVE 🧸🍼✨" : dinoTheme ? "ONE LITTLE STEP AT A TIME 🦕✨" : "ONE LITTLE STEP AT A TIME ✨"))}</div>
             <h1 style={{ fontSize: 28, margin: "6px 0 0", fontWeight: 800, letterSpacing: "-0.02em" }}>
-              {user ? (isGuardianAccount ? "Guardian Support" : personalPlushlistTitle) : "PlushLife"} 💜
+              {user ? (isGuardianAccount && !guardianUsingPersonalSpace ? "Guardian Support" : personalPlushlistTitle) : "PlushLife"} 💜
             </h1>
           </div>
           {user && <div style={{ display: "flex", alignItems: "center", gap: 6, flexShrink: 0 }}>
-            {!isGuardianAccount && <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
+            {(!isGuardianAccount || guardianUsingPersonalSpace) && <button type="button" onClick={() => setCollectionOpen(true)} aria-label={`Open rewards, ${unlockedOutfits.length} outfits and ${earnedBadgeIdSet.size} badges unlocked`} style={{ display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E9C96E", background: "#FFFDF4", cursor: "pointer", overflow: "hidden" }}>
               <PlushMascot outfit={selectedOutfit} size={46} mood="happy" activityDays={activityDaysTotal} darkMode={preferences.dark_mode} />
             </button>}
             <button type="button" onClick={() => setProfileOpen(true)} aria-label={unreadNoteCount > 0 ? `Open profile, ${unreadNoteCount} unread notes` : "Open profile"} style={{ position: "relative", display: "flex", alignItems: "center", justifyContent: "center", width: 46, height: 46, padding: 0, borderRadius: "50%", border: "1px solid #E6D4F2", background: "#FFFFFFCC", color: "#8D5CA5", fontSize: 19, cursor: "pointer" }}>
@@ -6519,6 +6525,7 @@ function GlowUpTracker() {
               </button>;
             })}
           </div>
+          {guardianUsingPersonalSpace && <button type="button" onClick={() => { setGuardianWorkspace("support"); setDashboard("guardian"); }} style={{ padding: "8px 10px", borderRadius: 11, border: "1px solid #A9DFC4", background: "#EAF6F1", color: "#287663", fontWeight: 900, fontSize: 11.5, cursor: "pointer", whiteSpace: "nowrap" }}>💛 Support</button>}
         </div>
 
         {dashboard === "today" && (
@@ -7708,6 +7715,7 @@ function GlowUpTracker() {
                 <div style={{ fontSize: 11, letterSpacing: "0.11em", fontWeight: 900, color: "#318C79" }}>💛 GUARDIAN SUPPORT DASHBOARD</div>
                 <div style={{ marginTop: 5, fontSize: 14, fontWeight: 900, color: "#365A53" }}>{isSupportAdult ? `Supporting ${selectedSupportName}` : "A calm place to receive and manage support invitations"}</div>
                 <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5, color: "#52746E" }}>{isSupportAdult ? "You can encourage and offer support within the boundaries your Cozy chose. Their tasks and private reflections stay theirs." : "Nothing is shared until you accept an invitation, and every connection stays permission-based."}</div>
+                <button type="button" onClick={() => { setGuardianWorkspace("personal"); setDashboard("today"); }} style={{ marginTop: 10, padding: "7px 10px", borderRadius: 9, border: "1px solid #A9DFC4", background: "white", color: "#287663", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>🧸 My own PlushLife</button>
               </div>
             )}
             {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (

@@ -22,6 +22,8 @@ const requiredRegressionMarkers = [
   'const isGuardianAccount = !!user && trackerProfile?.account_type === "caretaker";',
   'GUARDIAN SUPPORT DASHBOARD',
   'CALM, CONSENT-BASED SUPPORT',
+  'My own PlushLife',
+  'setGuardianWorkspace("personal")',
 ];
 
 for (const marker of requiredRegressionMarkers) {
