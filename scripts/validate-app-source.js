@@ -24,6 +24,7 @@ const requiredRegressionMarkers = [
   'CALM, CONSENT-BASED SUPPORT',
   'My own PlushLife',
   'setGuardianWorkspace("personal")',
+  '[isGuardianAccount, guardianUsingPersonalSpace, canUseCaretakerDashboard, invitedSupportLinks.length]',
 ];
 
 for (const marker of requiredRegressionMarkers) {

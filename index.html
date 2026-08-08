@@ -5487,7 +5487,7 @@ function GlowUpTracker() {
         loadSupportOwner(invitedSupportLinks[0].owner_user_id);
       }
     }
-  }, [isGuardianAccount, guardianUsingPersonalSpace, canUseCaretakerDashboard, invitedSupportLinks.length, supportOwnerId]);
+  }, [isGuardianAccount, guardianUsingPersonalSpace, canUseCaretakerDashboard, invitedSupportLinks.length]);
 
   useEffect(() => {
     if (!isGuardianAccount) setGuardianWorkspace("support");
