@@ -39,7 +39,7 @@ const requiredRegressionMarkers = [
   'Rainy-Day Coat',
   'AMBIENT THEME',
   'appearanceTheme !== "soft"',
-  'whole-app skins, not background pictures.',
+  'Ambient themes never recolor content.',
 ];
 
 for (const marker of requiredRegressionMarkers) {

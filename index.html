@@ -5908,17 +5908,9 @@ function GlowUpTracker() {
         .baby-mode .baby-mode-welcome {
           display: block;
         }
-        /* Twilight and Meadow are whole-app skins, not background pictures.
-           The transform is deliberately applied to the app shell so cards,
-           controls, illustrations, and existing feature panels keep their
-           contrast and all shift together. Baby and Dino remain their own
-           complete visual modes and aren't recolored underneath. */
-        .appearance-twilight:not(.baby-mode):not(.dino-theme) {
-          filter: hue-rotate(16deg) saturate(.88) brightness(.91);
-        }
-        .appearance-meadow:not(.baby-mode):not(.dino-theme) {
-          filter: hue-rotate(152deg) saturate(.82) brightness(1.02);
-        }
+        /* Ambient themes never recolor content. The mascot, title, status
+           colors, and controls keep their intentional artwork and contrast;
+           each theme changes the surrounding shell and decorative wash only. */
         .appearance-twilight:not(.baby-mode):not(.dino-theme) button,
         .appearance-meadow:not(.baby-mode):not(.dino-theme) button {
           box-shadow: 0 3px 10px rgba(55,43,102,.12);
