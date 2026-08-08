@@ -440,6 +440,62 @@ function BabyArrivalRitual({ comfortItemName, onShowTinyThing, onSoftDay, onShow
   );
 }
 
+function MamasCorner() {
+  const [open, setOpen] = React.useState(false);
+  const [draft, setDraft] = React.useState("");
+  const [sending, setSending] = React.useState(false);
+  const [error, setError] = React.useState("");
+  const [messages, setMessages] = React.useState(() => [{ role: "assistant", content: "Hi baby. I’m your PlushLife AI comfort companion. What feels most important to say right now?" }]);
+  const send = async () => {
+    const text = draft.trim();
+    if (!text || sending) return;
+    const nextMessages = [...messages, { role: "user", content: text }];
+    setMessages(nextMessages);
+    setDraft("");
+    setError("");
+    setSending(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      const response = await fetch("/api/mamas-corner", {
+        method: "POST",
+        headers: { "content-type": "application/json", authorization: `Bearer ${session?.access_token || ""}` },
+        body: JSON.stringify({ messages: nextMessages }),
+      });
+      const result = await response.json().catch(() => ({}));
+      if (!response.ok || !result.reply) throw new Error(result.error || "No reply yet.");
+      setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
+    } catch (requestError) {
+      setMessages((current) => current.slice(0, -1));
+      setDraft(text);
+      setError(requestError.message || "Mama’s Corner could not reply just yet.");
+    } finally {
+      setSending(false);
+    }
+  };
+  return (
+    <section className="mamas-corner" aria-label="Mama's Corner">
+      <button type="button" className="mamas-corner-header" onClick={() => setOpen((current) => !current)} aria-expanded={open}>
+        <span><span className="mamas-corner-kicker">🍼 PRIVATE MAMA’S CORNER</span><span className="mamas-corner-title">Talk through one little thing</span></span>
+        <span aria-hidden="true">{open ? "⌃" : "›"}</span>
+      </button>
+      {!open && <div className="mamas-corner-summary">A gentle AI chat just for this profile. Nothing is saved after you close it.</div>}
+      {open && <div className="mamas-corner-body">
+        <p className="mamas-corner-note">This is an AI comfort companion, not a person, Guardian, clinician, or emergency service. It sends this chat to PlushLife’s private AI service to reply; closing or resetting it clears this device’s chat.</p>
+        <div className="mamas-messages" aria-live="polite">
+          {messages.map((message, index) => <div key={`${message.role}-${index}`} className={message.role === "user" ? "mamas-message mamas-message-user" : "mamas-message"}>{message.content}</div>)}
+          {sending && <div className="mamas-message">Mama is thinking…</div>}
+        </div>
+        {error && <div className="mamas-corner-error" role="alert">{error}</div>}
+        <div className="mamas-compose">
+          <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} maxLength="1200" placeholder="Tell Mama what is going on…" aria-label="Message Mama's Corner" rows="2" />
+          <button type="button" onClick={send} disabled={!draft.trim() || sending}>{sending ? "Thinking…" : "Send"}</button>
+        </div>
+        <button type="button" className="mamas-reset" onClick={() => { setMessages([{ role: "assistant", content: "Fresh start, baby. What feels most important right now?" }]); setDraft(""); setError(""); }} disabled={sending}>Start a fresh chat</button>
+      </div>}
+    </section>
+  );
+}
+
 function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays, comfortItemName, onOpenJournal, onSoftDay }) {
   const [windDown, setWindDown] = React.useState([false, false, false]);
   const [comfortOpen, setComfortOpen] = React.useState(null);
@@ -5740,6 +5796,7 @@ function GlowUpTracker() {
     }
   };
   const isAdminUser = ["johnston.alexander.k@gmail.com", "johnston.alexander.k+plushlisttest@gmail.com"].includes((user?.email || "").toLowerCase());
+  const isMamaCornerProfile = (user?.email || "").trim().toLowerCase() === "johnston.alexander.k@gmail.com";
   const isSupporterAccount = !!preferences.is_supporter || isAdminUser;
   const personalPlushlistTitle = trackerProfile?.display_name
     ? `${trackerProfile.display_name}’s PlushLife`
@@ -6084,6 +6141,23 @@ function GlowUpTracker() {
         .baby-mode .baby-journal-prompt { display: flex; width: 100%; align-items: center; justify-content: space-between; margin-top: 12px; padding: 9px 10px; border: 1px solid #D8B8E3; border-radius: 12px; background: #FFFFFFB8; color: #8D4FA2; font-size: 12px; font-weight: 900; cursor: pointer; }
         .baby-mode .baby-journal-prompt span { font-size: 20px; line-height: .7; }
         .baby-mode .baby-care-footer { margin-top: 9px; color: #9A79A2; font-size: 9.5px; font-weight: 700; text-align: center; }
+        .mamas-corner { margin: 0 0 14px; overflow: hidden; border: 1px solid #E7BFE9; border-radius: 18px; background: linear-gradient(145deg,#FFF8FD,#F2EDFF 58%,#EAF9FF); box-shadow: 0 7px 16px rgba(166,93,193,.10); }
+        .mamas-corner-header { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; padding: 11px 12px; border: 0; background: transparent; color: #75428C; cursor: pointer; text-align: left; }
+        .mamas-corner-kicker, .mamas-corner-title { display: block; }
+        .mamas-corner-kicker { font-size: 9.5px; letter-spacing: .12em; font-weight: 900; color: #A057B5; }
+        .mamas-corner-title { margin-top: 2px; font-size: 14px; font-weight: 900; color: #68446F; }
+        .mamas-corner-summary { padding: 0 12px 11px; color: #856B8B; font-size: 11px; line-height: 1.4; }
+        .mamas-corner-body { padding: 0 11px 11px; }
+        .mamas-corner-note { margin: 0 0 8px; color: #866C8E; font-size: 10px; line-height: 1.42; }
+        .mamas-messages { display: grid; gap: 7px; max-height: 260px; overflow-y: auto; padding: 8px; border: 1px solid #E9D4EF; border-radius: 13px; background: rgba(255,255,255,.65); }
+        .mamas-message { max-width: 88%; padding: 8px 10px; border-radius: 12px 12px 12px 4px; background: #FFF0FA; color: #644E70; font-size: 12px; line-height: 1.45; white-space: pre-wrap; }
+        .mamas-message-user { justify-self: end; border-radius: 12px 12px 4px 12px; background: #EAF5FF; color: #45677D; }
+        .mamas-compose { display: flex; gap: 7px; align-items: end; margin-top: 8px; }
+        .mamas-compose textarea { flex: 1; resize: vertical; padding: 8px 9px; border: 1px solid #DABEE4; background: white; color: #5B4B6B; font: inherit; font-size: 12px; line-height: 1.35; }
+        .mamas-compose button { padding: 9px 10px; border: 0; background: #B768C9; color: white; font-weight: 900; cursor: pointer; }
+        .mamas-compose button:disabled, .mamas-reset:disabled { opacity: .55; cursor: not-allowed; }
+        .mamas-corner-error { margin-top: 7px; color: #A3485F; font-size: 11px; font-weight: 700; }
+        .mamas-reset { margin-top: 7px; padding: 0; border: 0; background: transparent; color: #8D4FA2; font-size: 10.5px; font-weight: 900; text-decoration: underline; cursor: pointer; }
         @keyframes nurseryMobileSway {
           0%, 100% { transform: rotate(-3deg); }
           50% { transform: rotate(3deg); }
@@ -6901,6 +6975,8 @@ function GlowUpTracker() {
               <button type="button" onClick={() => setCareSituationsExpanded((expanded) => !expanded)} aria-expanded={careSituationsExpanded} style={{ marginTop: 9, padding: "7px 10px", borderRadius: 9, border: "1px solid #73B7A8", background: "white", color: "#318C79", fontWeight: 900, fontSize: 11.5, cursor: "pointer" }}>{careSituationsExpanded ? "Show fewer situations" : "Show all situations"}</button>
               {careMessage && <div aria-live="polite" style={{ marginTop: 10, padding: "9px 11px", borderRadius: 10, background: "#FFFFFFB8", color: "#5E766F", fontSize: 11.5, lineHeight: 1.5 }}>{careMessage}</div>}
             </div>
+
+            {isMamaCornerProfile && <MamasCorner />}
 
             {babyMode && (
               <BabyModeCareSuite

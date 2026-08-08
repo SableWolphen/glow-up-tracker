@@ -60,6 +60,9 @@ const requiredRegressionMarkers = [
   'BEDTIME NEST',
   'BIG FEELINGS TRANSLATOR',
   'COZY LITTLE ROUTINES',
+  'function MamasCorner()',
+  'PRIVATE MAMA’S CORNER',
+  'const isMamaCornerProfile = (user?.email || "").trim().toLowerCase() === "johnston.alexander.k@gmail.com";',
 ];
 
 for (const marker of requiredRegressionMarkers) {
