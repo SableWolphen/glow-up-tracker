@@ -419,6 +419,7 @@ function NurseryNook({ outfit, mood, activityDays, onOpenCloset }) {
 function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays, onOpenJournal }) {
   const [windDown, setWindDown] = React.useState([false, false, false]);
   const [comfortOpen, setComfortOpen] = React.useState(null);
+  const [open, setOpen] = React.useState(false);
   const stickers = ["🌈 Rainbow try", "⭐ Brave little star", "🧸 Cozy helper", "🫧 Bubble break", "🌼 Gentle grower"];
   const sticker = stickers[(todayDone + activityDays) % stickers.length];
   const nurseryLevel = activityDays >= 21 ? "a storybook shelf and rainy-day coat hook" : activityDays >= 10 ? "a soft star lamp and toy basket" : activityDays >= 3 ? "a little cloud mobile" : "a cozy blanket and one tiny teddy";
@@ -430,10 +431,12 @@ function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays
   ];
   return (
     <section className="baby-care-suite" aria-label="Baby Mode cozy care">
-      <div className="baby-care-header">
+      <button type="button" className="baby-care-header" onClick={() => setOpen((current) => !current)} aria-expanded={open}>
         <div><div className="baby-care-kicker">🧸 LITTLE CARE CORNER</div><div className="baby-care-title">Tiny things count here.</div></div>
-        <div className="baby-sticker" aria-label={`Today's sticker: ${sticker}`}>{sticker}</div>
-      </div>
+        <div className="baby-care-header-right"><span className="baby-sticker" aria-label={`Today's sticker: ${sticker}`}>{sticker}</span><span className="baby-care-arrow" aria-hidden="true">{open ? "⌃" : "›"}</span></div>
+      </button>
+      {!open && <div className="baby-care-summary">{todayTotal ? `${todayDone} of ${todayTotal} little jobs tucked in today` : "No must-dos today — rest is allowed"}</div>}
+      {open && <>
       {todayTotal === 0 ? (
         <div className="baby-gentle-empty">No must-dos are waiting today. Your only job can be to rest, play, or pick one tiny kind thing for yourself.</div>
       ) : (
@@ -459,6 +462,7 @@ function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays
       </div>
       <button type="button" className="baby-journal-prompt" onClick={onOpenJournal}>📖 Put one little thought in PlushJournal <span>›</span></button>
       <div className="baby-care-footer">{careDays ? `${careDays} gentle-care ${careDays === 1 ? "day" : "days"} collected so far` : `Start your first gentle-care day whenever you are ready`} · {date}</div>
+      </>}
     </section>
   );
 }
@@ -5999,11 +6003,14 @@ function GlowUpTracker() {
         .baby-mode .nursery-toy-right { right: 13%; }
         .baby-mode .nursery-mascot { position: relative; z-index: 1; display: flex; justify-content: center; padding-top: 12px; }
         .baby-mode .nursery-nook-caption { position: absolute; z-index: 3; right: 14px; bottom: 10px; color: #9A62AB; font-size: 10px; font-weight: 800; }
-        .baby-mode .baby-care-suite { margin: 0 0 14px; padding: 15px; border: 1px solid #E7BFE9; border-radius: 21px; background: linear-gradient(145deg, #FFF9FD, #F4F0FF 55%, #EAF9FF); box-shadow: 0 10px 24px rgba(166,93,193,.12); }
-        .baby-mode .baby-care-header { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+        .baby-mode .baby-care-suite { margin: 0 0 14px; padding: 9px 11px; border: 1px solid #E7BFE9; border-radius: 16px; background: linear-gradient(145deg, #FFF9FD, #F4F0FF 55%, #EAF9FF); box-shadow: 0 7px 16px rgba(166,93,193,.10); }
+        .baby-mode .baby-care-header { display: flex; width: 100%; align-items: center; justify-content: space-between; gap: 10px; min-height: 0; padding: 2px; border: 0; border-radius: 0; background: transparent; box-shadow: none; cursor: pointer; text-align: left; }
+        .baby-mode .baby-care-header-right { display: flex; align-items: center; gap: 7px; flex-shrink: 0; }
+        .baby-mode .baby-care-arrow { color: #A057B5; font-size: 20px; font-weight: 900; }
         .baby-mode .baby-care-kicker, .baby-mode .baby-section-label { font-size: 10px; letter-spacing: .12em; font-weight: 900; color: #A057B5; }
-        .baby-mode .baby-care-title { margin-top: 3px; color: #68446F; font-size: 18px; font-weight: 900; }
-        .baby-mode .baby-sticker { padding: 7px 9px; border: 1px dashed #DDA6E7; border-radius: 12px; background: #FFFFFFAA; color: #8A529A; font-size: 10.5px; font-weight: 900; text-align: center; }
+        .baby-mode .baby-care-title { margin-top: 2px; color: #68446F; font-size: 14px; font-weight: 900; }
+        .baby-mode .baby-sticker { padding: 5px 7px; border: 1px dashed #DDA6E7; border-radius: 10px; background: #FFFFFFAA; color: #8A529A; font-size: 9.5px; font-weight: 900; text-align: center; }
+        .baby-mode .baby-care-summary { margin: 6px 2px 1px; color: #856B8B; font-size: 10.5px; font-weight: 700; }
         .baby-mode .baby-milestone, .baby-mode .baby-nursery-unlock, .baby-mode .baby-gentle-empty { margin-top: 11px; padding: 9px 10px; border-radius: 12px; background: rgba(255,255,255,.68); color: #6B5A7D; font-size: 12px; line-height: 1.45; }
         .baby-mode .baby-milestone { border: 1px solid #F0C9DF; }
         .baby-mode .baby-nursery-unlock { border: 1px solid #CDE8F5; }
