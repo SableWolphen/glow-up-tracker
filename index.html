@@ -447,8 +447,8 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
   const [error, setError] = React.useState("");
   const [taskToConfirm, setTaskToConfirm] = React.useState(null);
   const [messages, setMessages] = React.useState(() => [{ role: "assistant", content: "Hi baby. I’m your PlushLife AI comfort companion. What feels most important to say right now?" }]);
-  const send = async () => {
-    const text = draft.trim();
+  const send = async (messageOverride = null) => {
+    const text = (typeof messageOverride === "string" ? messageOverride : draft).trim();
     if (!text || sending) return;
     const nextMessages = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
@@ -461,7 +461,7 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
       const response = await fetch("/api/mamas-corner", {
         method: "POST",
         headers: { "content-type": "application/json", authorization: `Bearer ${session?.access_token || ""}` },
-        body: JSON.stringify({ messages: nextMessages }),
+        body: JSON.stringify({ messages: nextMessages, unfinishedTasks: (incompleteTasks || []).slice(0, 6).map((task) => task.label).filter(Boolean) }),
       });
       const result = await response.json().catch(() => ({}));
       if (!response.ok || !result.reply) throw new Error(result.error || "No reply yet.");
@@ -493,13 +493,14 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
       </button>
       {!open && <div className="mamas-corner-summary">A gentle AI chat just for this profile. Nothing is saved after you close it.</div>}
       {open && <div className="mamas-corner-body">
-        <p className="mamas-corner-note">This is an AI comfort companion, not a person, Guardian, clinician, or emergency service. It sends this chat to PlushLife’s private AI service to reply; closing or resetting it clears this device’s chat.</p>
+        <p className="mamas-corner-note">This is an AI comfort companion, not a person, Guardian, clinician, or emergency service. It sends this chat and up to six unfinished task names to PlushLife’s private AI service to reply; closing or resetting it clears this device’s chat.</p>
         <div className="mamas-messages" aria-live="polite">
           {messages.map((message, index) => <div key={`${message.role}-${index}`} className={message.role === "user" ? "mamas-message mamas-message-user" : "mamas-message"}>{message.content}</div>)}
           {sending && <div className="mamas-message">Mama is thinking…</div>}
         </div>
         {error && <div className="mamas-corner-error" role="alert">{error}</div>}
         {taskToConfirm && <div className="mamas-task-confirm"><div>Did you want Mama to check off <strong>{taskToConfirm.label}</strong>?</div><div><button type="button" onClick={() => { onConfirmTask(taskToConfirm.key); setTaskToConfirm(null); }}>✓ Yes, tuck it in</button><button type="button" onClick={() => setTaskToConfirm(null)}>Not yet</button></div></div>}
+        <button type="button" className="mamas-task-checkin" onClick={() => send("Can you check in on my unfinished tasks? Ask me about just one small one, and do not assume it is done.")} disabled={sending || !(incompleteTasks || []).length}>{(incompleteTasks || []).length ? "🧸 Mama, check in on my tasks" : "🧸 Everything is tucked in"}</button>
         <div className="mamas-compose">
           <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} maxLength="1200" placeholder="Tell Mama what is going on…" aria-label="Message Mama's Corner" rows="2" />
           <button type="button" onClick={send} disabled={!draft.trim() || sending}>{sending ? "Thinking…" : "Send"}</button>
@@ -6175,6 +6176,8 @@ function GlowUpTracker() {
         .mamas-task-confirm > div:last-child { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 7px; }
         .mamas-task-confirm button { min-height: 31px; padding: 6px 8px; border: 1px solid #A9D1E9; border-radius: 10px; background: white; color: #33779C; font-size: 11px; font-weight: 900; cursor: pointer; }
         .mamas-task-confirm button:first-child { border-color: #7ACAA7; background: #E8FFF3; color: #277858; }
+        .mamas-task-checkin { width: 100%; min-height: 35px; margin-top: 8px; padding: 7px 9px; border: 1px solid #D6B9E5; border-radius: 11px; background: #FFFFFFC9; color: #80548E; font-size: 11.5px; font-weight: 900; cursor: pointer; }
+        .mamas-task-checkin:disabled { opacity: .62; cursor: default; }
         .mamas-reset { margin-top: 7px; padding: 0; border: 0; background: transparent; color: #8D4FA2; font-size: 10.5px; font-weight: 900; text-decoration: underline; cursor: pointer; }
         @keyframes nurseryMobileSway {
           0%, 100% { transform: rotate(-3deg); }
