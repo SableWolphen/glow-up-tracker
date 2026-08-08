@@ -446,7 +446,16 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
   const [sending, setSending] = React.useState(false);
   const [error, setError] = React.useState("");
   const [taskToConfirm, setTaskToConfirm] = React.useState(null);
+  const [lastTaskAsked, setLastTaskAsked] = React.useState(null);
   const [messages, setMessages] = React.useState(() => [{ role: "assistant", content: "Hi baby. I’m your PlushLife AI comfort companion. What feels most important to say right now?" }]);
+  const checkInOnTasks = () => {
+    const task = (incompleteTasks || [])[0];
+    if (!task || sending) return;
+    setTaskToConfirm(null);
+    setLastTaskAsked(task);
+    setError("");
+    setMessages((current) => [...current, { role: "assistant", content: `Okay, baby — I see “${task.label}” is still waiting. Did you get it done, or would you like to make it tiny together?` }]);
+  };
   const send = async (messageOverride = null, options = {}) => {
     const text = (typeof messageOverride === "string" ? messageOverride : draft).trim();
     if (!text || sending) return;
@@ -467,7 +476,8 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
       if (!response.ok || !result.reply) throw new Error(result.error || "No reply yet.");
       setMessages((current) => [...current, { role: "assistant", content: result.reply }]);
       const completedLanguage = /\b(?:i(?:'ve| have)?|we(?:'ve| have)?)\s+(?:did|finished|completed|checked off|took care of)|\b(?:all done|done with|finished with|completed)\b/i.test(text);
-      if (completedLanguage) {
+      const confirmsAskedTask = !!lastTaskAsked && /^\s*(?:yes|yeah|yep|yup|i did|done|finished)\b/i.test(text);
+      if (completedLanguage || confirmsAskedTask) {
         const normalizedText = text.toLowerCase();
         const matchedTask = (incompleteTasks || []).find((task) => {
           const label = (task.label || "").toLowerCase();
@@ -475,7 +485,10 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
           const words = label.split(/[^a-z0-9]+/).filter((word) => word.length >= 4 && !["with", "from", "that", "your", "today"].includes(word));
           return words.length >= 2 && words.filter((word) => normalizedText.includes(word)).length >= 2;
         });
-        if (matchedTask) setTaskToConfirm(matchedTask);
+        if (matchedTask || confirmsAskedTask) {
+          setTaskToConfirm(matchedTask || lastTaskAsked);
+          setLastTaskAsked(null);
+        }
       }
     } catch (requestError) {
       setMessages((current) => current.slice(0, -1));
@@ -499,8 +512,8 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
           {sending && <div className="mamas-message">Mama is thinking…</div>}
         </div>
         {error && <div className="mamas-corner-error" role="alert">{error}</div>}
-        {taskToConfirm && <div className="mamas-task-confirm"><div>Did you want Mama to check off <strong>{taskToConfirm.label}</strong>?</div><div><button type="button" onClick={() => { onConfirmTask(taskToConfirm.key); setTaskToConfirm(null); }}>✓ Yes, tuck it in</button><button type="button" onClick={() => setTaskToConfirm(null)}>Not yet</button></div></div>}
-        <button type="button" className="mamas-task-checkin" onClick={() => send("Mama, please check in on one of my unfinished tasks.", { taskCheckIn: true })} disabled={sending || !(incompleteTasks || []).length}>{(incompleteTasks || []).length ? "🧸 Mama, check in on my tasks" : "🧸 Everything is tucked in"}</button>
+        {taskToConfirm && <div className="mamas-task-confirm"><div>Did you want Mama to check off <strong>{taskToConfirm.label}</strong>?</div><div><button type="button" onClick={() => { onConfirmTask(taskToConfirm.key); setTaskToConfirm(null); setLastTaskAsked(null); }}>✓ Yes, tuck it in</button><button type="button" onClick={() => setTaskToConfirm(null)}>Not yet</button></div></div>}
+        <button type="button" className="mamas-task-checkin" onClick={checkInOnTasks} disabled={sending || !(incompleteTasks || []).length}>{(incompleteTasks || []).length ? "🧸 Mama, check in on my tasks" : "🧸 Everything is tucked in"}</button>
         <div className="mamas-compose">
           <textarea value={draft} onChange={(event) => setDraft(event.target.value)} onKeyDown={(event) => { if (event.key === "Enter" && !event.shiftKey) { event.preventDefault(); send(); } }} maxLength="1200" placeholder="Tell Mama what is going on…" aria-label="Message Mama's Corner" rows="2" />
           <button type="button" onClick={send} disabled={!draft.trim() || sending}>{sending ? "Thinking…" : "Send"}</button>
