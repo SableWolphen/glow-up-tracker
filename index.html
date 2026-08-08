@@ -7700,8 +7700,8 @@ function GlowUpTracker() {
             {isGuardianAccount && (
               <div style={{ marginBottom: 14, padding: "13px 14px", borderRadius: 14, background: "linear-gradient(135deg,#EAF6F1,#F4FAFF)", border: "1px solid #B9E0D0" }}>
                 <div style={{ fontSize: 11, letterSpacing: "0.11em", fontWeight: 900, color: "#318C79" }}>💛 GUARDIAN SUPPORT DASHBOARD</div>
-                <div style={{ marginTop: 5, fontSize: 14, fontWeight: 900, color: "#365A53" }}>{isSupportAdult ? `Supporting ${selectedSupportName}` : "A calm place to receive and manage support invitations"}</div>
-                <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5, color: "#52746E" }}>{isSupportAdult ? "You can encourage and offer support within the boundaries your Cozy chose. Their tasks and private reflections stay theirs." : "Nothing is shared until you accept an invitation, and every connection stays permission-based."}</div>
+                <div style={{ marginTop: 5, fontSize: 14, fontWeight: 900, color: "#365A53" }}>{isSupportAdult ? `Supporting ${selectedSupportName}` : "Manage the Guardians who support you"}</div>
+                <div style={{ marginTop: 4, fontSize: 11.5, lineHeight: 1.5, color: "#52746E" }}>{isSupportAdult ? "You can encourage and offer support within the boundaries your Cozy chose. Their tasks and private reflections stay theirs." : "Choose who supports you, what they can access, and pause or end a connection whenever you need."}</div>
               </div>
             )}
             {supportViewMode === "caretaker" && guardianSupportRequests.filter((request) => request.owner_user_id === supportOwnerId && request.status !== "resolved" && request.status !== "cancelled").length > 0 && (
@@ -7740,14 +7740,14 @@ function GlowUpTracker() {
             )}
             {canUseCaretakerDashboard && (
               <div role="tablist" aria-label="Guardian views" style={{ display: "flex", gap: 6, marginBottom: 14 }}>
-                <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>{isGuardianAccount ? "⚙️ My boundaries" : "🧸 My Support"}</button>
+                <button type="button" role="tab" aria-selected={supportViewMode === "mine"} onClick={() => setSupportViewMode("mine")} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "mine" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "mine" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>{isGuardianAccount ? "🧸 My Guardians" : "🧸 My Support"}</button>
                 <button type="button" role="tab" aria-selected={supportViewMode === "caretaker"} onClick={() => { setSupportViewMode("caretaker"); if (invitedSupportLinks[0]) loadSupportOwner(invitedSupportLinks[0].owner_user_id); }} style={{ flex: 1, padding: "8px 6px", borderRadius: 10, border: supportViewMode === "caretaker" ? "2px solid #4C8FE8" : "1px solid #CFE4F5", background: supportViewMode === "caretaker" ? "#EAF4FF" : "white", color: "#2D6BB5", fontWeight: 900, fontSize: 12, cursor: "pointer" }}>💛 People I Support</button>
               </div>
             )}
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", gap: 10 }}>
               <div>
-                <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#4C8FE8", fontWeight: 800 }}>{isSupportAdult ? "💛 YOUR SUPPORT SPACE" : (isGuardianAccount ? "⚙️ MY SUPPORT BOUNDARIES" : "🧸 MY GUARDIANS")}</div>
-                <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900 }}>{isSupportAdult ? `Supporting ${selectedSupportName}` : (isGuardianAccount ? "Your consent & connections" : "My trusted guardians")}</div>
+                <div style={{ fontSize: 11, letterSpacing: "0.14em", color: "#4C8FE8", fontWeight: 800 }}>{isSupportAdult ? "💛 YOUR SUPPORT SPACE" : "🧸 MY GUARDIANS"}</div>
+                <div style={{ marginTop: 4, fontSize: 18, fontWeight: 900 }}>{isSupportAdult ? `Supporting ${selectedSupportName}` : "My trusted guardians"}</div>
               </div>
               <button onClick={() => loadSupportData(user)} style={{ padding: "7px 9px", borderRadius: 9, border: "1px solid #B9DCF6", background: "#F5FAFF", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>↻ Refresh</button>
             </div>
@@ -7776,7 +7776,7 @@ function GlowUpTracker() {
             )}
 
             <div style={{ marginTop: 14, padding: 12, borderRadius: 13, background: "#FFF9FD", border: "1px solid #E9D7F0" }}>
-              <div style={{ fontSize: 11, fontWeight: 900, color: "#8D5CA5", letterSpacing: "0.08em" }}>{isSupportAdult ? "YOUR SUPPORT AGREEMENT" : (isGuardianAccount ? "YOUR SUPPORT SETTINGS" : "YOUR PRIVATE TRACKER")}</div>
+              <div style={{ fontSize: 11, fontWeight: 900, color: "#8D5CA5", letterSpacing: "0.08em" }}>{isSupportAdult ? "YOUR SUPPORT AGREEMENT" : "MY GUARDIAN SETTINGS"}</div>
               {isSupportAdult && activeSupportLink?.care_agreement && <div style={{ marginTop: 8, padding: "9px 11px", borderRadius: 10, background: "white", border: "1px solid #E9D7F0", fontSize: 12, lineHeight: 1.5, color: "#6B5A7D" }}><strong>Care agreement:</strong> {activeSupportLink.care_agreement}</div>}
               <div style={{ marginTop: 7, fontSize: 11.5, lineHeight: 1.5, color: "#8C6B9E" }}>
                 {isSupportAdult
