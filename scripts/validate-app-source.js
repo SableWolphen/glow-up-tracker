@@ -44,6 +44,10 @@ const requiredRegressionMarkers = [
   'const MOTHERLY_NICKNAMES = [',
   'function NurseryNook({ outfit, mood, activityDays, onOpenCloset })',
   'MY LITTLE NURSERY',
+  'function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays, onOpenJournal })',
+  'LITTLE CARE CORNER',
+  'BEDTIME WIND-DOWN',
+  'Today’s little-win sticker: Super Cozy Helper',
 ];
 
 for (const marker of requiredRegressionMarkers) {
