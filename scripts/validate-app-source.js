@@ -48,6 +48,8 @@ const requiredRegressionMarkers = [
   'LITTLE CARE CORNER',
   'BEDTIME WIND-DOWN',
   'Today’s little-win sticker: Super Cozy Helper',
+  'const WINS_JAR_NOTES = [',
+  'YOUR WINS JAR',
 ];
 
 for (const marker of requiredRegressionMarkers) {
