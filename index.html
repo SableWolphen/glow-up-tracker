@@ -459,6 +459,15 @@ function MamasCorner({ incompleteTasks, onConfirmTask }) {
   const send = async (messageOverride = null, options = {}) => {
     const text = (typeof messageOverride === "string" ? messageOverride : draft).trim();
     if (!text || sending) return;
+    const confirmsLastTask = !!lastTaskAsked && /\b(?:yes|yeah|yep|yup|done|finished|i did(?: that| it)?|i think i did(?: that| it)?|pretty sure|probably)\b/i.test(text);
+    if (confirmsLastTask) {
+      setMessages((current) => [...current, { role: "user", content: text }, { role: "assistant", content: `That sounds like a real win, baby. Shall I tuck “${lastTaskAsked.label}” into your done list?` }]);
+      setDraft("");
+      setError("");
+      setTaskToConfirm(lastTaskAsked);
+      setLastTaskAsked(null);
+      return;
+    }
     const nextMessages = [...messages, { role: "user", content: text }];
     setMessages(nextMessages);
     setDraft("");
