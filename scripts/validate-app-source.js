@@ -50,6 +50,8 @@ const requiredRegressionMarkers = [
   'Today’s little-win sticker: Super Cozy Helper',
   'const WINS_JAR_NOTES = [',
   'YOUR WINS JAR',
+  'yearlight-crown',
+  'case "reflection_count": return reflectionDates.length;',
 ];
 
 for (const marker of requiredRegressionMarkers) {

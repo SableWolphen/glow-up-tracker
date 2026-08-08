@@ -311,6 +311,17 @@ const MASCOT_OUTFITS = [
   { id: "moon-cap", name: "Moonlit Cap", badge: "🌙", accessory: "🌙", unlock: { type: "care_days", count: 10 }, hint: "Complete your essential care on any 10 days" },
   { id: "book-buddy", name: "Book Buddy", badge: "📚", accessory: "📚", unlock: { type: "activity_days", count: 21 }, hint: "Check in or care for yourself on any 21 days" },
   { id: "raincoat", name: "Rainy-Day Coat", badge: "🧥", accessory: "🧥", unlock: { type: "care_days", count: 21 }, hint: "Complete your essential care on any 21 days" },
+  { id: "starlight-pins", name: "Starlight Pins", badge: "🌟", accessory: "🌟", unlock: { type: "activity_days", count: 45 }, hint: "Check in or care for yourself on any 45 days" },
+  { id: "cozy-cardigan", name: "Cozy Cardigan", badge: "🧶", accessory: "🧶", unlock: { type: "care_days", count: 45 }, hint: "Complete your essential care on any 45 days" },
+  { id: "comet-bow", name: "Comet Bow", badge: "☄️", accessory: "☄️", unlock: { type: "activity_days", count: 75 }, hint: "Check in or care for yourself on any 75 days" },
+  { id: "sunrise-cape", name: "Sunrise Cape", badge: "🌅", accessory: "🌅", unlock: { type: "care_days", count: 75 }, hint: "Complete your essential care on any 75 days" },
+  { id: "journal-charm", name: "Journal Charm", badge: "📝", accessory: "📝", unlock: { type: "reflection_count", count: 20 }, hint: "Write 20 private reflections" },
+  { id: "memory-ribbon", name: "Memory Ribbon", badge: "🎗️", accessory: "🎗️", unlock: { type: "reflection_count", count: 50 }, hint: "Write 50 private reflections" },
+  { id: "aurora-crown", name: "Aurora Crown", badge: "👑", accessory: "👑", unlock: { type: "activity_days", count: 150 }, hint: "Check in or care for yourself on any 150 days" },
+  { id: "evergreen-halo", name: "Evergreen Halo", badge: "🌲", accessory: "🌲", unlock: { type: "care_days", count: 150 }, hint: "Complete your essential care on any 150 days" },
+  { id: "storybook-star", name: "Storybook Star", badge: "📖", accessory: "📖", unlock: { type: "reflection_count", count: 100 }, hint: "Write 100 private reflections" },
+  { id: "keepsake-gem", name: "Keepsake Gem", badge: "💎", accessory: "💎", unlock: { type: "activity_days", count: 250 }, hint: "Check in or care for yourself on any 250 days" },
+  { id: "yearlight-crown", name: "Yearlight Crown", badge: "🏆", accessory: "🏆", unlock: { type: "care_days", count: 365 }, hint: "Complete your essential care on any 365 days" },
 ];
 const APPEARANCE_THEMES = [
   { id: "soft", label: "Soft Plush Theme", icon: "💜", background: "#FFF6FB", glowA: "#FFD9EC", glowB: "#C9ECFF", glowC: "#FFF3D6", glowD: "#D6F5E3", wash: "#FFF9FCDD", accent: "#C77DD6" },
@@ -422,7 +433,7 @@ function BabyModeCareSuite({ date, todayDone, todayTotal, activityDays, careDays
   const [open, setOpen] = React.useState(false);
   const stickers = ["🌈 Rainbow try", "⭐ Brave little star", "🧸 Cozy helper", "🫧 Bubble break", "🌼 Gentle grower"];
   const sticker = stickers[(todayDone + activityDays) % stickers.length];
-  const nurseryLevel = activityDays >= 21 ? "a storybook shelf and rainy-day coat hook" : activityDays >= 10 ? "a soft star lamp and toy basket" : activityDays >= 3 ? "a little cloud mobile" : "a cozy blanket and one tiny teddy";
+  const nurseryLevel = activityDays >= 365 ? "a whole yearlight room, filled with keepsakes" : activityDays >= 150 ? "a cozy reading nook and an aurora night-light" : activityDays >= 75 ? "a starry ceiling and a storybook shelf" : activityDays >= 45 ? "a soft star lamp, toy basket, and a tiny plant" : activityDays >= 21 ? "a storybook shelf and rainy-day coat hook" : activityDays >= 10 ? "a soft star lamp and toy basket" : activityDays >= 3 ? "a little cloud mobile" : "a cozy blanket and one tiny teddy";
   const allWindDownDone = windDown.every(Boolean);
   const comfortTools = [
     { id: "sip", label: "Take a sip", text: "One sip of water is enough. You do not have to fix the whole day right now." },
@@ -5553,6 +5564,7 @@ function GlowUpTracker() {
       case "activity_days": return activityDaysTotal;
       case "build_checkins": return maxBuildHabitCheckIns;
       case "reduce_checkins": return maxReduceHabitCheckIns;
+      case "reflection_count": return reflectionDates.length;
       case "founding": return (user?.created_at && new Date(user.created_at) < new Date("2026-09-01T00:00:00Z")) ? 1 : 0;
       default: return Number.NEGATIVE_INFINITY;
     }
