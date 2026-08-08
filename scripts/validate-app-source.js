@@ -42,7 +42,6 @@ const requiredRegressionMarkers = [
   'Ambient themes never recolor content.',
   'A little hello from Mama 🍼',
   'const MOTHERLY_NICKNAMES = [',
-  'MOTHERLY WORDS',
 ];
 
 for (const marker of requiredRegressionMarkers) {

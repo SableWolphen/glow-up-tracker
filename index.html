@@ -317,16 +317,7 @@ const APPEARANCE_THEMES = [
   { id: "twilight", label: "Twilight Theme", icon: "🌙", background: "#DDD4FF", glowA: "#9784E6", glowB: "#7FADE8", glowC: "#D99BE8", glowD: "#AAB7F2", wash: "#EEE9FFB8", accent: "#6950B6" },
   { id: "meadow", label: "Meadow Theme", icon: "🌿", background: "#D9F2DE", glowA: "#77C98B", glowB: "#75C7C1", glowC: "#E8C95D", glowD: "#9BD17D", wash: "#ECFAEEB8", accent: "#328660" },
 ];
-const MOTHERLY_NICKNAMES = [
-  { id: "mix", label: "Mix it up", value: null },
-  { id: "baby", label: "Baby", value: "baby" },
-  { id: "little_one", label: "Little one", value: "little one" },
-  { id: "sweetheart", label: "Sweetheart", value: "sweetheart" },
-  { id: "angel", label: "Angel", value: "angel" },
-  { id: "bunny", label: "Bunny", value: "bunny" },
-  { id: "pumpkin", label: "Pumpkin", value: "pumpkin" },
-  { id: "darling", label: "Darling", value: "darling" },
-];
+const MOTHERLY_NICKNAMES = ["baby", "little one", "sweetheart", "angel", "bunny", "pumpkin", "darling"];
 const OPTIONAL_SECTION_MARKERS = ["bonus", "little space", "reward", "fun"];
 
 function urlBase64ToUint8Array(value) {
@@ -1497,7 +1488,6 @@ function GlowUpTracker() {
   const [active, setActive] = useState(() => dayIdForDate(trackerPeriod().date));
   const [dashboard, setDashboard] = useState("today");
   const [appearanceTheme, setAppearanceTheme] = useState("soft");
-  const [motherlyNickname, setMotherlyNickname] = useState("mix");
   const [progressView, setProgressView] = useState("overview");
   const swipeStartX = React.useRef(null);
   const swipeStartY = React.useRef(null);
@@ -1547,8 +1537,6 @@ function GlowUpTracker() {
     if (!user?.id) return;
     const savedTheme = window.localStorage.getItem(`plushlist-appearance-${user.id}`);
     if (APPEARANCE_THEMES.some((theme) => theme.id === savedTheme)) setAppearanceTheme(savedTheme);
-    const savedNickname = window.localStorage.getItem(`plushlist-motherly-nickname-${user.id}`);
-    if (MOTHERLY_NICKNAMES.some((item) => item.id === savedNickname)) setMotherlyNickname(savedNickname);
   }, [user?.id]);
   const [weeklyHistory, setWeeklyHistory] = useState([]);
   const [longHistory, setLongHistory] = useState([]);
@@ -5825,17 +5813,9 @@ function GlowUpTracker() {
   }
 
   const themeKey = babyMode ? (preferences.baby_voice === "fatherly" ? "baby_fatherly" : "baby_motherly") : dinoTheme ? "dino" : "warm";
-  const selectedMotherlyNickname = (() => {
-    const selected = MOTHERLY_NICKNAMES.find((item) => item.id === motherlyNickname) || MOTHERLY_NICKNAMES[0];
-    if (selected.value) return selected.value;
-    const choices = MOTHERLY_NICKNAMES.filter((item) => item.value);
-    const rotation = [...period.date].reduce((sum, character) => sum + character.charCodeAt(0), 0) % choices.length;
-    return choices[rotation].value;
-  })();
-  const selectMotherlyNickname = (nicknameId) => {
-    setMotherlyNickname(nicknameId);
-    if (user?.id) window.localStorage.setItem(`plushlist-motherly-nickname-${user.id}`, nicknameId);
-  };
+  const selectedMotherlyNickname = MOTHERLY_NICKNAMES[
+    [...period.date].reduce((sum, character) => sum + character.charCodeAt(0), 0) % MOTHERLY_NICKNAMES.length
+  ];
   const baseVoice = THEME_VOICE[themeKey];
   const voice = themeKey === "baby_motherly" ? {
     ...baseVoice,
@@ -7158,16 +7138,6 @@ function GlowUpTracker() {
                   <button type="button" onClick={() => updatePreference({ baby_voice: "motherly" })} aria-pressed={(preferences.baby_voice || "motherly") === "motherly"} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: (preferences.baby_voice || "motherly") === "motherly" ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: (preferences.baby_voice || "motherly") === "motherly" ? "#F7ECFB" : "white", color: "#8E4EAA", fontWeight: 800, cursor: "pointer" }}>👩 Motherly</button>
                   <button type="button" onClick={() => updatePreference({ baby_voice: "fatherly" })} aria-pressed={preferences.baby_voice === "fatherly"} style={{ flex: 1, padding: "8px 10px", borderRadius: 10, border: preferences.baby_voice === "fatherly" ? "2px solid #4C8FE8" : "1px solid #E3C9EC", background: preferences.baby_voice === "fatherly" ? "#EAF4FF" : "white", color: "#4C8FE8", fontWeight: 800, cursor: "pointer" }}>👨 Fatherly</button>
                 </div>
-                {(preferences.baby_voice || "motherly") === "motherly" && <div style={{ marginTop: 10 }}>
-                  <div style={{ fontSize: 10.5, fontWeight: 900, color: "#8E4EAA" }}>MOTHERLY WORDS</div>
-                  <div style={{ marginTop: 4, fontSize: 10.5, lineHeight: 1.4, color: "#8C6B9E" }}>Choose what Motherly Mode calls you. “Mix it up” gently rotates through the options each day.</div>
-                  <div style={{ display: "grid", gridTemplateColumns: "repeat(2,minmax(0,1fr))", gap: 6, marginTop: 7 }}>
-                    {MOTHERLY_NICKNAMES.map((item) => {
-                      const selected = motherlyNickname === item.id;
-                      return <button key={item.id} type="button" aria-pressed={selected} onClick={() => selectMotherlyNickname(item.id)} style={{ padding: "7px 8px", borderRadius: 9, border: selected ? "2px solid #A65DC1" : "1px solid #E3C9EC", background: selected ? "#F7ECFB" : "white", color: "#8E4EAA", fontWeight: 800, fontSize: 11, cursor: "pointer" }}>{item.id === "mix" ? "✨ " : ""}{item.label}</button>;
-                    })}
-                  </div>
-                </div>}
               </div>
             )}
 
