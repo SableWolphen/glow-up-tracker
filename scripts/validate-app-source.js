@@ -30,6 +30,9 @@ const requiredRegressionMarkers = [
   'Nothing you already had was changed.',
   'Add another one anyway?',
   'Import ${duplicateNames.length === 1 ? "it" : "them"} again anyway?',
+  'const careAreas = (() => {',
+  '📖 YOUR CARE STORY',
+  '🪴 CARE AREAS',
 ];
 
 for (const marker of requiredRegressionMarkers) {

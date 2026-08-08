@@ -5329,6 +5329,42 @@ function GlowUpTracker() {
     return { mostConsistent, topTool, topMood };
   })();
 
+  // Care Areas are intentionally made from a person's own task groups rather
+  // than a fixed wellness taxonomy. "Morning," "School," "Comfort," and a
+  // custom group can all be meaningful care areas; this keeps the summary
+  // personal without asking anyone to classify themselves.
+  const careAreas = (() => {
+    const areas = new Map();
+    datesThroughToday(period).forEach((date) => {
+      const completed = date === period.date
+        ? new Set(Object.keys(done).filter((key) => done[key]))
+        : (historyByDate.get(date) || new Set());
+      trackerTasks
+        .filter((task) => !task.archived_at && !taskIsOptional(task) && taskIsScheduledForDate(task, date) && !isTaskPausedOnDate(task, date))
+        .forEach((task) => {
+          const label = (task.section || "Everyday care").trim() || "Everyday care";
+          const area = areas.get(label) || { label, done: 0, possible: 0 };
+          area.possible += 1;
+          if (completed.has(task.task_key)) area.done += 1;
+          areas.set(label, area);
+        });
+    });
+    return [...areas.values()]
+      .map((area) => ({ ...area, pct: area.possible ? Math.round((area.done / area.possible) * 100) : 0 }))
+      .sort((a, b) => b.possible - a.possible || a.label.localeCompare(b.label))
+      .slice(0, 6);
+  })();
+
+  const careStory = (() => {
+    const lines = [];
+    if (caringDays > 0) lines.push(`You made room for care on ${caringDays} ${caringDays === 1 ? "day" : "days"} this week.`);
+    if (weeklyHighlights?.mostConsistent) lines.push(`${weeklyHighlights.mostConsistent.task.task} was a steady part of your rhythm.`);
+    if (weeklyHighlights?.topTool) lines.push(`${weeklyHighlights.topTool.name || weeklyHighlights.topTool.title} seemed to be a helpful support.`);
+    if (weeklyHighlights?.topMood) lines.push(`Your most common check-in feeling was ${weeklyHighlights.topMood}.`);
+    if (lines.length === 0) lines.push("Your story will start taking shape as you check in and choose small caring steps.");
+    return lines.slice(0, 3);
+  })();
+
   const todayDailyCoreKeys = requiredKeysForDate(period.date);
   const todayDailyCoreIsComplete =
     todayDailyCoreKeys.length > 0 &&
@@ -9076,6 +9112,31 @@ function GlowUpTracker() {
           <div style={{ marginTop: 9, padding: "9px 10px", borderRadius: 10, background: "#FFFFFF99", fontSize: 11.5, lineHeight: 1.45, color: "#6B5A7D" }}>
             <strong>Gentle weekly review:</strong> {weeklyEssentialDone} essentials and {weeklyBonusDone} bonus wins completed across {caringDays} caring {caringDays === 1 ? "day" : "days"}. A missed day never erases the care you gave yourself.
           </div>
+          <div style={{ marginTop: 9, padding: "12px", borderRadius: 12, background: "#F5FBF8", border: "1px solid #CFE8E1", color: "#526F67" }}>
+            <div style={{ fontSize: 9.5, letterSpacing: "0.12em", fontWeight: 900, color: "#318C79" }}>📖 YOUR CARE STORY</div>
+            <div style={{ marginTop: 5, fontSize: 11.5, lineHeight: 1.55 }}>{careStory.map((line, index) => <div key={index} style={{ marginTop: index ? 3 : 0 }}>{line}</div>)}</div>
+            <div style={{ marginTop: 7, fontSize: 10.5, lineHeight: 1.4, color: "#6B8A82" }}>A gentle reflection on what you chose—not a score, diagnosis, or rule for next week.</div>
+          </div>
+          {careAreas.length > 0 && (
+            <div style={{ marginTop: 9, padding: "12px", borderRadius: 12, background: "#F7F9FF", border: "1px solid #D9E6F6" }}>
+              <div style={{ display: "flex", justifyContent: "space-between", gap: 8, alignItems: "baseline" }}>
+                <div style={{ fontSize: 9.5, letterSpacing: "0.12em", fontWeight: 900, color: "#4C78A8" }}>🪴 CARE AREAS</div>
+                <button type="button" onClick={() => openTaskManager()} style={{ padding: "4px 7px", borderRadius: 7, border: "1px solid #B9DCF6", background: "white", color: "#3D70A3", fontWeight: 800, fontSize: 10, cursor: "pointer" }}>Edit groups</button>
+              </div>
+              <div style={{ marginTop: 5, fontSize: 10.5, lineHeight: 1.4, color: "#6B7C99" }}>Your task groups become your care areas. Rename or make a group anytime from task settings.</div>
+              <div style={{ display: "grid", gap: 6, marginTop: 9 }}>
+                {careAreas.map((area) => (
+                  <div key={area.label} style={{ display: "grid", gridTemplateColumns: "minmax(0,1fr) auto", gap: 8, alignItems: "center" }}>
+                    <div style={{ minWidth: 0 }}>
+                      <div style={{ display: "flex", justifyContent: "space-between", gap: 8, fontSize: 11, color: "#536C89" }}><span style={{ overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap", fontWeight: 800 }}>{area.label}</span><span>{area.done}/{area.possible}</span></div>
+                      <div style={{ height: 5, marginTop: 3, overflow: "hidden", borderRadius: 99, background: "#E6EFF9" }}><div style={{ height: "100%", width: `${area.pct}%`, borderRadius: 99, background: "#7FC8F8" }} /></div>
+                    </div>
+                    <span style={{ minWidth: 30, textAlign: "right", fontSize: 11, fontWeight: 900, color: "#4C8FE8" }}>{area.pct}%</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
           {patternInsightCards.length > 0 && (() => {
             const card = patternInsightCards[insightCardIndex % patternInsightCards.length];
             return (
